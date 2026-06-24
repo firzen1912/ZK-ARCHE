@@ -80,18 +80,3 @@ make
 ./build/tests/test_vectors ../rust/test-vectors/0x0001
 ```
 
-## Hermes Legion Commander usage
-
-Build repo graph context first:
-
-```powershell
-$CommanderExe = "$env:LOCALAPPDATA\HermesLegionCommander\venv\Scripts\hermes-legion-commander.exe"
-$Repo = "C:\Users\firze\OneDrive\Documents\GitHub\ZK-ARCHE"
-
-& $CommanderExe repo-graph build `
-  $Repo `
-  --out "$Repo\shared-context\repo-map" `
-  --task "ZK-ARCHE unified Rust/C baseline validation and security roadmap"
-```
-
-Use alternating mode for low-risk validation infrastructure and documentation. Use checkpoint competition for protocol, crypto, parsing, replay, RNG, side-channel, memory-safety, and interop changes.
