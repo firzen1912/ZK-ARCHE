@@ -2,6 +2,7 @@
 // Generates spec/iot-auth-wire-spec.docx
 
 const fs = require("fs");
+const path = require("path");
 const {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
   AlignmentType, PageOrientation, LevelFormat, HeadingLevel,
@@ -850,6 +851,7 @@ const doc = new Document({
 });
 
 Packer.toBuffer(doc).then(buf => {
-  fs.writeFileSync("/home/claude/iot-auth-refactor/spec/iot-auth-wire-spec.docx", buf);
-  console.log("wrote spec/iot-auth-wire-spec.docx", buf.length, "bytes");
+  const outPath = path.join(__dirname, "iot-auth-wire-spec.docx");
+  fs.writeFileSync(outPath, buf);
+  console.log("wrote", outPath, buf.length, "bytes");
 });

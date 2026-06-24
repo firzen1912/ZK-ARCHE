@@ -12,7 +12,7 @@
  *   kdf_kc.json               HKDF session key + KC transcript hash + tags
  *
  * DRBG: ChaCha20 IETF with 32-byte seed key and zero 12-byte nonce.
- * See test-vectors/0x0001/DRBG.md for the full specification.
+ * See docs/assurance-and-validation.md for the full specification.
  */
 
 #include "auth/iot_auth.h"
@@ -581,7 +581,7 @@ int main(int argc, char **argv)
 {
     const char *dir = (argc > 1)
         ? argv[1]
-        : "../iot-auth-refactor/test-vectors/0x0001";
+        : "../rust/test-vectors/0x0001";
 
     if (auth_init() != AUTH_OK) {
         fprintf(stderr, "auth_init failed\n"); return 1;

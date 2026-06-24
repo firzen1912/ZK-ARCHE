@@ -1,6 +1,6 @@
 # ZK-ARCHE Combined Rust/C Improvement Roadmap
 
-This roadmap describes an evidence-gated improvement path for the combined ZK-ARCHE Rust and C repository. It is designed for Hermes Legion Commander runs that alternate between Codex CLI and Claude Code CLI, and for checkpoint competition when security-sensitive implementation changes are proposed.
+This roadmap describes an evidence-gated improvement path for the combined ZK-ARCHE Rust and C repository. It is designed for ordinary maintenance work, automated-agent assistance, and checkpoint-style review when security-sensitive implementation changes are proposed.
 
 The roadmap is evidence-gated, not calendar-gated. It does not claim production readiness, formal verification, side-channel resistance, replay-resistance completeness, IoT field readiness, external cryptographic review, or certification unless the required evidence exists as checked-in artifacts.
 
@@ -17,14 +17,14 @@ Rust test vectors under `rust/test-vectors/0x0001/` are the primary byte-level i
 
 ## Non-Negotiable Boundaries
 
-- Do not change cryptographic primitives, transcript domain separators, packet formats, suite identifiers, test-vector meanings, replay semantics, or wire compatibility without explicit checkpoint competition and evidence.
+- Do not change cryptographic primitives, transcript domain separators, packet formats, suite identifiers, test-vector meanings, replay semantics, or wire compatibility without explicit checkpoint-style review and evidence.
 - Do not claim production-ready cryptographic security, side-channel resistance, memory-safety completeness, formal verification, replay-resistance completeness, external review completion, IoT field readiness, or certification without checked-in evidence.
 - Rust and C must remain byte-compatible at the vector, transcript, wire-header, TLV, proof, KDF, MAC, and protocol-state-machine boundaries.
 - Normal `AUTH` must remain proof of prior enrollment. Unknown-device self-registration inside `AUTH` is not allowed unless a future checkpoint explicitly proves equivalent authorization, replay, privacy, and abuse resistance.
 - The C implementation must preserve strict warnings and sanitizer-clean validation as release-gate evidence.
 - Rust code must preserve `cargo fmt`, `cargo check`, `cargo test`, and `cargo clippy -D warnings` evidence as release-gate evidence.
 - Fuzz targets and formal models are evidence producers, not proof of complete security by themselves.
-- Hermes agents may improve clarity, tests, scripts, and validation, but must not weaken assurance-status truthfulness.
+- Automated agents may improve clarity, tests, scripts, and validation, but must not weaken assurance-status truthfulness.
 
 
 
@@ -71,22 +71,22 @@ An IoT-readiness claim requires checked-in target profile notes, byte/RAM/CPU me
 negative security tests, and implementation gap disclosure.
 ```
 
-## Commander Mode Policy
+## Review Policy
 
-| Work type | Required Commander mode |
+| Work type | Required review posture |
 |---|---|
-| Documentation cleanup, repo graph, roadmap alignment, validation script wrappers | Council alternating mode is acceptable |
-| CI repair without semantic protocol changes | Alternating mode, followed by final verification |
-| Replay tests, wire parsing, transcript generation, proof verification, KDF/MAC behavior, RNG/DRBG handling | Checkpoint competition |
-| C memory-safety changes, unsafe Rust changes, sanitizer findings, fuzz-crash fixes | Checkpoint competition |
-| Cross-language compatibility changes | Checkpoint competition |
-| Release-candidate gate review | Checkpoint final verification |
+| Documentation cleanup, roadmap alignment, validation script wrappers | Lightweight review is acceptable |
+| CI repair without semantic protocol changes | Normal review followed by final verification |
+| Replay tests, wire parsing, transcript generation, proof verification, KDF/MAC behavior, RNG/DRBG handling | Checkpoint-style review |
+| C memory-safety changes, unsafe Rust changes, sanitizer findings, fuzz-crash fixes | Checkpoint-style review |
+| Cross-language compatibility changes | Checkpoint-style review |
+| Release-candidate gate review | Independent final verification |
 
 ## Phase Map
 
 | Range | Status | Purpose |
 |---|---|---|
-| zk201 | Planned | Combined repository baseline, graph build, validation inventory |
+| zk201 | Planned | Combined repository baseline and validation inventory |
 | zk202 | Planned | Parent-level CI wrappers and evidence log normalization |
 | zk203 | Planned | Replay-test automation and negative-case coverage |
 | zk204 | Planned | Fuzzing automation, corpus layout, crash triage workflow |
@@ -111,7 +111,7 @@ negative security tests, and implementation gap disclosure.
 | zk223 | Planned | Reviewed anonymous-credential migration evaluation as optional, not `iot-core` mandatory |
 | zk224 | Planned | Optional post-quantum hybrid suite research with explicit MTU/RAM/profile limits |
 
-## zk201 — Baseline and Repo Graph
+## zk201 - Baseline and Validation Inventory
 
 Goal: make the combined repository navigable and establish baseline evidence without modifying protocol semantics.
 
@@ -124,23 +124,22 @@ Required artifacts:
 | Rust lane preserved | `rust/` |
 | C lane preserved | `c/` |
 | Parent validation scripts | `scripts/` |
-| Commander repo graph | `shared-context/repo-map/graph.json` |
-| Commander graph report | `shared-context/repo-map/GRAPH_REPORT.md` |
+| Unified assurance guide | `docs/assurance-and-validation.md` |
 
 Acceptance gates:
 
 - Both implementation lanes are present and independently buildable.
 - The Rust test-vector path is documented as the C interop anchor.
-- Hermes repo graph can be generated for the parent repository.
+- Shared assurance, validation, and test-vector guidance is documented once.
 - No production/security-certification claims are introduced.
 
-Suggested Commander task:
+Suggested task:
 
 ```text
-Build and inspect the repository graph for the combined ZK-ARCHE Rust/C workspace. Identify validation commands, security docs, test-vector anchors, fuzz targets, and formal-model files. Do not change protocol semantics.
+Inspect the combined ZK-ARCHE Rust/C workspace. Identify validation commands, security docs, test-vector anchors, fuzz targets, and formal-model files. Do not change protocol semantics.
 ```
 
-## zk202 — Parent CI and Evidence Normalization
+## zk202 - Parent CI and Evidence Normalization
 
 Goal: make local validation repeatable from the parent repository.
 
@@ -163,13 +162,13 @@ Acceptance gates:
 - Failures are visible and not converted into false passes.
 - No protocol semantics are changed.
 
-Suggested Commander task:
+Suggested task:
 
 ```text
 Improve parent-level CI wrappers and evidence logging only. Do not modify cryptographic code, packet formats, transcript construction, or test-vector meanings.
 ```
 
-## zk203 — Replay-Test Automation
+## zk203 - Replay-Test Automation
 
 Goal: convert the existing replay-test plans into executable or clearly tracked evidence.
 
@@ -188,15 +187,15 @@ Acceptance gates:
 - Replay tests are automated where practical.
 - Manual gaps are recorded as explicit TODO evidence, not silent passes.
 - Rust and C behavior is compared where vectors or harnesses allow comparison.
-- Any semantic change requires checkpoint competition and final verification.
+- Any semantic change requires checkpoint-style review and final verification.
 
-Suggested Commander task:
+Suggested task:
 
 ```text
 Implement automated replay evidence for duplicate, reordered, stale, and retransmitted protocol messages across Rust and C where practical. Preserve wire compatibility and document any unimplemented manual evidence gaps.
 ```
 
-## zk204 — Fuzzing Automation and Crash Triage
+## zk204 - Fuzzing Automation and Crash Triage
 
 Goal: make fuzz targets easy to run and triage.
 
@@ -216,7 +215,7 @@ Acceptance gates:
 - Crashes become reproducible tests before being claimed fixed.
 - Fuzzing is not described as complete verification.
 
-## zk205 — Cross-Language Vector and Interop Parity
+## zk205 - Cross-Language Vector and Interop Parity
 
 Goal: prove byte-level compatibility between Rust and C using deterministic vectors and runnable interop checks.
 
@@ -237,7 +236,7 @@ Acceptance gates:
 - Both implementations agree on generated/parsed bytes.
 - Interop failures block release-candidate status.
 
-## zk206 — TOFU and Provisioning Hardening
+## zk206 - TOFU and Provisioning Hardening
 
 Goal: make enrollment/provisioning trust assumptions explicit and testable.
 
@@ -253,9 +252,9 @@ Acceptance gates:
 
 - TOFU is not presented as equivalent to pre-provisioned trust.
 - Insecure bootstrap modes are explicit and auditable.
-- Any change to enrollment trust semantics requires checkpoint competition.
+- Any change to enrollment trust semantics requires checkpoint-style review.
 
-## zk207 — Formal Model Expansion
+## zk207 - Formal Model Expansion
 
 Goal: expand formal models without overstating proof coverage.
 
@@ -273,7 +272,7 @@ Acceptance gates:
 - Unmodeled implementation behavior remains marked as unproven.
 - Proof artifacts do not replace implementation tests.
 
-## zk208 — Side-Channel and RNG Evidence
+## zk208 - Side-Channel and RNG Evidence
 
 Goal: enforce truthful side-channel and RNG evidence tracking.
 
@@ -290,9 +289,9 @@ Acceptance gates:
 
 - Test-only deterministic randomness cannot enter production paths.
 - Side-channel resistance is not claimed without evidence.
-- C memory handling and Rust secret handling are reviewed in checkpoint competition.
+- C memory handling and Rust secret handling require checkpoint-style review.
 
-## zk209 — External Review Package
+## zk209 - External Review Package
 
 Goal: prepare a reproducible package for external cryptographic/security review.
 
@@ -314,7 +313,7 @@ Acceptance gates:
 - Known gaps are visible.
 - External review is not marked complete until review records exist.
 
-## zk210 — Release-Candidate Evidence Gate
+## zk210 - Release-Candidate Evidence Gate
 
 Goal: produce a release-candidate readiness decision without self-awarding unsupported claims.
 
@@ -340,7 +339,7 @@ Blocked claims unless externally supported:
 - external review completion.
 
 
-## zk211 — Late Enrollment with Signed Enrollment Grants
+## zk211 - Late Enrollment with Signed Enrollment Grants
 
 Goal: allow devices to be registered after the original setup/provisioning window without allowing unauthenticated self-registration through normal `AUTH`.
 
@@ -357,8 +356,8 @@ Required design artifacts:
 |---|---|
 | Late-enrollment design note | `docs/late-enrollment-design.md` |
 | Enrollment grant wire/TLV extension | `docs/enrollment-grant-wire.md` |
-| Grant threat model addendum | `security/ENROLLMENT_GRANT_THREAT_MODEL.md` |
-| Grant replay-test plan | `security/ENROLLMENT_GRANT_REPLAY_TEST_PLAN.md` |
+| Grant threat model addendum | `docs/enrollment-grant-threat-model.md` |
+| Grant replay-test plan | `docs/enrollment-grant-replay-tests.md` |
 | Rust/C/Python compatibility vectors | `rust/test-vectors/0x0001/enrollment_grant.json` |
 
 Proposed `EnrollmentGrant` fields:
@@ -395,13 +394,13 @@ Acceptance gates:
 - Rust, C, and Python agree on serialized grant bytes, transcript binding, and rejection cases before compatibility is claimed.
 - Legacy pairing-token behavior remains clearly marked as lab/demo unless separately hardened.
 
-Suggested Commander task:
+Suggested task:
 
 ```text
 Design and implement a signed one-time EnrollmentGrant path for SETUP. Preserve normal AUTH as prior-enrollment proof only. Add negative tests for expired, wrong-server, wrong-role, malformed, unsigned, and replayed grants across Rust, C, and Python where available.
 ```
 
-## zk212 — Delegated Commissioner Enrollment
+## zk212 - Delegated Commissioner Enrollment
 
 Goal: allow an already-authenticated device or operator-controlled commissioner to authorize registration of a new device without sharing secrets or directly editing the registry.
 
@@ -430,13 +429,13 @@ Acceptance gates:
 - Grant issuance is auditable without leaking unnecessary device-linkage metadata.
 - Existing device secrets are never transferred to the new device.
 
-Suggested Commander task:
+Suggested task:
 
 ```text
 Add a delegated commissioner enrollment design and, if approved, implement ENROLL_GRANT_REQ/RESP as an authenticated post-AUTH operation. Enforce role authorization, server/domain binding, audit records, and single-use grant replay protection.
 ```
 
-## zk213 — Authenticated Rekey and Re-Registration
+## zk213 - Authenticated Rekey and Re-Registration
 
 Goal: allow an already-enrolled device to rotate or replace its device key without performing a full operator-assisted setup and without creating an ambiguous duplicate identity.
 
@@ -470,13 +469,13 @@ Acceptance gates:
 - Rekey does not silently expand role privileges.
 - Rust, C, and Python either implement the same semantics or explicitly mark implementation gaps.
 
-Suggested Commander task:
+Suggested task:
 
 ```text
 Design authenticated REKEY_1/REKEY_2 messages that rotate a device key after AUTH. Bind the rekey transcript to the session key, prove possession of the new key, atomically tombstone the old registry entry, and add rollback/replay/concurrency negative tests.
 ```
 
-## zk214 — Enrollment Abuse, Replay, and Operational Controls
+## zk214 - Enrollment Abuse, Replay, and Operational Controls
 
 Goal: prevent late enrollment from becoming a denial-of-service, privilege-escalation, or privacy-regression path.
 
@@ -499,13 +498,13 @@ Acceptance gates:
 - Privacy claims are not expanded unless unlinkability and metadata-retention evidence exists.
 - Large-registry behavior remains measured because `AUTH_1` lookup is intentionally `O(n)` while PID hides identity.
 
-Suggested Commander task:
+Suggested task:
 
 ```text
 Build late-enrollment abuse and replay tests covering grant duplication, registry spam, invalid issuer floods, downgrade attempts, and large-registry lookup behavior. Add operational controls without changing AUTH privacy semantics.
 ```
 
-## zk215 — Privacy-Preserving Credential Upgrade Research
+## zk215 - Privacy-Preserving Credential Upgrade Research
 
 Goal: evaluate whether role authorization should migrate from the current custom role-membership proof toward a reviewed privacy-preserving credential system.
 
@@ -524,14 +523,14 @@ Acceptance gates before any migration:
 - External cryptographic review is required before production claims.
 - The existing custom proof remains marked security-sensitive until reviewed or replaced.
 
-Suggested Commander task:
+Suggested task:
 
 ```text
 Research privacy-preserving credential options for future role authorization. Produce a design comparison covering BBS-style credentials, Privacy Pass-style tokens, and DAA-style approaches, with suite negotiation and vector requirements before any protocol migration.
 ```
 
 
-## zk216 — IoT Profile Matrix and Benchmark Harness
+## zk216 - IoT Profile Matrix and Benchmark Harness
 
 Goal: make every future protocol improvement measurable on constrained and heterogeneous IoT targets before it is treated as baseline behavior.
 
@@ -550,8 +549,8 @@ Required artifacts:
 | IoT profile matrix | `docs/iot-profile-matrix.md` |
 | AUTH byte-cost report | `evidence/auth-wire-cost.md` |
 | Constrained benchmark harness | `bench/auth_iot_profile/` |
-| C bounded-buffer audit notes | `c/security/BOUNDED_BUFFER_AUDIT.md` |
-| Rust allocation/profile notes | `rust/security/IOT_PROFILE_NOTES.md` |
+| C bounded-buffer audit notes | `docs/c-bounded-buffer-audit.md` |
+| Rust allocation/profile notes | `docs/rust-iot-profile-notes.md` |
 | Target evidence template | `docs/iot-target-evidence-template.md` |
 
 Baseline byte model to verify in CI:
@@ -580,13 +579,13 @@ Acceptance gates:
 - Missing hardware measurements are marked as evidence gaps, not passes.
 - `iot-core` remains usable without post-quantum, anonymous-credential, or large-registry extensions.
 
-Suggested Commander task:
+Suggested task:
 
 ```text
 Add an IoT profile matrix and AUTH benchmark harness. Measure or estimate wire bytes, RAM, CPU, storage writes, and registry lookup costs for constrained and Linux-edge profiles. Do not claim IoT field readiness without target evidence.
 ```
 
-## zk217 — AUTH Transcript v3 and Complete Context Binding
+## zk217 - AUTH Transcript v3 and Complete Context Binding
 
 Goal: harden AUTH key confirmation against downgrade, transcript-splicing, unknown-key-share, cross-suite, and cross-transport confusion while adding no extra round trips and negligible wire cost.
 
@@ -625,13 +624,13 @@ Acceptance gates:
 - Python vectors are updated after Rust/C parity is stable.
 - No production claim is made until mutation-test coverage is checked in.
 
-Suggested Commander task:
+Suggested task:
 
 ```text
 Implement AUTH transcript v3 by binding HELLO, AUTH headers, suite/profile IDs, role policy, transport label, server identity, and canonical payload bytes into key confirmation. Add mutation tests proving each security-relevant field is covered.
 ```
 
-## zk218 — Strict AUTH State-Machine and Sequence Validation
+## zk218 - Strict AUTH State-Machine and Sequence Validation
 
 Goal: make replay resistance and retransmission behavior a precise state machine rather than an emergent property of handlers.
 
@@ -667,13 +666,13 @@ Acceptance gates:
 - Rust/C behavior matches for accepted retransmission and rejected replay cases.
 - Formal model notes identify which state-machine rules are modeled and which remain implementation-only tests.
 
-Suggested Commander task:
+Suggested task:
 
 ```text
 Tighten AUTH state-machine checks for session_id, sequence, packet type, address binding, retransmission, and restart behavior. Add negative tests for duplicate, reordered, stale, wrong-sequence, wrong-session, wrong-address, and cross-transport packets.
 ```
 
-## zk219 — Stateless AUTH_RETRY Cookies and Unauthenticated-Work Throttling
+## zk219 - Stateless AUTH_RETRY Cookies and Unauthenticated-Work Throttling
 
 Goal: prevent unauthenticated peers from forcing expensive registry scans, proof verification, allocations, or response amplification before basic source validation.
 
@@ -723,13 +722,13 @@ Acceptance gates:
 - Retry behavior is covered for UDP and TCP profiles.
 - The fallback path remains available for closed local deployments that do not need retry.
 
-Suggested Commander task:
+Suggested task:
 
 ```text
 Add an AUTH_RETRY cookie design and implementation option. Verify retry cookies before registry scans or proof verification, keep the path stateless or bounded, and add negative tests for expired, tampered, wrong-source, wrong-suite, and replayed cookies.
 ```
 
-## zk220 — Optional Encrypted Lookup Hints for Scalable AUTH
+## zk220 - Optional Encrypted Lookup Hints for Scalable AUTH
 
 Goal: reduce server registry lookup from intentional `O(n)` scanning to optional `O(1)` lookup without exposing a stable cleartext device identifier on the wire.
 
@@ -784,13 +783,13 @@ Acceptance gates:
 - Large-registry benchmarks include 1k, 10k, and 100k records on Linux-edge server profiles.
 - MCU clients can disable hints and remain compatible.
 
-Suggested Commander task:
+Suggested task:
 
 ```text
 Design optional encrypted lookup hints using existing curve/KDF/AEAD primitives where possible. Preserve the current O(n) scan fallback, bind hints into the transcript, and benchmark 1k/10k/100k-record lookup behavior.
 ```
 
-## zk221 — Replay-Safe Session Resumption for Constrained Devices
+## zk221 - Replay-Safe Session Resumption for Constrained Devices
 
 Goal: reduce repeated AUTH cost and latency for devices that reconnect frequently without allowing replayed tickets or unsafe early writes.
 
@@ -849,13 +848,13 @@ Acceptance gates:
 - Resumption transcript mutation tests exist.
 - Full AUTH remains available and required when tickets are absent or invalid.
 
-Suggested Commander task:
+Suggested task:
 
 ```text
 Design replay-safe 1-RTT AUTH resumption with self-authenticating or bounded tickets. Bind tickets to suite, profile, server identity, registry epoch, role policy, and transcript. Reject unsafe 0-RTT writes.
 ```
 
-## zk222 — AUTH Metrics CI and Security-Assurance Dashboard
+## zk222 - AUTH Metrics CI and Security-Assurance Dashboard
 
 Goal: make AUTH security and performance regressions visible as checked-in evidence rather than informal observations.
 
@@ -891,7 +890,7 @@ Required artifacts:
 | AUTH metrics schema | `docs/auth-metrics-schema.md` |
 | Latest AUTH metrics | `evidence/auth-metrics.json` |
 | Security dashboard summary | `evidence/auth-security-dashboard.md` |
-| Negative-test inventory | `security/AUTH_NEGATIVE_TEST_INVENTORY.md` |
+| Negative-test inventory | `docs/auth-negative-test-inventory.md` |
 | Target benchmark logs | `evidence/targets/` |
 
 Acceptance gates:
@@ -902,13 +901,13 @@ Acceptance gates:
 - CI distinguishes `not implemented`, `not measured`, `failed`, and `passed`; missing evidence is never reported as success.
 - Metrics include both Rust and C where the feature exists in both lanes.
 
-Suggested Commander task:
+Suggested task:
 
 ```text
 Create AUTH metrics CI that records wire bytes, lookup scaling, replay outcomes, transcript mutation outcomes, and constrained-memory evidence. Fail on unreviewed security regression or profile-budget regression.
 ```
 
-## zk223 — Optional Reviewed Anonymous-Credential Migration Evaluation
+## zk223 - Optional Reviewed Anonymous-Credential Migration Evaluation
 
 Goal: evaluate replacing or augmenting the custom role-membership proof with a reviewed anonymous-credential construction without making heavy credential systems mandatory for constrained devices.
 
@@ -933,13 +932,13 @@ Acceptance gates:
 - A downgrade path from anonymous-credential suite to classical suite is either forbidden or transcript-bound and policy-controlled.
 - External cryptographic review is required before production claims.
 
-Suggested Commander task:
+Suggested task:
 
 ```text
 Evaluate anonymous credential options for role authorization under IoT constraints. Do not make BBS, Privacy Pass-style, DAA, or certificate-only modes mandatory for iot-core. Produce proof-size, CPU/RAM, dependency, privacy, and review-status evidence before migration.
 ```
 
-## zk224 — Optional Post-Quantum Hybrid Suite Research
+## zk224 - Optional Post-Quantum Hybrid Suite Research
 
 Goal: explore post-quantum hybrid key establishment as a future optional suite while preserving the current low-footprint classical AUTH profile for constrained IoT.
 
@@ -979,7 +978,7 @@ Acceptance gates:
 - Downgrade and cross-suite transcript mutation tests exist.
 - No PQ production claim is made without external review and target evidence.
 
-Suggested Commander task:
+Suggested task:
 
 ```text
 Research an optional post-quantum hybrid AUTH suite. Keep it suite-negotiated and non-mandatory for iot-core, measure exact byte/RAM/CPU impact, and require downgrade tests, hybrid-KDF design review, and external cryptographic review before implementation claims.
@@ -994,4 +993,4 @@ Future automated edits may improve implementation quality, validation, documenta
 - strict separation between evidence and claims;
 - truthful assurance-status wording;
 - no production/security/certification claims without evidence;
-- checkpoint competition for protocol, crypto, parsing, replay, RNG, memory-safety, formal-model, side-channel, and interop changes.
+- checkpoint-style review for protocol, crypto, parsing, replay, RNG, memory-safety, formal-model, side-channel, and interop changes.
