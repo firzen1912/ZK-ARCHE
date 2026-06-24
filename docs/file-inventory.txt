@@ -53,6 +53,7 @@ c\tests\test_e2e.c
 c\tests\test_vectors.c
 c\tests\test_wire.c
 c\wire-spec.docx
+c\wire-spec.md
 docs\assurance-and-validation.md
 docs\cross-language-validation.md
 docs\file-inventory.txt
@@ -103,6 +104,7 @@ rust\test-vectors\0x0001\role_set_membership.json
 rust\test-vectors\0x0001\schnorr_auth_client.json
 rust\test-vectors\0x0001\transcript.json
 rust\wire-spec.docx
+rust\wire-spec.md
 scripts\ci-all.sh
 scripts\ci-c.sh
 scripts\ci-rust.sh
