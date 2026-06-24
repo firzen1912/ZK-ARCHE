@@ -1,0 +1,29 @@
+{
+  "suite": "0x0001",
+  "name": "kdf_kc",
+  "notes": "Fully deterministic. Both peers MUST derive identical session keys. Schnorr proofs use DRBG bytes 0..64 for the client prover and 64..128 for the server prover.",
+  "inputs": {
+    "client_eph_sk": "1100000000000000000000000000000000000000000000000000000000000000",
+    "server_eph_sk": "1300000000000000000000000000000000000000000000000000000000000000",
+    "nonce_c": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+    "nonce_s": "b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2",
+    "pid": "1fe089931f5237f1306f8215eb0886fe261f77c7738cb85e6ce11a98e27f36ea",
+    "eph_c": "682802b3c90112e0f4e7d985e423cd2b16c5bfa63d9c967c52bb6cb7fea7ea7e",
+    "eph_s": "4cf1b9deda93eb9fd515fcc99262aed1368b48f24a27afd2984da8fe7bb2341f",
+    "server_pub": "aa52e000df2e16f55fb1032fc33bc42742dad6bd5a8fc0be0167436c5948501f",
+    "a_c": "6438b7d6b72e5bf7d473250fe8cb3d24ad472abea8ed5686951816a62735042a",
+    "s_c": "deb9331e101e11702f530e62c6b499b6ec6ba6d0a345ccb2ca8c6147766fa00c",
+    "a_s": "b69b1027f551d8f6801a0a96daec74b33c69e27f57cc73ca908a730f11859b63",
+    "s_s": "c9ec78fcfb966d979d0268ac487230bd6683c3bdddfab82be95edee0a7a8a10f"
+  },
+  "expected": {
+    "session_key_from_client": "5cea979c840f9cb1302db41f7dcfe91c4f8b22f7019b0586db183219e27ef348",
+    "session_key_from_server": "5cea979c840f9cb1302db41f7dcfe91c4f8b22f7019b0586db183219e27ef348",
+    "session_keys_match": true,
+    "transcript_hash": "ea464a12ccc560fa383dfa215677893493d214a8a008a2bacd93a9a2b6a0259b",
+    "k_s2c": "fcde1ac949ea0df6ad3e535907933ac5f7053454612d66ecd074c6171bcdae54",
+    "k_c2s": "695064d7005ee16cb0038d912e1a5c0f47c3e8dd3e5107832a31f2214684858a",
+    "tag_s": "8fe7882b8d6423568c1572d4fcf90ed2b5fb7c18666d407f98f26ae7331b46e0",
+    "tag_c": "757c1758d52b76884e8f5e8d7201ba6bc8b14e5e311fab0e959ae30af79f193e"
+  }
+}

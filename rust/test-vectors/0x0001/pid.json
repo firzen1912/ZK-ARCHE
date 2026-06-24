@@ -1,0 +1,15 @@
+{
+  "suite": "0x0001",
+  "name": "pid_basic",
+  "notes": "PID = SHA256( u32_LE(len(T_PID)) || T_PID || device_pub || nonce_c || eph_c || server_pub ).",
+  "inputs": {
+    "domain": "iot-auth/pid/v1",
+    "device_pub": "44f53520926ec81fbd5a387845beb7df85a96a24ece18738bdcfa6a7822a176d",
+    "nonce_c": "4242424242424242424242424242424242424242424242424242424242424242",
+    "eph_c": "4cf1b9deda93eb9fd515fcc99262aed1368b48f24a27afd2984da8fe7bb2341f",
+    "server_pub": "aa52e000df2e16f55fb1032fc33bc42742dad6bd5a8fc0be0167436c5948501f"
+  },
+  "expected": {
+    "pid": "2963a1cb11755e90fe0eea03c4e93bb7d5aba3c4be824fb06e0fe513ccb24d40"
+  }
+}

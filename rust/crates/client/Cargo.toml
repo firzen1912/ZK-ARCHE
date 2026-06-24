@@ -1,0 +1,18 @@
+[package]
+name = "client"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Reference client binary for the transport-agnostic IoT-Auth protocol"
+
+[dependencies]
+proto = { path = "../proto", features = ["udp-transport", "fs-store"] }
+hex = { workspace = true }
+rand = { workspace = true }
+curve25519-dalek = { workspace = true }
+zeroize = { workspace = true }
+
+[[bin]]
+name = "client"
+path = "src/main.rs"

@@ -1,0 +1,17 @@
+[package]
+name = "server"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Reference server for the transport-agnostic IoT-Auth protocol"
+
+[dependencies]
+proto = { path = "../proto", features = ["udp-transport", "fs-store"] }
+hex = { workspace = true }
+rand = { workspace = true }
+curve25519-dalek = { workspace = true }
+
+[[bin]]
+name = "server"
+path = "src/main.rs"

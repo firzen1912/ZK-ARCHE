@@ -1,0 +1,40 @@
+{
+  "suite": "0x0001",
+  "name": "role_set_membership",
+  "notes": "Fully deterministic CDS-OR proof. DRBG consumption order matches the loop in prove_role_set_membership_with_rng(): for i in 0..allowed_roles.len(), the true branch consumes 1 scalar (w), every other branch consumes 2 scalars (c_i, s_i). Verification MUST accept the published branches; tampering with c_prime MUST cause rejection.",
+  "inputs": {
+    "allowed_roles": [
+      1,
+      2,
+      3
+    ],
+    "role_code": 2,
+    "blind_prime": "8a00000000000000000000000000000000000000000000000000000000000000",
+    "c_prime": "6abe74177ca34b97c47b8520296e02c304a971e3acb91de58df04e04bfb2a831",
+    "pid": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+    "nonce_c": "efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
+    "eph_c": "c4cf43dc642b4d6bc97c05b92a936e8a9cb30fbd862c8db0b3b5559667628924",
+    "drbg_consumption": "for each i in 0..n: if i == true_index consume 1 scalar (64B); else consume 2 scalars (128B). n=3, true_index=1 here."
+  },
+  "expected": {
+    "branches": [
+      {
+        "a": "380a8cb015daff56e16cf65f1819cff1158a4d8316a58fbce69ef8da60b90753",
+        "c": "9d2e2734be4840ebfaf7ec6266c5abadce1471606a27608c39f59032f7b32c09",
+        "s": "cffb691bb1556ee6670b4520942c077270df9d79e292476ed5bf0040755e8600"
+      },
+      {
+        "a": "eeeffa61dd239628b0bd5d2e81f8a9f34ebbf6954a16d699c878e1c029633534",
+        "c": "6c498185dc8bdef7dfd362560361986fd1245675651c248d99b6ea9cb7d29002",
+        "s": "a32b10db8f0bada29e091aebf4f3e475712389e52021aed1d0b3892cc2e18706"
+      },
+      {
+        "a": "161185c34c4e4c37f8d080d876181681c23d5c9a67dc40f03bcc6417dae47069",
+        "c": "910ff5fe1e91d09c3d571b1f0de47d2b3c77d94ee0e44a5ca321d852eb00b50f",
+        "s": "1a24af6d899c9926a664cbac1565561d5035c258d270bba6174d87683baa2d01"
+      }
+    ],
+    "verify_ok": true,
+    "verify_wrong_c_prime": false
+  }
+}

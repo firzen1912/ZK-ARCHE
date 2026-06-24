@@ -1,0 +1,26 @@
+[package]
+name = "zk-arche-rust-fuzz"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+proto = { path = "../crates/proto" }
+
+[[bin]]
+name = "wire_parse"
+path = "fuzz_targets/wire_parse.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "auth_payloads"
+path = "fuzz_targets/auth_payloads.rs"
+test = false
+doc = false
+bench = false

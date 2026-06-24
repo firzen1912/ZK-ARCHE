@@ -1,0 +1,40 @@
+[package]
+name = "proto"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Transport-agnostic IoT authentication protocol (ZK-ARCHE v2)"
+
+[dependencies]
+blake2.workspace = true
+curve25519-dalek.workspace = true
+hkdf.workspace = true
+hmac.workspace = true
+rand.workspace = true
+sha2.workspace = true
+subtle.workspace = true
+zeroize.workspace = true
+hex.workspace = true
+thiserror.workspace = true
+serde = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
+rand_chacha = { version = "0.3", optional = true }
+
+[features]
+default = ["std"]
+std = []
+# Enables JSON-serializable types for publishing test vectors and cross-lang
+# interop. Constrained targets can disable this.
+test-vectors = ["serde", "serde_json", "rand_chacha"]
+# Enables the filesystem-backed store implementations. MCU targets that only
+# have flash/secure-element backends should turn this off.
+fs-store = ["std"]
+# Enables the built-in UDP transport binding. Embedded/custom transports should
+# disable and implement `Transport` themselves.
+udp-transport = ["std"]
+
+[[example]]
+name = "gen_test_vectors"
+path = "examples/gen_test_vectors.rs"
+required-features = ["test-vectors"]

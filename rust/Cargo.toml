@@ -1,0 +1,32 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/proto",
+    "crates/client",
+    "crates/server",
+]
+
+[workspace.package]
+version = "0.2.0"
+edition = "2021"
+license = "Apache-2.0"
+authors = ["IoT-Auth Contributors"]
+
+[workspace.dependencies]
+# Crypto
+blake2 = "0.10"
+curve25519-dalek = { version = "4.1", features = ["digest"] }
+hkdf = "0.12"
+hmac = "0.12"
+rand = "0.8"
+sha2 = "0.10"
+subtle = "2.5"
+zeroize = { version = "1.7", features = ["derive"] }
+
+# Encoding
+hex = "0.4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Errors
+thiserror = "1"

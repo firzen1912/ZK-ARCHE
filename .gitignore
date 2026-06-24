@@ -1,0 +1,24 @@
+# Build artifacts
+/target/
+/rust/target/
+/c/build/
+
+# Generated evidence and local state
+/evidence/*.log
+/shared-context/repo-map/cache/
+/shared-context/*.jsonl
+/shared-context/*.json
+
+# Runtime state
+/client-state/
+/server-state/
+/rust/client-state/
+/rust/server-state/
+/c/client-state/
+/c/server-state/
+
+# Editor/OS noise
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp

@@ -1,0 +1,19 @@
+{
+  "suite": "0x0001",
+  "name": "schnorr_auth_client",
+  "notes": "Fully deterministic. Reproducing implementations: instantiate ChaCha20 with the published DRBG_SEED, consume exactly 64 bytes for `r` (reduced via scalar_from_wide_bytes), and produce the published (a, s) byte-for-byte.",
+  "inputs": {
+    "x": "0b00000000000000000000000000000000000000000000000000000000000000",
+    "device_pub": "bce83f8ba5dd2fa572864c24ba1810f9522bc6004afe95877ac73241cafdab42",
+    "pid": "abababababababababababababababababababababababababababababababab",
+    "nonce_c": "5555555555555555555555555555555555555555555555555555555555555555",
+    "eph_c": "c0287ab3502a0f5c5853ebaa191d8b01c42cdc8c124c3cc76030ee08ddab8559",
+    "drbg_bytes_for_r": "979e2a60197618804f3abd0262eb1103d49c525dce8457bf34e65ca8081cbd755eb18d4442132065630d1012737b810cf1bb04f43495e093ba31395761e95987"
+  },
+  "expected": {
+    "proof_a": "6438b7d6b72e5bf7d473250fe8cb3d24ad472abea8ed5686951816a62735042a",
+    "proof_s": "c8b8385d2a899bc5e8ebe2e51ccd5d02f3568d0a5ebec0948f7f1fbfe2ef9c07",
+    "verify_ok_own": true,
+    "verify_ok_wrong_pubkey": false
+  }
+}
