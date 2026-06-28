@@ -10,7 +10,7 @@ This unified workspace carries forward the work from these earlier repositories:
 |---|---|
 | <https://github.com/firzen1912/ZK-ARCHE-Rust.git> | Rust reference implementation, deterministic test vectors, protocol modeling, and higher-level validation. |
 | <https://github.com/firzen1912/ZK-ARCHE-C.git> | Low-level C implementation intended for constrained and heterogeneous IoT targets. |
-| Local Python lane | Python reference implementation, CLI harness, and Rust-vector validation used for readable protocol experimentation. |
+| New Implementation | Python reference implementation, CLI harness, and Rust-vector validation used for readable protocol experimentation. |
 | <https://github.com/firzen1912/zk-arche-compare.git> | Cross-implementation comparison, interop notes, and validation planning. |
 
 Use this repository as the canonical place for new ZK-ARCHE work unless a task explicitly targets one of the historical repositories. The older repositories remain useful for source lineage, audit trail, and implementation history, but the roadmap, shared protocol notes, and future hardening work should live here.
