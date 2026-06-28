@@ -1,0 +1,64 @@
+(* ZK-ARCHE symbolic authentication model skeleton.
+   This model abstracts elliptic-curve operations and ZK proofs.
+   It is not a computational proof of Schnorr or role-membership ZK security. *)
+
+free c: channel.
+
+type skey.
+type pkey.
+type nonce.
+type sesskey.
+type role.
+
+fun pk(skey): pkey.
+fun dh(skey, pkey): sesskey.
+fun kdf(sesskey, nonce, nonce, bitstring): sesskey.
+fun hmac(sesskey, bitstring): bitstring.
+fun schnorr_proof(skey, bitstring): bitstring.
+fun role_proof(role, bitstring): bitstring.
+
+reduc verify_schnorr(pk(x), ctx, schnorr_proof(x, ctx)) = true.
+reduc verify_role(r, ctx, role_proof(r, ctx)) = true.
+
+event BeginClient(pkey, pkey, bitstring).
+event EndClient(pkey, pkey, sesskey).
+event BeginServer(pkey, pkey, bitstring).
+event EndServer(pkey, pkey, sesskey).
+
+query attacker(new sk: sesskey).
+query cpk:pkey, spk:pkey, sid:bitstring; event(EndClient(cpk,spk,new sk:sesskey)) ==> event(BeginServer(cpk,spk,sid)).
+query cpk:pkey, spk:pkey, sid:bitstring; event(EndServer(cpk,spk,new sk:sesskey)) ==> event(BeginClient(cpk,spk,sid)).
+
+let Client(csk:skey, spk:pkey, r:role) =
+  new nc:nonce;
+  new ce:skey;
+  let cpk = pk(csk) in
+  let ephc = pk(ce) in
+  let ctx1 = (cpk, spk, nc, ephc) in
+  event BeginClient(cpk, spk, ctx1);
+  out(c, (cpk, nc, ephc, schnorr_proof(csk, ctx1), role_proof(r, ctx1)));
+  in(c, (ns:nonce, ephs:pkey, tagS:bitstring));
+  let k = kdf(dh(ce, ephs), nc, ns, ctx1) in
+  if tagS = hmac(k, ("server finished", ctx1, ns, ephs)) then
+    out(c, hmac(k, ("client finished", ctx1, ns, ephs)));
+    event EndClient(cpk, spk, k).
+
+let Server(ssk:skey, allowed:role) =
+  let spk = pk(ssk) in
+  in(c, (cpk:pkey, nc:nonce, ephc:pkey, pf:bitstring, rpf:bitstring));
+  let ctx1 = (cpk, spk, nc, ephc) in
+  if verify_schnorr(cpk, ctx1, pf) = true then
+  if verify_role(allowed, ctx1, rpf) = true then
+    event BeginServer(cpk, spk, ctx1);
+    new ns:nonce;
+    new se:skey;
+    let ephs = pk(se) in
+    let k = kdf(dh(se, ephc), nc, ns, ctx1) in
+    out(c, (ns, ephs, hmac(k, ("server finished", ctx1, ns, ephs))));
+    in(c, tagC:bitstring);
+    if tagC = hmac(k, ("client finished", ctx1, ns, ephs)) then
+      event EndServer(cpk, spk, k).
+
+process
+  new csk:skey; new ssk:skey; new r:role;
+  (!Client(csk, pk(ssk), r)) | (!Server(ssk, r))

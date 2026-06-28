@@ -10,6 +10,21 @@ Python reference implementation lane for the ZK-ARCHE v2 protocol, designed to m
 - Filesystem credential, registry, server-key, and in-memory replay-cache stores compatible with the Rust filesystem byte layout.
 - Test-vector validation against the Rust `test-vectors/0x0001` set.
 
+## Layout
+
+```text
+python/
+|-- zk_arche/             Library: crypto, wire, payloads, protocol, transport, stores, CLI
+|-- tests/                Unit, vector, and state-machine tests
+|-- test-vectors/0x0001/  Mirrored deterministic vectors
+|-- fuzz/                 Atheris fuzz harnesses (wire, payloads)
+|-- models/proverif/      Symbolic model skeleton
+|-- scripts/ci-python.sh  Python validation script
+|-- wire-spec.md          Shared wire-format specification
+|-- pyproject.toml
+`-- Makefile
+```
+
 ## Runtime requirement
 
 This implementation uses Python `ctypes` against system `libsodium` for Ristretto255. No PyPI crypto wrapper is required, but `libsodium` must expose the `crypto_core_ristretto255_*` and `crypto_scalarmult_ristretto255*` APIs.
