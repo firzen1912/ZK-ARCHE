@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import binascii
-import sys
 
 from .. import DEFAULT_ALLOWED_ROLES
 from ..crypto import basepoint_mul, derive_device_id, derive_device_scalar

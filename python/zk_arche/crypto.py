@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 from dataclasses import dataclass
-from typing import Iterable, Sequence
+from typing import Sequence
 
 from .errors import ErrorCode, ProtoError
 from .sodium import IDENTITY, canonical_scalar_bytes, random_bytes_32 as _random_bytes_32, sodium

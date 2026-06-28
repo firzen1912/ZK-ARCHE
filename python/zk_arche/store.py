@@ -6,7 +6,7 @@ from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
 
-from .crypto import Point, Scalar, decode_scalar, decompress_point, derive_device_id, encode_role, make_role_commitment, random_bytes_32, random_scalar
+from .crypto import Point, Scalar, decode_scalar, decompress_point, encode_role, make_role_commitment, random_bytes_32, random_scalar
 from .errors import ErrorCode, ProtoError
 
 

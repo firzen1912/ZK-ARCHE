@@ -4,10 +4,10 @@ import json
 from pathlib import Path
 
 from zk_arche.crypto import (
-    Point, Scalar, SchnorrProof, basepoint_mul, compute_pid, derive_kc_keys,
+    Point, Scalar, compute_pid, derive_kc_keys,
     derive_session_key, hmac_tag, kc_transcript_hash, prove_auth_client_with_rng,
     prove_rerandomization_with_rng, verify_auth_client, verify_rerandomization,
-    verify_role_set_membership, scalar_from_wide_bytes,
+    verify_role_set_membership,
 )
 from zk_arche.transcript import Transcript
 
@@ -66,7 +66,6 @@ def test_rerandomization():
     tv = json.loads((V / "rerandomization.json").read_text())
     i = tv["inputs"]
     stored_c = point(i["stored_c"])
-    blind = scalar(i["blind"])
     delta = scalar(i["delta"])
     from zk_arche.crypto import attr_h
     c_prime = stored_c + attr_h() * delta
