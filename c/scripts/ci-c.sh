@@ -22,24 +22,32 @@ else
   export TEMP="$TMPDIR_ABS"
 fi
 
-compiler_has_runtime() {
-  local runtime="$1"
-  local resolved
-  resolved="$("$CC" -print-file-name="$runtime" 2>/dev/null || true)"
-  [ -n "$resolved" ] && [ "$resolved" != "$runtime" ]
+compiler_links_with() {
+  local label="$1"
+  local flag="$2"
+  local src="$TMPDIR_ABS/${label}-probe.c"
+  local exe="$TMPDIR_ABS/${label}-probe"
+
+  printf 'int main(void) { return 0; }\n' > "$src"
+  if "$CC" "$flag" "$src" -o "$exe" >/dev/null 2>&1; then
+    rm -f "$src" "$exe" "$exe.exe"
+    return 0
+  fi
+  rm -f "$src" "$exe" "$exe.exe"
+  return 1
 }
 
-require_or_skip_runtime() {
+require_or_skip_sanitizer() {
   local label="$1"
-  local runtime="$2"
-  if compiler_has_runtime "$runtime"; then
+  local flag="$2"
+  if compiler_links_with "$label" "$flag"; then
     return 0
   fi
   if [ "${REQUIRE_SANITIZERS:-0}" = "1" ]; then
-    echo "$label runtime ($runtime) not found and REQUIRE_SANITIZERS=1" >&2
+    echo "$label compile/link probe with $flag failed and REQUIRE_SANITIZERS=1" >&2
     exit 1
   fi
-  echo "$label runtime ($runtime) not found; skipping $label build/tests"
+  echo "$label compile/link probe with $flag failed; skipping $label build/tests"
   return 1
 }
 
@@ -78,13 +86,13 @@ require_or_skip_runtime() {
     echo "clang not installed; skipping secondary clang build"
   fi
   echo "== ASan build/tests =="
-  if require_or_skip_runtime "ASan" "libasan.a"; then
+  if require_or_skip_sanitizer "ASan" "-fsanitize=address"; then
     make clean
     ASAN_OPTIONS=abort_on_error=1:detect_leaks=1:strict_init_order=1:strict_string_checks=1 \
       make CFLAGS="$BASE_CFLAGS" asan
   fi
   echo "== UBSan build/tests =="
-  if require_or_skip_runtime "UBSan" "libubsan.a"; then
+  if require_or_skip_sanitizer "UBSan" "-fsanitize=undefined"; then
     make clean
     UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 \
       make CFLAGS="$BASE_CFLAGS" ubsan
