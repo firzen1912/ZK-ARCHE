@@ -13,7 +13,12 @@ authors = [{ name = "ZK-ARCHE" }]
 dependencies = []
 
 [project.optional-dependencies]
-dev = ["pytest>=7"]
+dev = [
+  "pytest>=7",
+  "ruff>=0.6",
+  "bandit[toml]>=1.7",
+  "pip-audit>=2.7",
+]
 
 [project.scripts]
 zk-arche-client = "zk_arche.cli.client:main"

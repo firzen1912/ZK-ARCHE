@@ -1,6 +1,6 @@
 .PHONY: ci install test fuzz-wire fuzz-payloads clean
 ci:
-	./scripts/ci-python.sh
+	bash ./scripts/ci-python.sh
 install:
 	python -m pip install -e .[dev]
 test:

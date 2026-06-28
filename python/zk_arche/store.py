@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -39,17 +40,13 @@ def write_private_file_atomic(path: Path, data: bytes) -> None:
             f.write(data)
             f.flush()
             os.fsync(f.fileno())
-        try:
+        with suppress(OSError):
             os.chmod(tmp, 0o600)
-        except OSError:
-            pass
         os.replace(tmp, path)
     finally:
         if tmp.exists():
-            try:
+            with suppress(OSError):
                 tmp.unlink()
-            except OSError:
-                pass
 
 
 def verify_private_permissions(path: Path) -> None:
@@ -143,11 +140,9 @@ class FsRegistryStore:
         if not self.dirty:
             return
         if self.registry_file.exists():
-            try:
+            with suppress(OSError):
                 _ensure_parent(self.backup_file)
                 self.backup_file.write_bytes(self.registry_file.read_bytes())
-            except OSError:
-                pass
         data = bytearray()
         for device_id, rec in self.cache.items():
             data += device_id + rec.pubkey.to_bytes() + rec.role_commitment.to_bytes()

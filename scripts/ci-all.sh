@@ -9,13 +9,13 @@ LOG="$ROOT/evidence/ci-all.log"
   echo "root=$ROOT"
   echo
   echo "== rust lane =="
-  "$ROOT/scripts/ci-rust.sh"
+  bash "$ROOT/scripts/ci-rust.sh"
   echo
   echo "== c lane =="
-  "$ROOT/scripts/ci-c.sh"
+  bash "$ROOT/scripts/ci-c.sh"
   echo
   echo "== python lane =="
-  "$ROOT/scripts/ci-python.sh"
+  bash "$ROOT/scripts/ci-python.sh"
   echo
   echo "== c vector harness against rust vectors =="
   cd "$ROOT/c"

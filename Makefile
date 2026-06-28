@@ -1,16 +1,16 @@
 .PHONY: ci rust-ci c-ci python-ci c-vectors clean
 
 ci:
-	./scripts/ci-all.sh
+	bash ./scripts/ci-all.sh
 
 rust-ci:
-	./scripts/ci-rust.sh
+	bash ./scripts/ci-rust.sh
 
 c-ci:
-	./scripts/ci-c.sh
+	bash ./scripts/ci-c.sh
 
 python-ci:
-	./scripts/ci-python.sh
+	bash ./scripts/ci-python.sh
 
 c-vectors:
 	cd c && ./build/tests/test_vectors ../rust/test-vectors/0x0001

@@ -127,7 +127,7 @@ def run_tcp(bind: str, state: ServerState) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="zk-arche-server")
-    p.add_argument("--bind", default="0.0.0.0:4000")
+    p.add_argument("--bind", default="127.0.0.1:4000")
     p.add_argument("--transport", choices=["udp", "tcp", "both"], default="udp")
     p.add_argument("--state-dir", default="./server-state")
     p.add_argument("--require-pairing-token")

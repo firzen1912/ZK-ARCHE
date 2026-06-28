@@ -1,6 +1,6 @@
 .PHONY: ci test fmt clippy fuzz-wire fuzz-auth clean
 ci:
-	./scripts/ci-rust.sh
+	bash ./scripts/ci-rust.sh
 fmt:
 	cargo fmt --all -- --check
 test:

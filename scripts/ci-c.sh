@@ -2,4 +2,4 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT/c"
-exec ./scripts/ci-c.sh
+exec bash ./scripts/ci-c.sh

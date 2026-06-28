@@ -343,7 +343,8 @@ def prove_role_set_membership_with_rng(rng, allowed_roles: Sequence[int], c_prim
     for i, r in enumerate(allowed_roles):
         t.append_message(f"r_{i}".encode(), int(r).to_bytes(8, "little"))
     for i, a in enumerate(a_points):
-        assert a is not None
+        if a is None:
+            raise ProtoError.internal("role-set proof branch was not constructed")
         t.append_point(f"A_{i}".encode(), a)
     master_c = t.challenge_scalar()
     sum_sim = zero
@@ -354,7 +355,12 @@ def prove_role_set_membership_with_rng(rng, allowed_roles: Sequence[int], c_prim
     s_true = w_true + c_true * blind_prime
     c_vals[true_index] = c_true
     s_vals[true_index] = s_true
-    return [(a_points[i], c_vals[i], s_vals[i]) for i in range(n)]  # type: ignore[list-item]
+    branches: list[SetBranch] = []
+    for i, a in enumerate(a_points):
+        if a is None:
+            raise ProtoError.internal("role-set proof branch was not constructed")
+        branches.append((a, c_vals[i], s_vals[i]))
+    return branches
 
 
 def prove_role_set_membership(allowed_roles: Sequence[int], c_prime: Point, role_code: int, blind_prime: Scalar, pid: bytes, nonce_c: bytes, eph_c: Point) -> list[SetBranch]:
