@@ -1,30 +1,34 @@
-# ZK-ARCHE Combined Rust/C Improvement Roadmap
+# ZK-ARCHE Unified Rust/C/Python Improvement Roadmap
 
-This roadmap describes an evidence-gated improvement path for the combined ZK-ARCHE Rust and C repository. It is designed for ordinary maintenance work, automated-agent assistance, and checkpoint-style review when security-sensitive implementation changes are proposed.
+This roadmap describes an evidence-gated improvement path for the unified ZK-ARCHE Rust, C, and Python repository. It is designed for Hermes Legion Commander runs that alternate between Codex CLI and Claude Code CLI, and for checkpoint competition when security-sensitive implementation changes are proposed.
 
 The roadmap is evidence-gated, not calendar-gated. It does not claim production readiness, formal verification, side-channel resistance, replay-resistance completeness, IoT field readiness, external cryptographic review, or certification unless the required evidence exists as checked-in artifacts.
 
 ## Current Baseline
 
-The repository contains two preserved implementation lanes:
+The repository contains three implementation lanes:
 
 | Lane | Path | Role |
 |---|---|---|
-| Rust reference | `rust/` | Cargo workspace, protocol library, binaries, deterministic test vectors, fuzz targets, ProVerif skeleton, security docs |
+| Rust reference | `rust/` | Cargo workspace, protocol library, binaries, canonical deterministic test vectors, fuzz targets, ProVerif skeleton, security docs |
 | C implementation | `c/` | libsodium-based C11 implementation, public headers, unit/e2e/vector tests, fuzz harnesses, ProVerif skeleton, security docs |
+| Python reference | `python/` | readable reference implementation, CLI harness, mirrored vector fixtures, state-machine tests, protocol experimentation lane |
 
-Rust test vectors under `rust/test-vectors/0x0001/` are the primary byte-level interop anchor for the C test-vector harness.
+Rust test vectors under `rust/test-vectors/0x0001/` are the primary byte-level interop anchor. The C harness consumes them directly; the Python lane currently carries mirrored fixtures under `python/test-vectors/0x0001/` and must preserve the same semantics.
 
 ## Non-Negotiable Boundaries
 
-- Do not change cryptographic primitives, transcript domain separators, packet formats, suite identifiers, test-vector meanings, replay semantics, or wire compatibility without explicit checkpoint-style review and evidence.
+- Do not change cryptographic primitives, transcript domain separators, packet formats, suite identifiers, test-vector meanings, replay semantics, or wire compatibility without explicit checkpoint competition and evidence.
 - Do not claim production-ready cryptographic security, side-channel resistance, memory-safety completeness, formal verification, replay-resistance completeness, external review completion, IoT field readiness, or certification without checked-in evidence.
-- Rust and C must remain byte-compatible at the vector, transcript, wire-header, TLV, proof, KDF, MAC, and protocol-state-machine boundaries.
+- Rust, C, and Python must remain byte-compatible at the vector, transcript, wire-header, TLV, proof, KDF, MAC, and protocol-state-machine boundaries where each lane implements the feature. Python is a reference/interoperability lane, not an `iot-core` constrained-device target.
 - Normal `AUTH` must remain proof of prior enrollment. Unknown-device self-registration inside `AUTH` is not allowed unless a future checkpoint explicitly proves equivalent authorization, replay, privacy, and abuse resistance.
+- `iot-core` must remain ZK-minimal: no general-purpose zkSNARK/STARK/Plonk/Groth16 prover, large anonymous-credential prover, post-quantum hybrid, large Merkle tree, certificate-chain parser, or heap-heavy policy engine may become mandatory for MCU-class devices.
+- Protected telemetry/data-sovereignty features must be encrypted-by-default. Any plaintext protected-data path must be explicitly marked public/test-only and must fail CI for sovereignty profiles.
+- Per-device data sovereignty claims require checked-in evidence for device-controlled encryption, policy-bound release, auditability, revocation behavior, replay resistance, and target profile footprint.
 - The C implementation must preserve strict warnings and sanitizer-clean validation as release-gate evidence.
 - Rust code must preserve `cargo fmt`, `cargo check`, `cargo test`, and `cargo clippy -D warnings` evidence as release-gate evidence.
 - Fuzz targets and formal models are evidence producers, not proof of complete security by themselves.
-- Automated agents may improve clarity, tests, scripts, and validation, but must not weaken assurance-status truthfulness.
+- Hermes agents may improve clarity, tests, scripts, and validation, but must not weaken assurance-status truthfulness.
 
 
 
@@ -71,22 +75,22 @@ An IoT-readiness claim requires checked-in target profile notes, byte/RAM/CPU me
 negative security tests, and implementation gap disclosure.
 ```
 
-## Review Policy
+## Commander Mode Policy
 
-| Work type | Required review posture |
+| Work type | Required Commander mode |
 |---|---|
-| Documentation cleanup, roadmap alignment, validation script wrappers | Lightweight review is acceptable |
-| CI repair without semantic protocol changes | Normal review followed by final verification |
-| Replay tests, wire parsing, transcript generation, proof verification, KDF/MAC behavior, RNG/DRBG handling | Checkpoint-style review |
-| C memory-safety changes, unsafe Rust changes, sanitizer findings, fuzz-crash fixes | Checkpoint-style review |
-| Cross-language compatibility changes | Checkpoint-style review |
-| Release-candidate gate review | Independent final verification |
+| Documentation cleanup, repo graph, roadmap alignment, validation script wrappers | Council alternating mode is acceptable |
+| CI repair without semantic protocol changes | Alternating mode, followed by final verification |
+| Replay tests, wire parsing, transcript generation, proof verification, KDF/MAC behavior, RNG/DRBG handling | Checkpoint competition |
+| C memory-safety changes, unsafe Rust changes, sanitizer findings, fuzz-crash fixes | Checkpoint competition |
+| Cross-language compatibility changes | Checkpoint competition |
+| Release-candidate gate review | Checkpoint final verification |
 
 ## Phase Map
 
 | Range | Status | Purpose |
 |---|---|---|
-| zk201 | Planned | Combined repository baseline and validation inventory |
+| zk201 | Planned | Combined repository baseline, graph build, validation inventory |
 | zk202 | Planned | Parent-level CI wrappers and evidence log normalization |
 | zk203 | Planned | Replay-test automation and negative-case coverage |
 | zk204 | Planned | Fuzzing automation, corpus layout, crash triage workflow |
@@ -110,8 +114,22 @@ negative security tests, and implementation gap disclosure.
 | zk222 | Planned | AUTH metrics CI covering wire cost, CPU/RAM, registry scaling, and negative security tests |
 | zk223 | Planned | Reviewed anonymous-credential migration evaluation as optional, not `iot-core` mandatory |
 | zk224 | Planned | Optional post-quantum hybrid suite research with explicit MTU/RAM/profile limits |
+| zk225 | Planned | Python lane integration, parent-level CI, and Rust-vector semantic alignment |
+| zk226 | Planned | RFC-style specification package skeleton and normative registry discipline |
+| zk227 | Planned | EDHOC/CoAP/OSCORE-inspired constrained profile research without mandatory CBOR/COSE dependency |
+| zk228 | Planned | TLS/mTLS-style channel-binding profile using exporter-bound transcripts where TLS already exists |
+| zk229 | Planned | DTLS-style datagram profile for retry cookies, anti-amplification, replay windows, and lossy-link retransmission |
+| zk230 | Planned | Protocol-suite decomposition into CORE, AUTH, BIND, ENROLL, and DATA documents |
+| zk231 | Planned | Per-device data sovereignty architecture with device-local root secrets and encrypted-by-default telemetry |
+| zk232 | Planned | ZK-minimal proof-carrying data profile for small devices |
+| zk233 | Planned | `ZK-ARCHE-DATA` minimal data commit, release request, release proof, wrapped-key, and audit flow |
+| zk234 | Planned | Policy-bound release tokens, recipient/purpose binding, and revocable epochs |
+| zk235 | Planned | Local audit hash-chain and gateway transparency-log bridge |
+| zk236 | Planned | Sovereignty CI gates for plaintext prevention, replay rejection, vector parity, fuzzing, and footprint budgets |
+| zk237 | Planned | Channel-bound sovereignty mode for EDHOC/OSCORE, TLS/mTLS, and DTLS deployments |
+| zk238 | Planned | Advanced anonymous-credential and zkSNARK sovereignty research kept outside `iot-core` |
 
-## zk201 - Baseline and Validation Inventory
+## zk201 — Baseline and Repo Graph
 
 Goal: make the combined repository navigable and establish baseline evidence without modifying protocol semantics.
 
@@ -124,22 +142,23 @@ Required artifacts:
 | Rust lane preserved | `rust/` |
 | C lane preserved | `c/` |
 | Parent validation scripts | `scripts/` |
-| Unified assurance guide | `docs/assurance-and-validation.md` |
+| Commander repo graph | `shared-context/repo-map/graph.json` |
+| Commander graph report | `shared-context/repo-map/GRAPH_REPORT.md` |
 
 Acceptance gates:
 
 - Both implementation lanes are present and independently buildable.
 - The Rust test-vector path is documented as the C interop anchor.
-- Shared assurance, validation, and test-vector guidance is documented once.
+- Hermes repo graph can be generated for the parent repository.
 - No production/security-certification claims are introduced.
 
-Suggested task:
+Suggested Commander task:
 
 ```text
-Inspect the combined ZK-ARCHE Rust/C workspace. Identify validation commands, security docs, test-vector anchors, fuzz targets, and formal-model files. Do not change protocol semantics.
+Build and inspect the repository graph for the combined ZK-ARCHE Rust/C workspace. Identify validation commands, security docs, test-vector anchors, fuzz targets, and formal-model files. Do not change protocol semantics.
 ```
 
-## zk202 - Parent CI and Evidence Normalization
+## zk202 — Parent CI and Evidence Normalization
 
 Goal: make local validation repeatable from the parent repository.
 
@@ -162,13 +181,13 @@ Acceptance gates:
 - Failures are visible and not converted into false passes.
 - No protocol semantics are changed.
 
-Suggested task:
+Suggested Commander task:
 
 ```text
 Improve parent-level CI wrappers and evidence logging only. Do not modify cryptographic code, packet formats, transcript construction, or test-vector meanings.
 ```
 
-## zk203 - Replay-Test Automation
+## zk203 — Replay-Test Automation
 
 Goal: convert the existing replay-test plans into executable or clearly tracked evidence.
 
@@ -187,15 +206,15 @@ Acceptance gates:
 - Replay tests are automated where practical.
 - Manual gaps are recorded as explicit TODO evidence, not silent passes.
 - Rust and C behavior is compared where vectors or harnesses allow comparison.
-- Any semantic change requires checkpoint-style review and final verification.
+- Any semantic change requires checkpoint competition and final verification.
 
-Suggested task:
+Suggested Commander task:
 
 ```text
 Implement automated replay evidence for duplicate, reordered, stale, and retransmitted protocol messages across Rust and C where practical. Preserve wire compatibility and document any unimplemented manual evidence gaps.
 ```
 
-## zk204 - Fuzzing Automation and Crash Triage
+## zk204 — Fuzzing Automation and Crash Triage
 
 Goal: make fuzz targets easy to run and triage.
 
@@ -215,7 +234,7 @@ Acceptance gates:
 - Crashes become reproducible tests before being claimed fixed.
 - Fuzzing is not described as complete verification.
 
-## zk205 - Cross-Language Vector and Interop Parity
+## zk205 — Cross-Language Vector and Interop Parity
 
 Goal: prove byte-level compatibility between Rust and C using deterministic vectors and runnable interop checks.
 
@@ -236,7 +255,7 @@ Acceptance gates:
 - Both implementations agree on generated/parsed bytes.
 - Interop failures block release-candidate status.
 
-## zk206 - TOFU and Provisioning Hardening
+## zk206 — TOFU and Provisioning Hardening
 
 Goal: make enrollment/provisioning trust assumptions explicit and testable.
 
@@ -252,9 +271,9 @@ Acceptance gates:
 
 - TOFU is not presented as equivalent to pre-provisioned trust.
 - Insecure bootstrap modes are explicit and auditable.
-- Any change to enrollment trust semantics requires checkpoint-style review.
+- Any change to enrollment trust semantics requires checkpoint competition.
 
-## zk207 - Formal Model Expansion
+## zk207 — Formal Model Expansion
 
 Goal: expand formal models without overstating proof coverage.
 
@@ -272,7 +291,7 @@ Acceptance gates:
 - Unmodeled implementation behavior remains marked as unproven.
 - Proof artifacts do not replace implementation tests.
 
-## zk208 - Side-Channel and RNG Evidence
+## zk208 — Side-Channel and RNG Evidence
 
 Goal: enforce truthful side-channel and RNG evidence tracking.
 
@@ -289,9 +308,9 @@ Acceptance gates:
 
 - Test-only deterministic randomness cannot enter production paths.
 - Side-channel resistance is not claimed without evidence.
-- C memory handling and Rust secret handling require checkpoint-style review.
+- C memory handling and Rust secret handling are reviewed in checkpoint competition.
 
-## zk209 - External Review Package
+## zk209 — External Review Package
 
 Goal: prepare a reproducible package for external cryptographic/security review.
 
@@ -313,7 +332,7 @@ Acceptance gates:
 - Known gaps are visible.
 - External review is not marked complete until review records exist.
 
-## zk210 - Release-Candidate Evidence Gate
+## zk210 — Release-Candidate Evidence Gate
 
 Goal: produce a release-candidate readiness decision without self-awarding unsupported claims.
 
@@ -339,7 +358,7 @@ Blocked claims unless externally supported:
 - external review completion.
 
 
-## zk211 - Late Enrollment with Signed Enrollment Grants
+## zk211 — Late Enrollment with Signed Enrollment Grants
 
 Goal: allow devices to be registered after the original setup/provisioning window without allowing unauthenticated self-registration through normal `AUTH`.
 
@@ -356,8 +375,8 @@ Required design artifacts:
 |---|---|
 | Late-enrollment design note | `docs/late-enrollment-design.md` |
 | Enrollment grant wire/TLV extension | `docs/enrollment-grant-wire.md` |
-| Grant threat model addendum | `docs/enrollment-grant-threat-model.md` |
-| Grant replay-test plan | `docs/enrollment-grant-replay-tests.md` |
+| Grant threat model addendum | `security/ENROLLMENT_GRANT_THREAT_MODEL.md` |
+| Grant replay-test plan | `security/ENROLLMENT_GRANT_REPLAY_TEST_PLAN.md` |
 | Rust/C/Python compatibility vectors | `rust/test-vectors/0x0001/enrollment_grant.json` |
 
 Proposed `EnrollmentGrant` fields:
@@ -394,13 +413,13 @@ Acceptance gates:
 - Rust, C, and Python agree on serialized grant bytes, transcript binding, and rejection cases before compatibility is claimed.
 - Legacy pairing-token behavior remains clearly marked as lab/demo unless separately hardened.
 
-Suggested task:
+Suggested Commander task:
 
 ```text
 Design and implement a signed one-time EnrollmentGrant path for SETUP. Preserve normal AUTH as prior-enrollment proof only. Add negative tests for expired, wrong-server, wrong-role, malformed, unsigned, and replayed grants across Rust, C, and Python where available.
 ```
 
-## zk212 - Delegated Commissioner Enrollment
+## zk212 — Delegated Commissioner Enrollment
 
 Goal: allow an already-authenticated device or operator-controlled commissioner to authorize registration of a new device without sharing secrets or directly editing the registry.
 
@@ -429,13 +448,13 @@ Acceptance gates:
 - Grant issuance is auditable without leaking unnecessary device-linkage metadata.
 - Existing device secrets are never transferred to the new device.
 
-Suggested task:
+Suggested Commander task:
 
 ```text
 Add a delegated commissioner enrollment design and, if approved, implement ENROLL_GRANT_REQ/RESP as an authenticated post-AUTH operation. Enforce role authorization, server/domain binding, audit records, and single-use grant replay protection.
 ```
 
-## zk213 - Authenticated Rekey and Re-Registration
+## zk213 — Authenticated Rekey and Re-Registration
 
 Goal: allow an already-enrolled device to rotate or replace its device key without performing a full operator-assisted setup and without creating an ambiguous duplicate identity.
 
@@ -469,13 +488,13 @@ Acceptance gates:
 - Rekey does not silently expand role privileges.
 - Rust, C, and Python either implement the same semantics or explicitly mark implementation gaps.
 
-Suggested task:
+Suggested Commander task:
 
 ```text
 Design authenticated REKEY_1/REKEY_2 messages that rotate a device key after AUTH. Bind the rekey transcript to the session key, prove possession of the new key, atomically tombstone the old registry entry, and add rollback/replay/concurrency negative tests.
 ```
 
-## zk214 - Enrollment Abuse, Replay, and Operational Controls
+## zk214 — Enrollment Abuse, Replay, and Operational Controls
 
 Goal: prevent late enrollment from becoming a denial-of-service, privilege-escalation, or privacy-regression path.
 
@@ -498,13 +517,13 @@ Acceptance gates:
 - Privacy claims are not expanded unless unlinkability and metadata-retention evidence exists.
 - Large-registry behavior remains measured because `AUTH_1` lookup is intentionally `O(n)` while PID hides identity.
 
-Suggested task:
+Suggested Commander task:
 
 ```text
 Build late-enrollment abuse and replay tests covering grant duplication, registry spam, invalid issuer floods, downgrade attempts, and large-registry lookup behavior. Add operational controls without changing AUTH privacy semantics.
 ```
 
-## zk215 - Privacy-Preserving Credential Upgrade Research
+## zk215 — Privacy-Preserving Credential Upgrade Research
 
 Goal: evaluate whether role authorization should migrate from the current custom role-membership proof toward a reviewed privacy-preserving credential system.
 
@@ -523,14 +542,14 @@ Acceptance gates before any migration:
 - External cryptographic review is required before production claims.
 - The existing custom proof remains marked security-sensitive until reviewed or replaced.
 
-Suggested task:
+Suggested Commander task:
 
 ```text
 Research privacy-preserving credential options for future role authorization. Produce a design comparison covering BBS-style credentials, Privacy Pass-style tokens, and DAA-style approaches, with suite negotiation and vector requirements before any protocol migration.
 ```
 
 
-## zk216 - IoT Profile Matrix and Benchmark Harness
+## zk216 — IoT Profile Matrix and Benchmark Harness
 
 Goal: make every future protocol improvement measurable on constrained and heterogeneous IoT targets before it is treated as baseline behavior.
 
@@ -549,8 +568,8 @@ Required artifacts:
 | IoT profile matrix | `docs/iot-profile-matrix.md` |
 | AUTH byte-cost report | `evidence/auth-wire-cost.md` |
 | Constrained benchmark harness | `bench/auth_iot_profile/` |
-| C bounded-buffer audit notes | `docs/c-bounded-buffer-audit.md` |
-| Rust allocation/profile notes | `docs/rust-iot-profile-notes.md` |
+| C bounded-buffer audit notes | `c/security/BOUNDED_BUFFER_AUDIT.md` |
+| Rust allocation/profile notes | `rust/security/IOT_PROFILE_NOTES.md` |
 | Target evidence template | `docs/iot-target-evidence-template.md` |
 
 Baseline byte model to verify in CI:
@@ -579,13 +598,13 @@ Acceptance gates:
 - Missing hardware measurements are marked as evidence gaps, not passes.
 - `iot-core` remains usable without post-quantum, anonymous-credential, or large-registry extensions.
 
-Suggested task:
+Suggested Commander task:
 
 ```text
 Add an IoT profile matrix and AUTH benchmark harness. Measure or estimate wire bytes, RAM, CPU, storage writes, and registry lookup costs for constrained and Linux-edge profiles. Do not claim IoT field readiness without target evidence.
 ```
 
-## zk217 - AUTH Transcript v3 and Complete Context Binding
+## zk217 — AUTH Transcript v3 and Complete Context Binding
 
 Goal: harden AUTH key confirmation against downgrade, transcript-splicing, unknown-key-share, cross-suite, and cross-transport confusion while adding no extra round trips and negligible wire cost.
 
@@ -624,13 +643,13 @@ Acceptance gates:
 - Python vectors are updated after Rust/C parity is stable.
 - No production claim is made until mutation-test coverage is checked in.
 
-Suggested task:
+Suggested Commander task:
 
 ```text
 Implement AUTH transcript v3 by binding HELLO, AUTH headers, suite/profile IDs, role policy, transport label, server identity, and canonical payload bytes into key confirmation. Add mutation tests proving each security-relevant field is covered.
 ```
 
-## zk218 - Strict AUTH State-Machine and Sequence Validation
+## zk218 — Strict AUTH State-Machine and Sequence Validation
 
 Goal: make replay resistance and retransmission behavior a precise state machine rather than an emergent property of handlers.
 
@@ -666,13 +685,13 @@ Acceptance gates:
 - Rust/C behavior matches for accepted retransmission and rejected replay cases.
 - Formal model notes identify which state-machine rules are modeled and which remain implementation-only tests.
 
-Suggested task:
+Suggested Commander task:
 
 ```text
 Tighten AUTH state-machine checks for session_id, sequence, packet type, address binding, retransmission, and restart behavior. Add negative tests for duplicate, reordered, stale, wrong-sequence, wrong-session, wrong-address, and cross-transport packets.
 ```
 
-## zk219 - Stateless AUTH_RETRY Cookies and Unauthenticated-Work Throttling
+## zk219 — Stateless AUTH_RETRY Cookies and Unauthenticated-Work Throttling
 
 Goal: prevent unauthenticated peers from forcing expensive registry scans, proof verification, allocations, or response amplification before basic source validation.
 
@@ -722,13 +741,13 @@ Acceptance gates:
 - Retry behavior is covered for UDP and TCP profiles.
 - The fallback path remains available for closed local deployments that do not need retry.
 
-Suggested task:
+Suggested Commander task:
 
 ```text
 Add an AUTH_RETRY cookie design and implementation option. Verify retry cookies before registry scans or proof verification, keep the path stateless or bounded, and add negative tests for expired, tampered, wrong-source, wrong-suite, and replayed cookies.
 ```
 
-## zk220 - Optional Encrypted Lookup Hints for Scalable AUTH
+## zk220 — Optional Encrypted Lookup Hints for Scalable AUTH
 
 Goal: reduce server registry lookup from intentional `O(n)` scanning to optional `O(1)` lookup without exposing a stable cleartext device identifier on the wire.
 
@@ -783,13 +802,13 @@ Acceptance gates:
 - Large-registry benchmarks include 1k, 10k, and 100k records on Linux-edge server profiles.
 - MCU clients can disable hints and remain compatible.
 
-Suggested task:
+Suggested Commander task:
 
 ```text
 Design optional encrypted lookup hints using existing curve/KDF/AEAD primitives where possible. Preserve the current O(n) scan fallback, bind hints into the transcript, and benchmark 1k/10k/100k-record lookup behavior.
 ```
 
-## zk221 - Replay-Safe Session Resumption for Constrained Devices
+## zk221 — Replay-Safe Session Resumption for Constrained Devices
 
 Goal: reduce repeated AUTH cost and latency for devices that reconnect frequently without allowing replayed tickets or unsafe early writes.
 
@@ -848,13 +867,13 @@ Acceptance gates:
 - Resumption transcript mutation tests exist.
 - Full AUTH remains available and required when tickets are absent or invalid.
 
-Suggested task:
+Suggested Commander task:
 
 ```text
 Design replay-safe 1-RTT AUTH resumption with self-authenticating or bounded tickets. Bind tickets to suite, profile, server identity, registry epoch, role policy, and transcript. Reject unsafe 0-RTT writes.
 ```
 
-## zk222 - AUTH Metrics CI and Security-Assurance Dashboard
+## zk222 — AUTH Metrics CI and Security-Assurance Dashboard
 
 Goal: make AUTH security and performance regressions visible as checked-in evidence rather than informal observations.
 
@@ -890,7 +909,7 @@ Required artifacts:
 | AUTH metrics schema | `docs/auth-metrics-schema.md` |
 | Latest AUTH metrics | `evidence/auth-metrics.json` |
 | Security dashboard summary | `evidence/auth-security-dashboard.md` |
-| Negative-test inventory | `docs/auth-negative-test-inventory.md` |
+| Negative-test inventory | `security/AUTH_NEGATIVE_TEST_INVENTORY.md` |
 | Target benchmark logs | `evidence/targets/` |
 
 Acceptance gates:
@@ -901,13 +920,13 @@ Acceptance gates:
 - CI distinguishes `not implemented`, `not measured`, `failed`, and `passed`; missing evidence is never reported as success.
 - Metrics include both Rust and C where the feature exists in both lanes.
 
-Suggested task:
+Suggested Commander task:
 
 ```text
 Create AUTH metrics CI that records wire bytes, lookup scaling, replay outcomes, transcript mutation outcomes, and constrained-memory evidence. Fail on unreviewed security regression or profile-budget regression.
 ```
 
-## zk223 - Optional Reviewed Anonymous-Credential Migration Evaluation
+## zk223 — Optional Reviewed Anonymous-Credential Migration Evaluation
 
 Goal: evaluate replacing or augmenting the custom role-membership proof with a reviewed anonymous-credential construction without making heavy credential systems mandatory for constrained devices.
 
@@ -932,13 +951,13 @@ Acceptance gates:
 - A downgrade path from anonymous-credential suite to classical suite is either forbidden or transcript-bound and policy-controlled.
 - External cryptographic review is required before production claims.
 
-Suggested task:
+Suggested Commander task:
 
 ```text
 Evaluate anonymous credential options for role authorization under IoT constraints. Do not make BBS, Privacy Pass-style, DAA, or certificate-only modes mandatory for iot-core. Produce proof-size, CPU/RAM, dependency, privacy, and review-status evidence before migration.
 ```
 
-## zk224 - Optional Post-Quantum Hybrid Suite Research
+## zk224 — Optional Post-Quantum Hybrid Suite Research
 
 Goal: explore post-quantum hybrid key establishment as a future optional suite while preserving the current low-footprint classical AUTH profile for constrained IoT.
 
@@ -978,10 +997,825 @@ Acceptance gates:
 - Downgrade and cross-suite transcript mutation tests exist.
 - No PQ production claim is made without external review and target evidence.
 
-Suggested task:
+Suggested Commander task:
 
 ```text
 Research an optional post-quantum hybrid AUTH suite. Keep it suite-negotiated and non-mandatory for iot-core, measure exact byte/RAM/CPU impact, and require downgrade tests, hybrid-KDF design review, and external cryptographic review before implementation claims.
+```
+
+## zk225 — Python Lane Integration and Vector Alignment
+
+Goal: integrate the latest Python implementation as a third reference lane while keeping Rust as the canonical vector source and C as the constrained-device implementation anchor.
+
+Role of the Python lane:
+
+- readable protocol reference;
+- CLI/demo harness for UDP and TCP behavior;
+- fast state-machine and negative-test prototyping;
+- mirrored Rust-vector validation;
+- specification examples for the future RFC-style package.
+
+Non-goals:
+
+- Python is not the baseline target for STM32/ESP32-S3-class constrained devices.
+- Python test success does not prove side-channel resistance, memory-safety, or field readiness.
+- Python vector fixtures must not become a competing source of truth against `rust/test-vectors/0x0001/`.
+
+Required artifacts:
+
+| Artifact | Path |
+|---|---|
+| Python implementation lane | `python/` |
+| Python CI wrapper | `scripts/ci-python.sh` |
+| Python evidence log | `evidence/python-ci.log` |
+| Parent CI includes Python | `scripts/ci-all.sh` |
+| Cross-language notes mention Python | `docs/cross-language-validation.md` |
+
+Acceptance gates:
+
+- `./scripts/ci-python.sh` installs the Python lane and runs `pytest`.
+- `./scripts/ci-all.sh` invokes Rust, C, Python, and the C-against-Rust vector harness.
+- Python vectors pass against the mirrored `0x0001` fixture set.
+- A future vector-sync check is planned before any vector semantics change.
+- README and roadmap identify Python as a reference/interoperability lane.
+
+Suggested Commander task:
+
+```text
+Keep the Python implementation integrated as a third reference lane. Add CI and evidence logging, preserve Rust as the canonical vector source, and do not make Python a constrained-device target.
+```
+
+## zk226 — RFC-Style Specification Package
+
+Goal: evolve ZK-ARCHE toward an RFC-like protocol package with normative message grammar, registries, state machines, security considerations, privacy considerations, and conformance tests.
+
+Reference discipline to emulate:
+
+- EDHOC-style compact authenticated key exchange for constrained IoT;
+- TLS/mTLS-style transcript binding, downgrade prevention, endpoint authentication, and alert/error discipline;
+- DTLS-style datagram replay, anti-amplification, retry, and lossy-link behavior;
+- OSCORE-style security-context/export thinking for constrained CoAP-like deployments.
+
+Required artifacts:
+
+| Artifact | Suggested path |
+|---|---|
+| RFC-style evolution plan | `docs/rfc-evolution-plan.md` |
+| Protocol specification skeleton | `spec/zk-arche-protocol.md` |
+| Registry document | `spec/registries.md` |
+| IoT profile document | `spec/iot-profiles.md` |
+| Security considerations | `spec/security-considerations.md` |
+| Privacy considerations | `spec/privacy-considerations.md` |
+| Test-vector specification | `spec/test-vectors.md` |
+| Interop matrix | `evidence/interop-matrix.md` |
+
+IoT constraints:
+
+- RFC-style work must preserve `iot-core`, `iot-edge`, and `research-only` feature separation.
+- Normative requirements must be testable on at least one relevant implementation lane before conformance claims.
+- TLS, DTLS, CBOR, COSE, anonymous credentials, and post-quantum suites remain optional unless target evidence proves they fit the profile.
+
+Acceptance gates:
+
+- Every wire/security behavior claimed as normative has a test-vector, negative test, or explicit evidence gap.
+- Suite, extension, alert, transport-binding, and profile identifiers are registry-controlled.
+- State machines are specified for SETUP, AUTH, late enrollment, rekey, and resumption.
+- Security and privacy considerations are explicit and do not overclaim production readiness.
+
+Suggested Commander task:
+
+```text
+Create an RFC-style specification skeleton for ZK-ARCHE. Define registries, state machines, security considerations, privacy considerations, IoT profiles, and test-vector requirements without changing wire semantics.
+```
+
+## zk227 — EDHOC/CoAP/OSCORE-Inspired Constrained Profile
+
+Goal: evaluate a constrained profile that borrows EDHOC/OSCORE design discipline while keeping current ZK-ARCHE semantics and avoiding mandatory heavyweight dependencies for `iot-core`.
+
+Candidate work:
+
+- compact canonical encoding review;
+- optional CBOR/CDDL description of messages for specification clarity;
+- optional CoAP transport mapping;
+- explicit security-context export function;
+- measured packet sizes for SETUP/AUTH/RESUME under `R=1`, `R=4`, and `R=8`.
+
+IoT constraints:
+
+- CBOR/COSE dependencies must be optional until code-size, RAM, CPU, and fuzz evidence exists for STM32/ESP32-S3-class targets.
+- Current native binary encoding remains valid unless a checkpoint-approved migration adds versioned vectors.
+- CoAP/OSCORE binding must not hide replay or retransmission state-machine behavior.
+
+Acceptance gates:
+
+- Compact profile byte costs are reported.
+- Any new parser has fuzz coverage and malformed-input tests.
+- Cross-encoding equivalence tests exist if both native and CBOR-like encodings are supported.
+- No constrained-profile claim is made without target evidence.
+
+Suggested Commander task:
+
+```text
+Evaluate an EDHOC/OSCORE-inspired constrained profile for ZK-ARCHE. Keep CBOR/COSE and CoAP bindings optional, measure byte/RAM/CPU costs, and preserve current vectors unless a versioned migration is approved.
+```
+
+## zk228 — TLS/mTLS-Style Channel-Binding Profile
+
+Goal: define an optional profile for deployments that already run TLS or mTLS, binding ZK-ARCHE authentication to the TLS channel without assuming client certificates are privacy preserving.
+
+Candidate binding:
+
+```text
+zk_arche_tls_channel_binding = TLS-Exporter("EXPORTER-ZK-ARCHE-v1", transcript_context, 32)
+AUTH transcript includes zk_arche_tls_channel_binding
+```
+
+Policy:
+
+- use TLS/mTLS as an optional deployment binding, not a replacement for ZK-ARCHE privacy semantics;
+- document client-certificate metadata leakage in mTLS mode;
+- define whether ZK-ARCHE authenticates the TLS endpoint or an application/device identity behind it;
+- bind server identity, ALPN/application profile, suite id, deployment id, and exporter value into the ZK-ARCHE transcript.
+
+Acceptance gates:
+
+- wrong exporter, wrong server identity, wrong ALPN/profile, wrong deployment id, and wrong suite are rejected.
+- TLS termination/proxy assumptions are documented.
+- mTLS mode does not claim unlinkability when stable client certificates are visible.
+- TLS is not mandatory for `iot-core` unless the deployment profile requires it and provides measurements.
+
+Suggested Commander task:
+
+```text
+Design an optional TLS/mTLS channel-binding profile for ZK-ARCHE using exporter-bound transcripts. Preserve privacy claims truthfully and reject wrong-channel mutations.
+```
+
+## zk229 — DTLS-Style Datagram Robustness Profile
+
+Goal: make native UDP behavior specification-grade by adopting DTLS-style discipline for anti-amplification, retry, replay, retransmission, and lossy-link operation.
+
+Required design points:
+
+- address-validation and retry-cookie policy;
+- amplification limit before peer validation;
+- replay window and duplicate suppression rules;
+- retransmission behavior for SETUP, AUTH, AUTH_RETRY, AUTH_ACK, and future RESUME;
+- response-cache limits under attack;
+- alert/error mapping with bounded privacy leakage.
+
+IoT constraints:
+
+- invalid unauthenticated datagrams must be cheap to reject.
+- response-cache memory must be bounded and measurable.
+- retransmission timers must tolerate lossy low-power links without requiring a large scheduler or heap.
+- fallback to TCP or gateway-only profile is required if packet sizes exceed the configured UDP budget.
+
+Acceptance gates:
+
+- duplicate, reordered, stale, cross-session, wrong-sequence, wrong-address, and oversized datagrams are tested.
+- unauthenticated packets do not trigger registry scans or proof verification when retry-cookie mode is required.
+- amplification behavior is measured and policy-bounded.
+- lossy-link tests or simulations are checked in as evidence, not only described.
+
+Suggested Commander task:
+
+```text
+Specify and test DTLS-style UDP robustness for ZK-ARCHE. Add retry-cookie, replay-window, retransmission, amplification, and response-cache rules with constrained-device memory bounds.
+```
+
+
+## zk230 — Protocol-Suite Decomposition for RFC-Like Maturity
+
+Goal: evolve ZK-ARCHE from a repository into a protocol suite with the same engineering layers that make EDHOC, TLS/mTLS, and DTLS credible, while preserving ZK-ARCHE's distinct role as a privacy-preserving device authorization and sovereignty protocol.
+
+Target suite structure:
+
+```text
+ZK-ARCHE-CORE
+  Wire format, canonical encoding, registries, transcript construction,
+  profile identifiers, extension negotiation, error handling, and test-vector rules.
+
+ZK-ARCHE-AUTH
+  Native privacy-preserving role authentication and constrained session establishment.
+
+ZK-ARCHE-BIND
+  Channel-bound mode for EDHOC/OSCORE, TLS/mTLS, and DTLS deployments.
+
+ZK-ARCHE-ENROLL
+  Setup, late enrollment, delegated enrollment, rekey, revocation, and registry epochs.
+
+ZK-ARCHE-DATA
+  Device-controlled encrypted data records, policy-bound release, auditability,
+  and revocable per-device data-sovereignty semantics.
+```
+
+Required specification artifacts:
+
+| Artifact | Suggested path |
+|---|---|
+| Architecture document | `spec/zk-arche-architecture.md` |
+| AUTH protocol document | `spec/zk-arche-auth.md` |
+| Enrollment document | `spec/zk-arche-setup-enrollment.md` |
+| Wire-format document | `spec/zk-arche-wire-format.md` |
+| Crypto-suite registry | `spec/zk-arche-crypto-suites.md` |
+| IoT profile document | `spec/zk-arche-iot-profiles.md` |
+| EDHOC/OSCORE binding | `spec/zk-arche-edhoc-oscore-binding.md` |
+| TLS/DTLS binding | `spec/zk-arche-tls-dtls-binding.md` |
+| Data-sovereignty document | `spec/zk-arche-data-sovereignty.md` |
+| Security considerations | `spec/zk-arche-security-considerations.md` |
+| Privacy considerations | `spec/zk-arche-privacy-considerations.md` |
+| Test-vector document | `spec/zk-arche-test-vectors.md` |
+| Registry document | `spec/zk-arche-iana-registries.md` |
+
+Protocol layering target:
+
+```text
+Layer 0: Wire framing and canonical encoding
+Layer 1: Crypto-suite and profile registries
+Layer 2: Enrollment, late enrollment, rekey, and revocation
+Layer 3: AUTH handshake and role-membership proof
+Layer 4: Session export and channel binding
+Layer 5: Application policy binding and data release
+Layer 6: IoT profile constraints and deployment guidance
+```
+
+Formal security goals to state explicitly:
+
+- server authentication;
+- device enrollment authentication;
+- role-membership authentication;
+- optional mutual authentication;
+- session-key secrecy and forward secrecy;
+- downgrade resistance;
+- unknown-key-share resistance;
+- replay resistance;
+- retry-cookie anti-DoS behavior;
+- registry epoch binding;
+- exporter/channel binding;
+- passive unlinkability for protocol identity fields where claimed;
+- bounded active-linkability limitations;
+- role privacy limitations;
+- explicit registry privacy limitations.
+
+Non-goals and limitations that must remain visible:
+
+- ZK-ARCHE does not hide identity from the authenticating server after successful lookup unless a future profile proves a stronger property.
+- ZK-ARCHE does not protect a device after its root/private key is compromised.
+- Custom role proofs are not production-grade anonymous credentials without external review.
+- ZK-ARCHE does not replace transport security in binding modes.
+- `iot-core` does not make post-quantum or general-purpose zkSNARK claims.
+- Traffic-analysis correlation by timing, radio metadata, and packet size is not solved by default.
+
+Acceptance gates:
+
+- A third-party implementer can build each normative message and transcript from specification text and vectors.
+- Suite, extension, profile, alert, proof-type, release-token, and data-record identifiers are registry-controlled.
+- Every normative security behavior has a positive vector, negative vector, test, formal-model claim, or explicit evidence gap.
+- Specification documents separate normative requirements from deployment guidance and research notes.
+- No RFC-like maturity claim is made until wire grammar, state machines, security/privacy considerations, registries, and vectors are checked in.
+
+Suggested Commander task:
+
+```text
+Split ZK-ARCHE into CORE, AUTH, BIND, ENROLL, and DATA specification tracks. Add RFC-style normative registries, layered protocol descriptions, security goals, privacy limitations, and implementer-facing message grammar without changing current wire semantics.
+```
+
+## zk231 — Per-Device Data Sovereignty Architecture
+
+Goal: define per-device data sovereignty as a first-class ZK-ARCHE objective without forcing heavy zero-knowledge systems onto constrained devices.
+
+Definition:
+
+```text
+Per-device data sovereignty means that each device cryptographically controls
+what protected data it releases, to whom, under which policy, during which epoch,
+and with what proof, while revealing the minimum identity, role, and state metadata
+required by the selected deployment profile.
+```
+
+Core constraint:
+
+```text
+ESP32-S3/STM32-class devices run only small, bounded crypto.
+Gateways, issuers, and servers handle heavy policy indexing, anonymous credentials,
+large Merkle structures, formal audit verification, or zkSNARK research modes.
+```
+
+Device-local sovereignty root:
+
+```text
+device_root_sk
+
+auth_sk    = HKDF(device_root_sk, "zk-arche auth")
+data_sk    = HKDF(device_root_sk, "zk-arche data sealing")
+audit_sk   = HKDF(device_root_sk, "zk-arche audit")
+consent_sk = HKDF(device_root_sk, "zk-arche consent")
+```
+
+Rules:
+
+- `device_root_sk` is never exported.
+- Derived keys use domain-separated labels and suite/profile identifiers.
+- Key derivation binds `device_epoch` where rotation/revocation semantics require it.
+- Hardware secure elements or TEEs may protect `device_root_sk`, but correctness must not require vendor-specific hardware.
+- Rekey and revocation must advance `device_epoch` and invalidate stale release material.
+
+Sovereignty properties:
+
+| Property | Required behavior | Metric/evidence |
+|---|---|---|
+| Device-controlled encryption | Protected data is encrypted before release or storage by untrusted infrastructure | 100% protected telemetry records are AEAD encrypted in sovereignty profiles |
+| Minimal identity disclosure | AUTH and data release avoid stable cleartext device identifiers | PID changes per session; no stable `device_id` on wire where privacy is claimed |
+| Policy-bound release | Release binds recipient, purpose, time window, policy hash, and device epoch | Mutating any bound field invalidates the release token/proof |
+| Local auditability | Device records release events in an append-only commitment chain | Deletion, reordering, or modification is detected by verifier tests |
+| Revocable authorization | Device, registry, policy, and credential epochs invalidate stale proofs/tickets | Old release tokens fail after epoch revocation |
+
+IoT constraints:
+
+- `iot-core` must not require a general-purpose ZK circuit prover.
+- `iot-core` must not require dynamic allocation in C hot paths after initialization.
+- Protected-data upload must support fixed-size or bounded chunks.
+- Audit entries must be small and append-only; target 64-96 bytes before optional metadata.
+- Flash-write frequency must be documented to avoid hidden wear risks.
+
+Acceptance gates:
+
+- Protected-data plaintext paths are explicitly marked public/test-only or rejected by CI.
+- Device epoch revocation invalidates old AUTH, release, and wrapped-key material according to profile policy.
+- Sovereignty key derivation vectors exist across Rust, C, and Python before compatibility is claimed.
+- No data-sovereignty claim is made without byte/RAM/CPU evidence for the selected profile.
+
+Suggested Commander task:
+
+```text
+Add a per-device data-sovereignty architecture document. Define device_root_sk derivation, encrypted-by-default protected data, release policy binding, audit-chain requirements, revocation epochs, and iot-core constraints without introducing heavyweight ZK dependencies.
+```
+
+## zk232 — ZK-Minimal Proof-Carrying Data Profile
+
+Goal: use small zero-knowledge or proof-like primitives for constrained devices while reserving heavyweight anonymous credentials and zkSNARKs for gateway/research profiles.
+
+Allowed `iot-core` proof primitives:
+
+- Schnorr proof of possession;
+- small fixed-role OR/set-membership proof with bounded branch count;
+- MAC-based authorization ticket;
+- blinded or unlinkable token redemption only if measured and bounded;
+- hash commitment;
+- small Merkle inclusion proof only if tree depth and stack use are bounded;
+- channel-bound proof using EDHOC/OSCORE, TLS, or DTLS exporter material.
+
+Forbidden as mandatory `iot-core` requirements:
+
+- Groth16, Plonk, STARK, or other general-purpose ZK proving;
+- large BBS proof generation;
+- large local Merkle tree construction;
+- large certificate-chain parsing;
+- post-quantum hybrid AUTH;
+- dynamic memory-heavy proof systems;
+- network-visible stable identifiers used as proof shortcuts.
+
+Proof hierarchy:
+
+| Sovereignty claim | Low-end proof | Higher-end proof |
+|---|---|---|
+| Enrolled device | Schnorr proof | anonymous credential |
+| Allowed role | small OR/set-membership proof | BBS-style selective disclosure |
+| Release authorized | MAC ticket or signature | Privacy Pass-style unlinkable token |
+| Data belongs to policy | hash commitment | Merkle proof or zkSNARK |
+| Audit not tampered | hash chain | Merkle transparency log |
+| Recipient allowed | policy token | ZK policy proof |
+
+Target `iot-core` metrics:
+
+| Metric | Target |
+|---|---|
+| `AUTH_1` | <= 1200 bytes for constrained default profile |
+| Full `AUTH` | <= 1600 bytes for constrained default profile |
+| RAM during AUTH | <= 16 KiB target or documented evidence gap |
+| Role branches | <= 4 default for constrained devices |
+| Proof verification | <= 100 ms target on ESP32-S3-class benchmark or explicit evidence gap |
+| Data release proof | <= 512 bytes target |
+| C hot-path allocation | no heap allocation after init for `iot-core` critical path |
+
+Acceptance gates:
+
+- Every proof type has a registry identifier, transcript binding rule, domain separator, and maximum encoded length.
+- Heavy proof systems are marked `gateway` or `research-only` and cannot be negotiated by `iot-core` unless explicitly enabled by profile policy.
+- Proof-carrying data vectors include positive and negative cases across Rust, C, and Python where implemented.
+- Mutation tests show that changing policy hash, recipient, purpose, epoch, session binding, or data commitment invalidates the proof/token.
+
+Suggested Commander task:
+
+```text
+Define a ZK-minimal proof-carrying data profile. Restrict iot-core to Schnorr, bounded role membership, MAC tickets, hash commitments, and small optional Merkle proofs. Keep BBS, Privacy Pass, zkSNARK, and post-quantum work gateway/research-only unless measured and reviewed.
+```
+
+## zk233 — ZK-ARCHE-DATA Minimal Sovereignty Protocol
+
+Goal: add a minimal data-sovereignty protocol on top of AUTH without changing the baseline AUTH semantics.
+
+Smallest viable flow:
+
+```text
+1. AUTH
+   Device proves enrollment/role and derives a session or channel-bound key.
+
+2. DATA_COMMIT
+   Device uploads encrypted protected data and policy/audit commitments.
+
+3. RELEASE_REQUEST
+   Verifier requests access for a specific data type, purpose, recipient, and time range.
+
+4. RELEASE_PROOF
+   Device or authorized gateway proves the request satisfies policy.
+
+5. RELEASE_KEY
+   Device releases or authorizes a wrapped data key scoped to recipient/purpose/time.
+
+6. AUDIT_APPEND
+   Device appends the release event to its local audit hash chain.
+```
+
+Minimal wire objects:
+
+```text
+EncryptedDataRecord {
+  version
+  suite_id
+  profile_id
+  record_id
+  device_epoch
+  data_type_commitment
+  timestamp_bucket
+  ciphertext
+  policy_hash
+  audit_head
+  tag
+}
+
+DataProof {
+  proof_type
+  device_epoch
+  policy_hash
+  data_type_commitment
+  role_or_capability_commitment
+  freshness_nonce
+  channel_binding_hash optional
+  proof
+}
+
+DataCommit {
+  record_id
+  device_epoch
+  data_type_commitment
+  timestamp_bucket
+  ciphertext
+  policy_hash
+  audit_head
+  data_proof
+  tag
+}
+
+ReleaseRequest {
+  requester_commitment
+  purpose_hash
+  data_type
+  time_range
+  nonce
+  channel_binding_hash optional
+}
+
+ReleaseProof {
+  proof_type
+  policy_hash
+  request_hash
+  device_epoch
+  proof
+}
+
+WrappedDataKey {
+  recipient_context
+  key_wrap_alg
+  wrapped_key
+  expires_at
+  device_epoch
+  policy_hash
+  tag
+}
+```
+
+Design rules:
+
+- `AUTH` proves enrollment; `ZK-ARCHE-DATA` controls protected-data release.
+- Data encryption and policy commitments must not depend on the server being trusted to enforce policy honestly.
+- Release keys must be scoped and bounded; no profile may define an unbounded “release everything forever” token as the default.
+- `DataCommit` must be safe to store on untrusted infrastructure.
+- `ReleaseProof` must bind to the request hash and channel/session context when available.
+
+Acceptance gates:
+
+- Replayed release requests and replayed release proofs are rejected or idempotently bounded according to profile rules.
+- A `WrappedDataKey` for one recipient, purpose, time range, or policy cannot decrypt another scope.
+- `DataCommit` parser fuzzing and malformed-input tests exist before compatibility claims.
+- Cross-language vectors cover at least one protected-data commit and one release-token rejection path before feature-complete claims.
+
+Suggested Commander task:
+
+```text
+Design ZK-ARCHE-DATA as a minimal protocol with DATA_COMMIT, RELEASE_REQUEST, RELEASE_PROOF, RELEASE_KEY, and AUDIT_APPEND semantics. Keep protected data encrypted by default and bind release keys to recipient, purpose, policy, time range, device epoch, and channel context.
+```
+
+## zk234 — Policy-Bound Release Tokens and Revocable Epochs
+
+Goal: make protected-data access explicitly scoped, replay-resistant, and revocable.
+
+Candidate release token:
+
+```text
+ReleaseToken {
+  version
+  suite_id
+  profile_id
+  device_epoch
+  registry_epoch
+  policy_epoch
+  credential_epoch optional
+  recipient_id_hash
+  data_type
+  time_range
+  purpose_hash
+  policy_hash
+  not_before
+  expires_at
+  nonce
+  issuer_id optional
+  issuer_mac_or_signature
+}
+```
+
+Epoch model:
+
+```text
+device_epoch     controls device rekey/re-registration freshness
+registry_epoch   controls server-side enrollment/revocation freshness
+policy_epoch     controls policy changes
+credential_epoch controls anonymous credential/token freshness where used
+```
+
+Required binding:
+
+- recipient identity or recipient commitment;
+- purpose hash;
+- data type or data-type commitment;
+- time range;
+- policy hash;
+- device epoch;
+- registry/policy epoch where available;
+- channel/session binding where used;
+- expiry and replay nonce/counter.
+
+IoT constraints:
+
+- `iot-core` tokens should be MAC- or signature-based with fixed maximum size.
+- Epoch state must fit bounded storage and support restart behavior.
+- Token validation must be possible without a large policy engine on MCU clients.
+- Clockless or weak-clock deployments must define counter/epoch alternatives to wall-clock expiry.
+
+Acceptance gates:
+
+- Mutating recipient, purpose, time range, policy hash, data type, epoch, suite, profile, or channel binding invalidates the token.
+- Old tokens fail after epoch revocation according to profile policy.
+- Replay behavior is deterministic across reboot for profiles that claim replay resistance.
+- Token format and validation behavior have positive and negative vectors.
+
+Suggested Commander task:
+
+```text
+Define ReleaseToken and epoch semantics for per-device data sovereignty. Bind every release to recipient, purpose, data type, time range, policy hash, device/registry/policy epochs, expiry, replay nonce, and channel context where available.
+```
+
+## zk235 — Local Audit Hash Chain and Gateway Transparency Bridge
+
+Goal: give constrained devices a small local audit mechanism while allowing gateways to provide heavier transparency and verification services.
+
+Device-local audit chain:
+
+```text
+audit_0 = H("zk-arche audit init" || suite_id || profile_id || device_epoch || device_audit_salt)
+
+audit_n = H(
+  audit_{n-1} ||
+  event_type ||
+  timestamp_or_counter_bucket ||
+  policy_hash ||
+  recipient_hash ||
+  data_commitment ||
+  release_token_hash ||
+  device_epoch
+)
+```
+
+Required event types:
+
+- protected data committed;
+- release requested;
+- release approved;
+- release rejected;
+- release key wrapped;
+- policy changed;
+- device epoch advanced;
+- audit checkpoint exported.
+
+IoT constraints:
+
+- Audit entries must be bounded and append-only.
+- Devices may keep only the current audit head plus a small ring buffer if storage is constrained.
+- Gateways may mirror audit checkpoints into a Merkle transparency log, but this is not mandatory for `iot-core`.
+- Audit export must avoid leaking stable identifiers unless the deployment profile accepts that tradeoff.
+
+Acceptance gates:
+
+- Verification detects deletion, reordering, and modification in checked-in tests.
+- Audit head is bound into protected-data commits or release proofs where the profile claims auditability.
+- Power-loss and partial-write behavior is documented for constrained targets.
+- Gateway transparency bridge is optional and cannot be required by baseline `iot-core`.
+
+Suggested Commander task:
+
+```text
+Add a bounded device-local audit hash chain for data commit/release events and an optional gateway transparency bridge. Test deletion, reordering, modification, power-loss, and privacy-leakage behavior.
+```
+
+## zk236 — Sovereignty CI Gates and Footprint Budgets
+
+Goal: make per-device data-sovereignty claims testable rather than aspirational.
+
+Required CI gates:
+
+```text
+1. No plaintext protected-data path in sovereignty profiles.
+2. All release tokens bind recipient, purpose, expiry, policy hash, and epoch.
+3. AUTH proof and data-release proof cannot be replayed across sessions.
+4. Device epoch revocation invalidates old release keys and release tokens.
+5. Policy mutation invalidates old proof transcripts.
+6. Parser fuzzing covers AUTH, DATA_COMMIT, RELEASE_REQUEST, RELEASE_PROOF, and RELEASE_KEY.
+7. Cross-language vectors exist for Rust, C, and Python before compatibility claims.
+8. Low-end profiles enforce maximum packet size, maximum proof size, and memory budget.
+9. Heavy ZK features are forbidden in iot-core by profile negotiation tests.
+10. Failure behavior covers malformed input, storage exhaustion, RNG failure, clock skew, restart, and replay cache loss.
+```
+
+Suggested vector layout:
+
+```text
+test-vectors/
+  data-sovereignty/
+    key-derivation/
+    encrypted-data-record/
+    data-commit/
+    release-token/
+    release-proof/
+    wrapped-key/
+    audit-chain/
+    epoch-revocation/
+    plaintext-negative/
+    replay-negative/
+```
+
+Suggested fuzz layout:
+
+```text
+fuzz/
+  wire-parser
+  auth-state-machine
+  tlv-parser
+  role-proof-parser
+  enrollment-grant-parser
+  data-commit-parser
+  release-request-parser
+  release-proof-parser
+  wrapped-key-parser
+```
+
+Footprint budget evidence:
+
+| Profile | Required evidence |
+|---|---|
+| `iot-core` | packet sizes, fixed-buffer limits, stack/heap estimate, proof maximum size, flash-write behavior |
+| `iot-edge` | persistent replay cache, registry size, encrypted lookup hint, local encrypted store, resumption ticket storage |
+| `gateway` | policy engine, anonymous credential service, audit verifier, interop matrix, fuzz/formal artifacts |
+| `research-only` | explicit warning that results are experimental and not baseline IoT requirements |
+
+Acceptance gates:
+
+- CI fails if a sovereignty profile emits protected plaintext in testable paths.
+- CI fails if `iot-core` negotiates heavy proof suites by default.
+- CI reports wire size and proof size for every sovereignty message.
+- Missing hardware measurements are recorded as evidence gaps, not passes.
+
+Suggested Commander task:
+
+```text
+Add sovereignty CI gates and footprint budgets. Enforce encrypted-by-default protected data, release-token binding, replay rejection, epoch revocation, parser fuzzing, vector parity, and profile negotiation rules that keep heavy ZK out of iot-core.
+```
+
+## zk237 — Channel-Bound Sovereignty over EDHOC/OSCORE, TLS/mTLS, and DTLS
+
+Goal: allow ZK-ARCHE sovereignty proofs to bind to mature secure-channel protocols where they already exist, without making ZK-ARCHE a replacement for EDHOC, TLS, or DTLS.
+
+Deployment modes:
+
+```text
+ZK-ARCHE-Standalone
+  Native AUTH derives session keys and DATA binds to the native transcript.
+
+ZK-ARCHE-over-EDHOC/OSCORE
+  EDHOC derives an OSCORE security context.
+  ZK-ARCHE role/data-release proofs bind to the EDHOC transcript and OSCORE context.
+
+ZK-ARCHE-over-TLS/DTLS
+  TLS/mTLS or DTLS establishes the secure channel.
+  ZK-ARCHE role/data-release proofs bind to exporter material and application context.
+```
+
+Binding requirements:
+
+- suite ID;
+- profile ID;
+- deployment/domain ID;
+- server identity or channel endpoint identity;
+- ALPN/application profile where available;
+- exporter or EDHOC/OSCORE context hash;
+- role policy hash;
+- release policy hash;
+- device/policy/registry epochs;
+- transcript hash of the ZK-ARCHE proof object.
+
+Privacy caveats:
+
+- mTLS with stable client certificates may reveal device identity and must not claim unlinkability.
+- TLS termination and proxies must be documented because exporter binding may terminate at the proxy rather than the origin verifier.
+- EDHOC/OSCORE bindings must specify whether the proof binds to endpoint identity, application identity, or gateway identity.
+- DTLS replay windows and ZK-ARCHE replay windows must not contradict each other.
+
+Acceptance gates:
+
+- Wrong exporter/context, wrong server identity, wrong ALPN/profile, wrong deployment ID, wrong suite/profile, and wrong policy hash are rejected.
+- Binding modes have positive and negative vectors before interoperability claims.
+- Channel binding does not become mandatory for `iot-core` standalone deployments.
+- Privacy claims are adjusted per binding mode and do not overstate anonymity.
+
+Suggested Commander task:
+
+```text
+Design channel-bound sovereignty modes for EDHOC/OSCORE, TLS/mTLS, and DTLS. Bind ZK-ARCHE AUTH and DATA proofs to exporter/context material, server/application identity, suite/profile, policy hash, and epoch state, with negative tests for wrong-channel mutations.
+```
+
+## zk238 — Advanced Sovereignty Research Outside iot-core
+
+Goal: evaluate stronger anonymous-credential and zero-knowledge policy systems without increasing the baseline code footprint or compute requirement of constrained devices.
+
+Research candidates:
+
+- BBS-style selective disclosure for higher-end gateway/issuer profiles;
+- Privacy Pass-style unlinkable authorization tokens;
+- Direct Anonymous Attestation-style hardware-backed authorization;
+- Merkle transparency logs for gateway audit aggregation;
+- zkSNARK policy proofs for complex release policies;
+- post-quantum hybrid suites only for gateway/research profiles.
+
+Strict separation policy:
+
+```text
+Research features MAY inform future suites.
+Research features MUST NOT become baseline `iot-core` requirements.
+Research features MUST be suite-negotiated, profile-gated, measured, and externally reviewed
+before any production or constrained-device claim is made.
+```
+
+Evaluation criteria:
+
+| Criterion | Required question |
+|---|---|
+| Privacy gain | What metadata or linkage is reduced versus the current proof? |
+| Footprint | What are code size, RAM, stack, heap, flash-write, and wire costs? |
+| Compute | What are proving and verification costs on gateway and constrained targets? |
+| Interop | Can Rust, C, and Python share vectors and reject malformed proofs? |
+| Review | Has the construction received external cryptographic review? |
+| Migration | Can it be isolated behind a new suite/profile without breaking existing vectors? |
+
+Acceptance gates:
+
+- Research suites cannot be enabled by default in `iot-core`.
+- All research claims include measured or explicitly missing byte/RAM/CPU evidence.
+- External review is required before production-grade privacy or cryptographic claims.
+- Existing classical vectors and constrained profiles remain valid.
+
+Suggested Commander task:
+
+```text
+Evaluate advanced anonymous credentials, Privacy Pass-style tokens, DAA-style device authorization, Merkle transparency logs, zkSNARK policy proofs, and post-quantum hybrids as gateway/research-only sovereignty extensions. Preserve iot-core minimalism and require measurement, suite isolation, and external review.
 ```
 
 ## Agent Editing Contract
@@ -993,4 +1827,4 @@ Future automated edits may improve implementation quality, validation, documenta
 - strict separation between evidence and claims;
 - truthful assurance-status wording;
 - no production/security/certification claims without evidence;
-- checkpoint-style review for protocol, crypto, parsing, replay, RNG, memory-safety, formal-model, side-channel, and interop changes.
+- checkpoint competition for protocol, crypto, parsing, replay, RNG, memory-safety, formal-model, side-channel, and interop changes.

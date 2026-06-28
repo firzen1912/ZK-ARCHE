@@ -1,0 +1,22 @@
+{
+  "suite": "0x0001",
+  "name": "transcript_basic",
+  "notes": "Byte-for-byte transcript layout with two appended messages.",
+  "inputs": {
+    "domain": "test-domain",
+    "fields": [
+      [
+        "a",
+        "68656c6c6f"
+      ],
+      [
+        "b",
+        "11223344"
+      ]
+    ]
+  },
+  "expected": {
+    "transcript_bytes": "0b746573742d646f6d61696e01610500000068656c6c6f01620400000011223344",
+    "challenge_scalar": "3846a439a2a77773a37099002ff586d32c38379b8c9a29390a159e3fbd5d430a"
+  }
+}

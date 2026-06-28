@@ -4,7 +4,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 mkdir -p "$ROOT/evidence"
 LOG="$ROOT/evidence/ci-all.log"
 {
-  echo "== ZK-ARCHE combined CI =="
+  echo "== ZK-ARCHE unified CI =="
   date -u +"timestamp_utc=%Y-%m-%dT%H:%M:%SZ"
   echo "root=$ROOT"
   echo
@@ -13,6 +13,9 @@ LOG="$ROOT/evidence/ci-all.log"
   echo
   echo "== c lane =="
   "$ROOT/scripts/ci-c.sh"
+  echo
+  echo "== python lane =="
+  "$ROOT/scripts/ci-python.sh"
   echo
   echo "== c vector harness against rust vectors =="
   cd "$ROOT/c"
