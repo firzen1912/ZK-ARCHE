@@ -74,17 +74,29 @@ pub struct Negotiated {
 /// Intersect two capability sets, picking the highest mutually-supported
 /// version and a mutually-supported suite. Returns an error with a specific
 /// wire code on mismatch so the initiator can tell *why* negotiation failed.
-#[allow(clippy::too_many_arguments)]
-pub fn negotiate(
-    local_version: u8,
-    local_min_version: u8,
-    local_suites: &[SuiteId],
-    local_caps: cap::Bits,
-    peer_version: u8,
-    peer_min_version: u8,
-    peer_suites: &[SuiteId],
-    peer_caps: cap::Bits,
-) -> Result<Negotiated> {
+/// One side's negotiation advertisement: protocol version window, supported
+/// cipher suites (in preference order), and capability bits.
+#[derive(Clone, Copy)]
+pub struct CapsAdvert<'a> {
+    pub version: u8,
+    pub min_version: u8,
+    pub suites: &'a [SuiteId],
+    pub caps: cap::Bits,
+}
+
+pub fn negotiate(local: &CapsAdvert, peer: &CapsAdvert) -> Result<Negotiated> {
+    let CapsAdvert {
+        version: local_version,
+        min_version: local_min_version,
+        suites: local_suites,
+        caps: local_caps,
+    } = *local;
+    let CapsAdvert {
+        version: peer_version,
+        min_version: peer_min_version,
+        suites: peer_suites,
+        caps: peer_caps,
+    } = *peer;
     let version = std::cmp::min(local_version, peer_version);
     if version < local_min_version || version < peer_min_version {
         return Err(ProtoError::wire(
@@ -126,17 +138,13 @@ mod tests {
 
     #[test]
     fn negotiates_common_version_and_suite() {
-        let n = negotiate(
-            2,
-            2,
-            &[SUITE_RISTRETTO255_SHA256],
-            cap::BASELINE,
-            2,
-            2,
-            &[SUITE_RISTRETTO255_SHA256],
-            cap::BASELINE,
-        )
-        .unwrap();
+        let advert = CapsAdvert {
+            version: 2,
+            min_version: 2,
+            suites: &[SUITE_RISTRETTO255_SHA256],
+            caps: cap::BASELINE,
+        };
+        let n = negotiate(&advert, &advert).unwrap();
         assert_eq!(n.version, 2);
         assert_eq!(n.suite, SUITE_RISTRETTO255_SHA256);
     }
@@ -144,17 +152,19 @@ mod tests {
     #[test]
     fn fails_on_version_floor() {
         // Peer requires >=3, we can only offer 2.
-        let e = negotiate(
-            2,
-            2,
-            &[SUITE_RISTRETTO255_SHA256],
-            cap::BASELINE,
-            3,
-            3,
-            &[SUITE_RISTRETTO255_SHA256],
-            cap::BASELINE,
-        )
-        .unwrap_err();
+        let local = CapsAdvert {
+            version: 2,
+            min_version: 2,
+            suites: &[SUITE_RISTRETTO255_SHA256],
+            caps: cap::BASELINE,
+        };
+        let peer = CapsAdvert {
+            version: 3,
+            min_version: 3,
+            suites: &[SUITE_RISTRETTO255_SHA256],
+            caps: cap::BASELINE,
+        };
+        let e = negotiate(&local, &peer).unwrap_err();
         assert_eq!(e.wire_code(), Some(ErrorCode::UnsupportedVersion));
     }
 }

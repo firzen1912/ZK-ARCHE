@@ -117,39 +117,38 @@ pub struct SchnorrProof {
     pub s: Scalar,
 }
 
-pub fn prove_setup_client(
-    x: &Scalar,
-    device_id: &[u8; 32],
-    device_pub: &RistrettoPoint,
-    server_pub: &RistrettoPoint,
-    client_nonce: &[u8; 32],
-    server_nonce: &[u8; 32],
-    setup_challenge: &[u8; SETUP_CHALLENGE_LEN],
-) -> SchnorrProof {
+/// Shared binding fields for the setup (enrollment) Schnorr proofs. Groups the
+/// six values that the client and server proofs both commit to, so the prove/
+/// verify signatures stay within clippy's argument limit without changing the
+/// transcript bytes.
+#[derive(Clone, Copy)]
+pub struct SetupBinding<'a> {
+    pub device_id: &'a [u8; 32],
+    pub device_pub: &'a RistrettoPoint,
+    pub server_pub: &'a RistrettoPoint,
+    pub client_nonce: &'a [u8; 32],
+    pub server_nonce: &'a [u8; 32],
+    pub setup_challenge: &'a [u8; SETUP_CHALLENGE_LEN],
+}
+
+pub fn prove_setup_client(x: &Scalar, binding: &SetupBinding) -> SchnorrProof {
     let mut rng = OsRng;
-    prove_setup_client_with_rng(
-        &mut rng,
-        x,
+    prove_setup_client_with_rng(&mut rng, x, binding)
+}
+
+pub fn prove_setup_client_with_rng<R: RngCore>(
+    rng: &mut R,
+    x: &Scalar,
+    binding: &SetupBinding,
+) -> SchnorrProof {
+    let SetupBinding {
         device_id,
         device_pub,
         server_pub,
         client_nonce,
         server_nonce,
         setup_challenge,
-    )
-}
-
-#[allow(clippy::too_many_arguments)]
-pub fn prove_setup_client_with_rng<R: RngCore>(
-    rng: &mut R,
-    x: &Scalar,
-    device_id: &[u8; 32],
-    device_pub: &RistrettoPoint,
-    server_pub: &RistrettoPoint,
-    client_nonce: &[u8; 32],
-    server_nonce: &[u8; 32],
-    setup_challenge: &[u8; SETUP_CHALLENGE_LEN],
-) -> SchnorrProof {
+    } = *binding;
     let r = random_scalar_with_rng(rng);
     let a = RISTRETTO_BASEPOINT_POINT * r;
     let c = tr::challenge(
@@ -168,15 +167,15 @@ pub fn prove_setup_client_with_rng<R: RngCore>(
     SchnorrProof { a, s: r + c * x }
 }
 
-pub fn verify_setup_client(
-    device_id: &[u8; 32],
-    device_pub: &RistrettoPoint,
-    server_pub: &RistrettoPoint,
-    client_nonce: &[u8; 32],
-    server_nonce: &[u8; 32],
-    setup_challenge: &[u8; SETUP_CHALLENGE_LEN],
-    proof: &SchnorrProof,
-) -> bool {
+pub fn verify_setup_client(binding: &SetupBinding, proof: &SchnorrProof) -> bool {
+    let SetupBinding {
+        device_id,
+        device_pub,
+        server_pub,
+        client_nonce,
+        server_nonce,
+        setup_challenge,
+    } = *binding;
     let c = tr::challenge(
         tr::T_SETUP,
         &[
@@ -193,39 +192,24 @@ pub fn verify_setup_client(
     RISTRETTO_BASEPOINT_POINT * proof.s == proof.a + device_pub * c
 }
 
-pub fn prove_setup_server(
-    server_sk: &Scalar,
-    device_id: &[u8; 32],
-    device_pub: &RistrettoPoint,
-    server_pub: &RistrettoPoint,
-    client_nonce: &[u8; 32],
-    server_nonce: &[u8; 32],
-    setup_challenge: &[u8; SETUP_CHALLENGE_LEN],
-) -> SchnorrProof {
+pub fn prove_setup_server(server_sk: &Scalar, binding: &SetupBinding) -> SchnorrProof {
     let mut rng = OsRng;
-    prove_setup_server_with_rng(
-        &mut rng,
-        server_sk,
+    prove_setup_server_with_rng(&mut rng, server_sk, binding)
+}
+
+pub fn prove_setup_server_with_rng<R: RngCore>(
+    rng: &mut R,
+    server_sk: &Scalar,
+    binding: &SetupBinding,
+) -> SchnorrProof {
+    let SetupBinding {
         device_id,
         device_pub,
         server_pub,
         client_nonce,
         server_nonce,
         setup_challenge,
-    )
-}
-
-#[allow(clippy::too_many_arguments)]
-pub fn prove_setup_server_with_rng<R: RngCore>(
-    rng: &mut R,
-    server_sk: &Scalar,
-    device_id: &[u8; 32],
-    device_pub: &RistrettoPoint,
-    server_pub: &RistrettoPoint,
-    client_nonce: &[u8; 32],
-    server_nonce: &[u8; 32],
-    setup_challenge: &[u8; SETUP_CHALLENGE_LEN],
-) -> SchnorrProof {
+    } = *binding;
     let r = random_scalar_with_rng(rng);
     let a = RISTRETTO_BASEPOINT_POINT * r;
     let c = tr::challenge(
@@ -247,15 +231,15 @@ pub fn prove_setup_server_with_rng<R: RngCore>(
     }
 }
 
-pub fn verify_setup_server(
-    server_pub: &RistrettoPoint,
-    device_id: &[u8; 32],
-    device_pub: &RistrettoPoint,
-    client_nonce: &[u8; 32],
-    server_nonce: &[u8; 32],
-    setup_challenge: &[u8; SETUP_CHALLENGE_LEN],
-    proof: &SchnorrProof,
-) -> bool {
+pub fn verify_setup_server(binding: &SetupBinding, proof: &SchnorrProof) -> bool {
+    let SetupBinding {
+        device_id,
+        device_pub,
+        server_pub,
+        client_nonce,
+        server_nonce,
+        setup_challenge,
+    } = *binding;
     let c = tr::challenge(
         tr::T_SETUP_SERVER,
         &[
@@ -462,39 +446,39 @@ pub fn verify_rerandomization(
 
 pub type SetBranch = (RistrettoPoint, Scalar, Scalar);
 
+/// Shared public binding for the role set-membership proof. The witness inputs
+/// (`role_code`, `blind_prime`) stay separate prove-only arguments.
+#[derive(Clone, Copy)]
+pub struct RoleSetBinding<'a> {
+    pub allowed_roles: &'a [u64],
+    pub c_prime: &'a RistrettoPoint,
+    pub pid: &'a [u8; 32],
+    pub nonce_c: &'a [u8; 32],
+    pub eph_c: &'a RistrettoPoint,
+}
+
 pub fn prove_role_set_membership(
-    allowed_roles: &[u64],
-    c_prime: &RistrettoPoint,
+    binding: &RoleSetBinding,
     role_code: u64,
     blind_prime: &Scalar,
-    pid: &[u8; 32],
-    nonce_c: &[u8; 32],
-    eph_c: &RistrettoPoint,
 ) -> Vec<SetBranch> {
     let mut rng = OsRng;
-    prove_role_set_membership_with_rng(
-        &mut rng,
+    prove_role_set_membership_with_rng(&mut rng, binding, role_code, blind_prime)
+}
+
+pub fn prove_role_set_membership_with_rng<R: RngCore>(
+    rng: &mut R,
+    binding: &RoleSetBinding,
+    role_code: u64,
+    blind_prime: &Scalar,
+) -> Vec<SetBranch> {
+    let RoleSetBinding {
         allowed_roles,
         c_prime,
-        role_code,
-        blind_prime,
         pid,
         nonce_c,
         eph_c,
-    )
-}
-
-#[allow(clippy::too_many_arguments)]
-pub fn prove_role_set_membership_with_rng<R: RngCore>(
-    rng: &mut R,
-    allowed_roles: &[u64],
-    c_prime: &RistrettoPoint,
-    role_code: u64,
-    blind_prime: &Scalar,
-    pid: &[u8; 32],
-    nonce_c: &[u8; 32],
-    eph_c: &RistrettoPoint,
-) -> Vec<SetBranch> {
+    } = *binding;
     let h = attr_h();
     let n = allowed_roles.len();
     let true_index = allowed_roles
@@ -558,14 +542,14 @@ pub fn prove_role_set_membership_with_rng<R: RngCore>(
         .collect()
 }
 
-pub fn verify_role_set_membership(
-    allowed_roles: &[u64],
-    c_prime: &RistrettoPoint,
-    pid: &[u8; 32],
-    nonce_c: &[u8; 32],
-    eph_c: &RistrettoPoint,
-    branches: &[SetBranch],
-) -> bool {
+pub fn verify_role_set_membership(binding: &RoleSetBinding, branches: &[SetBranch]) -> bool {
+    let RoleSetBinding {
+        allowed_roles,
+        c_prime,
+        pid,
+        nonce_c,
+        eph_c,
+    } = *binding;
     let h = attr_h();
     let n = allowed_roles.len();
     if branches.len() != n {
@@ -638,19 +622,36 @@ pub fn derive_session_key(
     okm
 }
 
-#[allow(clippy::too_many_arguments)]
-pub fn kc_transcript_hash(
-    pid: &[u8; 32],
-    a_c: &RistrettoPoint,
-    s_c: &Scalar,
-    nonce_c: &[u8; 32],
-    eph_c: &RistrettoPoint,
-    server_pub: &RistrettoPoint,
-    a_s: &RistrettoPoint,
-    s_s: &Scalar,
-    nonce_s: &[u8; 32],
-    eph_s: &RistrettoPoint,
-) -> [u8; 32] {
+/// All ten transcript inputs for the key-confirmation hash, grouped so the
+/// signature stays within clippy's argument limit. Field order matches the
+/// transcript append order in the body and must not be reordered.
+#[derive(Clone, Copy)]
+pub struct KcTranscriptParts<'a> {
+    pub pid: &'a [u8; 32],
+    pub a_c: &'a RistrettoPoint,
+    pub s_c: &'a Scalar,
+    pub nonce_c: &'a [u8; 32],
+    pub eph_c: &'a RistrettoPoint,
+    pub server_pub: &'a RistrettoPoint,
+    pub a_s: &'a RistrettoPoint,
+    pub s_s: &'a Scalar,
+    pub nonce_s: &'a [u8; 32],
+    pub eph_s: &'a RistrettoPoint,
+}
+
+pub fn kc_transcript_hash(parts: &KcTranscriptParts) -> [u8; 32] {
+    let KcTranscriptParts {
+        pid,
+        a_c,
+        s_c,
+        nonce_c,
+        eph_c,
+        server_pub,
+        a_s,
+        s_s,
+        nonce_s,
+        eph_s,
+    } = *parts;
     let mut t = Transcript::new(tr::T_KC_V2);
     t.append_message(b"pid", pid);
     t.append_point(b"a_c", a_c);
@@ -719,35 +720,19 @@ mod tests {
         let ns = [3u8; 32];
         let sc = [4u8; SETUP_CHALLENGE_LEN];
 
-        let cp = prove_setup_client(&x, &device_id, &device_pub, &server_pub, &nc, &ns, &sc);
-        assert!(verify_setup_client(
-            &device_id,
-            &device_pub,
-            &server_pub,
-            &nc,
-            &ns,
-            &sc,
-            &cp
-        ));
+        let binding = SetupBinding {
+            device_id: &device_id,
+            device_pub: &device_pub,
+            server_pub: &server_pub,
+            client_nonce: &nc,
+            server_nonce: &ns,
+            setup_challenge: &sc,
+        };
+        let cp = prove_setup_client(&x, &binding);
+        assert!(verify_setup_client(&binding, &cp));
 
-        let sp = prove_setup_server(
-            &server_sk,
-            &device_id,
-            &device_pub,
-            &server_pub,
-            &nc,
-            &ns,
-            &sc,
-        );
-        assert!(verify_setup_server(
-            &server_pub,
-            &device_id,
-            &device_pub,
-            &nc,
-            &ns,
-            &sc,
-            &sp
-        ));
+        let sp = prove_setup_server(&server_sk, &binding);
+        assert!(verify_setup_server(&binding, &sp));
     }
 
     #[test]
@@ -773,18 +758,15 @@ mod tests {
             &stored_c, &c_prime, &pid, &nc, &eph_c, &rp
         ));
 
-        let branches = prove_role_set_membership(
-            allowed,
-            &c_prime,
-            role_code,
-            &blind_prime,
-            &pid,
-            &nc,
-            &eph_c,
-        );
-        assert!(verify_role_set_membership(
-            allowed, &c_prime, &pid, &nc, &eph_c, &branches
-        ));
+        let role_binding = RoleSetBinding {
+            allowed_roles: allowed,
+            c_prime: &c_prime,
+            pid: &pid,
+            nonce_c: &nc,
+            eph_c: &eph_c,
+        };
+        let branches = prove_role_set_membership(&role_binding, role_code, &blind_prime);
+        assert!(verify_role_set_membership(&role_binding, &branches));
 
         let cp = prove_auth_client(&x, &pid, &nc, &eph_c);
         assert!(verify_auth_client(&device_pub, &pid, &nc, &eph_c, &cp));

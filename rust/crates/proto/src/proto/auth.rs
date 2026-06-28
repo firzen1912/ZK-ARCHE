@@ -13,6 +13,7 @@ use crate::crypto::{
     hmac_tag, kc_transcript_hash, prove_auth_client, prove_auth_server, prove_rerandomization,
     prove_role_set_membership, random_bytes_32, random_scalar, reject_identity,
     rerandomize_commitment, verify_auth_client, verify_rerandomization, verify_role_set_membership,
+    KcTranscriptParts, RoleSetBinding,
 };
 use crate::error::{ErrorCode, ProtoError, Result};
 use crate::profile::Profile;
@@ -62,13 +63,15 @@ pub fn run_auth_client<T: ClientTransport, C: CredentialStore>(
     let rerand_proof =
         prove_rerandomization(&role.commitment, &c_prime, &delta, &pid, &nonce_c, &eph_c);
     let branches = prove_role_set_membership(
-        allowed_roles,
-        &c_prime,
+        &RoleSetBinding {
+            allowed_roles,
+            c_prime: &c_prime,
+            pid: &pid,
+            nonce_c: &nonce_c,
+            eph_c: &eph_c,
+        },
         role.role_code,
         &blind_prime,
-        &pid,
-        &nonce_c,
-        &eph_c,
     );
 
     let a1 = Auth1 {
@@ -127,18 +130,18 @@ pub fn run_auth_client<T: ClientTransport, C: CredentialStore>(
         &eph_c,
         &a2.eph_s,
     );
-    let th = kc_transcript_hash(
-        &pid,
-        &client_proof.a,
-        &client_proof.s,
-        &nonce_c,
-        &eph_c,
-        &a2.server_pub,
-        &a2.server_proof.a,
-        &a2.server_proof.s,
-        &a2.nonce_s,
-        &a2.eph_s,
-    );
+    let th = kc_transcript_hash(&KcTranscriptParts {
+        pid: &pid,
+        a_c: &client_proof.a,
+        s_c: &client_proof.s,
+        nonce_c: &nonce_c,
+        eph_c: &eph_c,
+        server_pub: &a2.server_pub,
+        a_s: &a2.server_proof.a,
+        s_s: &a2.server_proof.s,
+        nonce_s: &a2.nonce_s,
+        eph_s: &a2.eph_s,
+    });
     let (k_s2c, k_c2s) = derive_kc_keys(&session_key, &th);
 
     let expected_tag_s = hmac_tag(&k_s2c, b"server finished", &th);
@@ -247,11 +250,13 @@ pub fn handle_auth_1<K: ServerKeyStore, R: RegistryStore, P: ReplayCache>(
 
     // 5. Verify role set-membership proof.
     if !verify_role_set_membership(
-        allowed_roles,
-        &a1.c_prime,
-        &a1.pid,
-        &a1.nonce_c,
-        &a1.eph_c,
+        &RoleSetBinding {
+            allowed_roles,
+            c_prime: &a1.c_prime,
+            pid: &a1.pid,
+            nonce_c: &a1.nonce_c,
+            eph_c: &a1.eph_c,
+        },
         &a1.branches,
     ) {
         return Err(ProtoError::wire(
@@ -277,18 +282,18 @@ pub fn handle_auth_1<K: ServerKeyStore, R: RegistryStore, P: ReplayCache>(
         &eph_s,
     );
 
-    let th = kc_transcript_hash(
-        &a1.pid,
-        &a1.client_proof.a,
-        &a1.client_proof.s,
-        &a1.nonce_c,
-        &a1.eph_c,
-        &server_pub,
-        &server_proof.a,
-        &server_proof.s,
-        &nonce_s,
-        &eph_s,
-    );
+    let th = kc_transcript_hash(&KcTranscriptParts {
+        pid: &a1.pid,
+        a_c: &a1.client_proof.a,
+        s_c: &a1.client_proof.s,
+        nonce_c: &a1.nonce_c,
+        eph_c: &a1.eph_c,
+        server_pub: &server_pub,
+        a_s: &server_proof.a,
+        s_s: &server_proof.s,
+        nonce_s: &nonce_s,
+        eph_s: &eph_s,
+    });
     let (k_s2c, k_c2s) = derive_kc_keys(&session_key, &th);
     let tag_s = hmac_tag(&k_s2c, b"server finished", &th);
     let expected_tag_c = hmac_tag(&k_c2s, b"client finished", &th);

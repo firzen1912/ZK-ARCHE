@@ -31,7 +31,7 @@ use proto::{
         kc_transcript_hash, make_role_commitment, prove_auth_client_with_rng,
         prove_auth_server_with_rng, prove_rerandomization_with_rng,
         prove_role_set_membership_with_rng, verify_auth_client, verify_rerandomization,
-        verify_role_set_membership,
+        verify_role_set_membership, KcTranscriptParts, RoleSetBinding,
     },
     transcript::{Transcript, T_PID},
 };
@@ -258,21 +258,26 @@ fn vec_role_set(out: &Path) {
     let eph_c = RISTRETTO_BASEPOINT_POINT * Scalar::from(101u64);
 
     let mut rng = drbg();
-    let branches = prove_role_set_membership_with_rng(
-        &mut rng,
-        &allowed,
-        &c_prime,
-        role_code,
-        &blind_prime,
-        &pid,
-        &nonce_c,
-        &eph_c,
-    );
-    let ok = verify_role_set_membership(&allowed, &c_prime, &pid, &nonce_c, &eph_c, &branches);
+    let binding = RoleSetBinding {
+        allowed_roles: &allowed,
+        c_prime: &c_prime,
+        pid: &pid,
+        nonce_c: &nonce_c,
+        eph_c: &eph_c,
+    };
+    let branches = prove_role_set_membership_with_rng(&mut rng, &binding, role_code, &blind_prime);
+    let ok = verify_role_set_membership(&binding, &branches);
 
     // Tamper case.
     let bad_c = c_prime + attr_h() * Scalar::from(999u64);
-    let bad = verify_role_set_membership(&allowed, &bad_c, &pid, &nonce_c, &eph_c, &branches);
+    let bad_binding = RoleSetBinding {
+        allowed_roles: &allowed,
+        c_prime: &bad_c,
+        pid: &pid,
+        nonce_c: &nonce_c,
+        eph_c: &eph_c,
+    };
+    let bad = verify_role_set_membership(&bad_binding, &branches);
 
     let branches_ser = branches
         .iter()
@@ -448,18 +453,18 @@ fn vec_kdf_kc(out: &Path) {
         &eph_s,
     );
 
-    let th = kc_transcript_hash(
-        &pid,
-        &cp.a,
-        &cp.s,
-        &nonce_c,
-        &eph_c,
-        &server_pub,
-        &sp.a,
-        &sp.s,
-        &nonce_s,
-        &eph_s,
-    );
+    let th = kc_transcript_hash(&KcTranscriptParts {
+        pid: &pid,
+        a_c: &cp.a,
+        s_c: &cp.s,
+        nonce_c: &nonce_c,
+        eph_c: &eph_c,
+        server_pub: &server_pub,
+        a_s: &sp.a,
+        s_s: &sp.s,
+        nonce_s: &nonce_s,
+        eph_s: &eph_s,
+    });
     let (k_s2c, k_c2s) = derive_kc_keys(&kc, &th);
     let tag_s = hmac_tag(&k_s2c, b"server finished", &th);
     let tag_c = hmac_tag(&k_c2s, b"client finished", &th);

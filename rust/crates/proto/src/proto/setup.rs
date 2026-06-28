@@ -13,7 +13,7 @@ use super::payloads::{decode_ack, encode_ack, Setup1, Setup2, Setup3};
 use crate::crypto::{
     derive_device_id, derive_device_scalar, encode_role, make_role_commitment, prove_setup_client,
     prove_setup_server, random_bytes_32, random_scalar, reject_identity, verify_setup_client,
-    verify_setup_server,
+    verify_setup_server, SetupBinding,
 };
 use crate::error::{ErrorCode, ProtoError, Result};
 use crate::profile::Profile;
@@ -106,15 +106,15 @@ pub fn run_setup_client<T: ClientTransport, C: CredentialStore>(
         }
     }
 
-    if !verify_setup_server(
-        &s2.server_pub,
-        &device_id,
-        &device_pub,
-        &client_nonce,
-        &s2.server_nonce,
-        &s2.setup_challenge,
-        &s2.server_proof,
-    ) {
+    let binding = SetupBinding {
+        device_id: &device_id,
+        device_pub: &device_pub,
+        server_pub: &s2.server_pub,
+        client_nonce: &client_nonce,
+        server_nonce: &s2.server_nonce,
+        setup_challenge: &s2.setup_challenge,
+    };
+    if !verify_setup_server(&binding, &s2.server_proof) {
         x.zeroize();
         return Err(ProtoError::wire(
             ErrorCode::ProofVerifyFailed,
@@ -123,15 +123,7 @@ pub fn run_setup_client<T: ClientTransport, C: CredentialStore>(
     }
 
     // --- SETUP_3 ---
-    let client_proof = prove_setup_client(
-        &x,
-        &device_id,
-        &device_pub,
-        &s2.server_pub,
-        &client_nonce,
-        &s2.server_nonce,
-        &s2.setup_challenge,
-    );
+    let client_proof = prove_setup_client(&x, &binding);
     x.zeroize();
     let s3 = Setup3 { client_proof };
     let ack_bytes = send_expect(
@@ -196,12 +188,14 @@ pub fn handle_setup_1<K: ServerKeyStore>(
 
     let server_proof = prove_setup_server(
         &server_sk,
-        &s1.device_id,
-        &s1.device_pub,
-        &server_pub,
-        &s1.client_nonce,
-        &server_nonce,
-        &sc,
+        &SetupBinding {
+            device_id: &s1.device_id,
+            device_pub: &s1.device_pub,
+            server_pub: &server_pub,
+            client_nonce: &s1.client_nonce,
+            server_nonce: &server_nonce,
+            setup_challenge: &sc,
+        },
     );
 
     let s2 = Setup2 {
@@ -237,12 +231,14 @@ pub fn handle_setup_3<R: RegistryStore>(
     let s3 = Setup3::decode(payload)?;
 
     let ok = verify_setup_client(
-        &pending.device_id,
-        &pending.device_pub,
-        server_pub,
-        &pending.client_nonce,
-        &pending.server_nonce,
-        &pending.setup_challenge,
+        &SetupBinding {
+            device_id: &pending.device_id,
+            device_pub: &pending.device_pub,
+            server_pub,
+            client_nonce: &pending.client_nonce,
+            server_nonce: &pending.server_nonce,
+            setup_challenge: &pending.setup_challenge,
+        },
         &s3.client_proof,
     );
     if !ok {
