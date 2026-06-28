@@ -1,0 +1,43 @@
+name: Python CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: python-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    name: python (pytest vs Rust vectors)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install libsodium (Ristretto255, loaded via ctypes)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libsodium-dev
+
+      - name: Run Python CI
+        run: ./scripts/ci-python.sh
+
+      - name: Upload CI log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-ci-log-${{ matrix.python-version }}
+          path: python/evidence/python-ci.log
+          if-no-files-found: ignore

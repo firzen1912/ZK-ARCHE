@@ -19,6 +19,11 @@ dev = ["pytest>=7"]
 zk-arche-client = "zk_arche.cli.client:main"
 zk-arche-server = "zk_arche.cli.server:main"
 
+# Restrict package discovery to the library so sibling dirs (tests, evidence,
+# test-vectors, build artifacts) are never mistaken for top-level packages.
+[tool.setuptools.packages.find]
+include = ["zk_arche*"]
+
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]

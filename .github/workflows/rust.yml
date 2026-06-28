@@ -1,0 +1,40 @@
+name: Rust CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: rust-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rust:
+    name: rust (fmt / check / test / clippy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain (from rust/rust-toolchain.toml)
+        working-directory: rust
+        run: |
+          rustup show
+          rustup component add rustfmt clippy
+
+      - name: Cache cargo build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+
+      - name: Run Rust CI
+        run: ./scripts/ci-rust.sh
+
+      - name: Upload CI log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-ci-log
+          path: rust/evidence/rust-ci.log
+          if-no-files-found: ignore
