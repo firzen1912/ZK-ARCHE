@@ -50,7 +50,7 @@ static void point_seed(uint8_t out[32], uint8_t seed)
 
 static auth_schnorr_proof_t proof_seed(uint8_t seed)
 {
-    auth_schnorr_proof_t p;
+    auth_schnorr_proof_t p = {0};
     point_seed(p.a, seed);
     scalar_seed(p.s, (uint8_t)(seed + 1u));
     return p;
