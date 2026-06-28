@@ -23,6 +23,11 @@ def _take_scalar(buf: bytes, off: int, what: str) -> tuple[Scalar, int]:
     return decode_scalar(b, what), off
 
 
+def _reject_trailing(data: bytes, off: int, what: str) -> None:
+    if off != len(data):
+        raise ProtoError.wire(ErrorCode.MalformedPacket, f"{what} has trailing bytes")
+
+
 @dataclass(frozen=True)
 class Setup1:
     pairing_token: bytes | None
@@ -52,6 +57,7 @@ class Setup1:
         device_pub, off = _take_point(data, off, "device_pub")
         client_nonce, off = _take(data, off, 32, "client_nonce")
         role_commitment, off = _take_point(data, off, "role_commitment")
+        _reject_trailing(data, off, "SETUP_1")
         return cls(token or None, device_id, device_pub, client_nonce, role_commitment)
 
 
@@ -75,6 +81,7 @@ class Setup2:
         server_pub, off = _take_point(data, off, "server_pub")
         a, off = _take_point(data, off, "setup a_s")
         s, off = _take_scalar(data, off, "setup s_s")
+        _reject_trailing(data, off, "SETUP_2")
         return cls(sn, sc, server_pub, SchnorrProof(a, s))
 
 
@@ -90,6 +97,7 @@ class Setup3:
         off = 0
         a, off = _take_point(data, off, "setup a_c")
         s, off = _take_scalar(data, off, "setup s_c")
+        _reject_trailing(data, off, "SETUP_3")
         return cls(SchnorrProof(a, s))
 
 
@@ -139,6 +147,7 @@ class Auth1:
             c, off = _take_scalar(data, off, "branch c")
             s, off = _take_scalar(data, off, "branch s")
             branches.append((a, c, s))
+        _reject_trailing(data, off, "AUTH_1")
         return cls(pid, SchnorrProof(ac, sc), nc, eph_c, c_prime, SchnorrProof(rand_a, rand_s), branches)
 
 
@@ -164,6 +173,7 @@ class Auth2:
         ns, off = _take(data, off, 32, "nonce_s")
         es, off = _take_point(data, off, "eph_s")
         tag, off = _take(data, off, 32, "tag_s")
+        _reject_trailing(data, off, "AUTH_2")
         return cls(sp, SchnorrProof(a, s), ns, es, tag)
 
 
@@ -178,7 +188,8 @@ class Auth3:
 
     @classmethod
     def decode(cls, data: bytes) -> "Auth3":
-        tag, _ = _take(data, 0, 32, "tag_c")
+        tag, off = _take(data, 0, 32, "tag_c")
+        _reject_trailing(data, off, "AUTH_3")
         return cls(tag)
 
 

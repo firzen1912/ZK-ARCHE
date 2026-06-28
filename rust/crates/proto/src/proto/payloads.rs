@@ -45,6 +45,16 @@ pub(crate) fn take_scalar<'a>(buf: &'a [u8], what: &'static str) -> Result<(Scal
     Ok((decode_scalar(b, what)?, rest))
 }
 
+fn reject_trailing(buf: &[u8], what: &'static str) -> Result<()> {
+    if !buf.is_empty() {
+        return Err(ProtoError::wire(
+            ErrorCode::MalformedPacket,
+            format!("{what} has trailing bytes"),
+        ));
+    }
+    Ok(())
+}
+
 // ---- SETUP_1 (client -> server) ----
 
 /// `SETUP_1` payload layout:
@@ -110,7 +120,8 @@ impl Setup1 {
         let (device_id, rest) = take_fixed::<32>(buf)?;
         let (device_pub, rest) = take_point(rest, "device_pub")?;
         let (client_nonce, rest) = take_fixed::<32>(rest)?;
-        let (role_commitment, _rest) = take_point(rest, "role_commitment")?;
+        let (role_commitment, rest) = take_point(rest, "role_commitment")?;
+        reject_trailing(rest, "SETUP_1")?;
 
         Ok(Self {
             pairing_token,
@@ -155,7 +166,8 @@ impl Setup2 {
         let (sc, rest) = take_fixed::<SETUP_CHALLENGE_LEN>(rest)?;
         let (server_pub, rest) = take_point(rest, "server_pub")?;
         let (a, rest) = take_point(rest, "setup a_s")?;
-        let (s, _rest) = take_scalar(rest, "setup s_s")?;
+        let (s, rest) = take_scalar(rest, "setup s_s")?;
+        reject_trailing(rest, "SETUP_2")?;
         Ok(Self {
             server_nonce: *sn,
             setup_challenge: *sc,
@@ -181,7 +193,8 @@ impl Setup3 {
     }
     pub fn decode(buf: &[u8]) -> Result<Self> {
         let (a, rest) = take_point(buf, "setup a_c")?;
-        let (s, _) = take_scalar(rest, "setup s_c")?;
+        let (s, rest) = take_scalar(rest, "setup s_c")?;
+        reject_trailing(rest, "SETUP_3")?;
         Ok(Self {
             client_proof: SchnorrProof { a, s },
         })
@@ -266,6 +279,7 @@ impl Auth1 {
             branches.push((a, c, s));
             rest = r2;
         }
+        reject_trailing(rest, "AUTH_1")?;
 
         Ok(Self {
             pid: *pid,
@@ -311,7 +325,8 @@ impl Auth2 {
         let (s, rest) = take_scalar(rest, "s_s")?;
         let (ns, rest) = take_fixed::<32>(rest)?;
         let (es, rest) = take_point(rest, "eph_s")?;
-        let (ts, _) = take_fixed::<32>(rest)?;
+        let (ts, rest) = take_fixed::<32>(rest)?;
+        reject_trailing(rest, "AUTH_2")?;
         Ok(Self {
             server_pub: sp,
             server_proof: SchnorrProof { a, s },
@@ -334,7 +349,8 @@ impl Auth3 {
         self.tag_c.to_vec()
     }
     pub fn decode(buf: &[u8]) -> Result<Self> {
-        let (tag, _) = take_fixed::<32>(buf)?;
+        let (tag, rest) = take_fixed::<32>(buf)?;
+        reject_trailing(rest, "AUTH_3")?;
         Ok(Self { tag_c: *tag })
     }
 }

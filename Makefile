@@ -1,7 +1,12 @@
-.PHONY: ci rust-ci c-ci python-ci c-vectors clean
+.PHONY: ci release-qualification release-qual rust-ci c-ci python-ci c-vectors clean
 
 ci:
 	bash ./scripts/ci-all.sh
+
+release-qualification:
+	bash ./scripts/ci-release-qualification.sh
+
+release-qual: release-qualification
 
 rust-ci:
 	bash ./scripts/ci-rust.sh

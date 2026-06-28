@@ -44,17 +44,14 @@ void auth_scalar_from_wide(const uint8_t wide[64],
 
 auth_err_t auth_check_point(const uint8_t point[AUTH_POINT_LEN])
 {
-    /* is_valid_point returns 1 on valid, 0 otherwise. It also rejects
-     * the identity point, which is exactly the check we need (matches
-     * Rust reject_identity + decompress_point). */
+    static const uint8_t identity[AUTH_POINT_LEN] = {0};
+    if (sodium_memcmp(point, identity, AUTH_POINT_LEN) == 0) {
+        return AUTH_ERR_IDENTITY_POINT;
+    }
+
+    /* is_valid_point returns 1 on canonical encodings. The identity is a
+     * canonical Ristretto encoding, so reject it explicitly first. */
     if (crypto_core_ristretto255_is_valid_point(point) != 1) {
-        /* Distinguish identity from malformed: the all-zero encoding is
-         * the canonical identity; any other invalid encoding is a bad
-         * point. */
-        static const uint8_t identity[AUTH_POINT_LEN] = {0};
-        if (sodium_memcmp(point, identity, AUTH_POINT_LEN) == 0) {
-            return AUTH_ERR_IDENTITY_POINT;
-        }
         return AUTH_ERR_INVALID_POINT;
     }
     return AUTH_OK;

@@ -28,6 +28,12 @@ PROTO_SRCS  := $(wildcard src/proto/*.c)
 TRANS_SRCS  := $(wildcard src/transport/*.c)
 STORE_SRCS  := $(wildcard src/store/*.c)
 
+HOST_OS := $(shell uname -s 2>/dev/null || echo unknown)
+ifneq (,$(filter Windows_NT MSYS_NT% MINGW% CYGWIN%,$(OS) $(HOST_OS)))
+TRANS_SRCS :=
+STORE_SRCS :=
+endif
+
 LIB_SRCS := $(CRYPTO_SRCS) $(WIRE_SRCS) $(PROTO_SRCS) $(TRANS_SRCS) $(STORE_SRCS)
 LIB_OBJS := $(patsubst src/%.c,$(BUILD)/%.o,$(LIB_SRCS))
 
@@ -35,6 +41,9 @@ TEST_SRCS := $(wildcard tests/*.c)
 TEST_BINS := $(patsubst tests/%.c,$(BUILD)/tests/%,$(TEST_SRCS))
 
 BINS_SRCS := $(wildcard bin/*.c)
+ifneq (,$(filter Windows_NT MSYS_NT% MINGW% CYGWIN%,$(OS) $(HOST_OS)))
+BINS_SRCS :=
+endif
 BINS      := $(patsubst bin/%.c,$(BUILD)/%,$(BINS_SRCS))
 
 .PHONY: all test clean lib bins tests

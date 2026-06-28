@@ -4,8 +4,10 @@
 /c/build/
 
 # Generated evidence and local state (top-level and per-lane)
+/evidence/
 /evidence/*.log
 /c/evidence/
+/c/.tmp/
 /rust/evidence/
 /python/evidence/
 
@@ -22,9 +24,11 @@
 Thumbs.db
 *.swp
 *.tmp
+__pycache__/
 
 # Python artifacts
 /python/.pytest_cache/
+/python/.pytest-tmp/
 /python/__pycache__/
 /python/**/*.pyc
 /python/.mypy_cache/
@@ -32,3 +36,4 @@ Thumbs.db
 /python/build/
 /python/dist/
 /python/*.egg-info/
+/.tmp/

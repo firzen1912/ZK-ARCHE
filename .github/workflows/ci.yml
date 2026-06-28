@@ -95,6 +95,7 @@ jobs:
     timeout-minutes: 30
     env:
       CC: gcc
+      REQUIRE_SANITIZERS: "1"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -103,7 +104,7 @@ jobs:
       - name: Install C build and analysis dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential cppcheck pkg-config libsodium-dev
+          sudo apt-get install -y build-essential clang cppcheck pkg-config libsodium-dev
 
       - name: Run C CI
         run: bash ./scripts/ci-c.sh
@@ -116,10 +117,64 @@ jobs:
           path: c/evidence/c-ci.log
           if-no-files-found: ignore
 
+  release-qualification:
+    name: Release qualification (interop / security)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    needs: [rust, python, c]
+    env:
+      CC: gcc
+      REQUIRE_SANITIZERS: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install Rust toolchain
+        working-directory: rust
+        run: |
+          rustup show
+          rustup component add rustfmt clippy
+
+      - name: Cache cargo build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+
+      - name: Install Rust security tooling
+        run: cargo install cargo-audit --locked
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: python/pyproject.toml
+
+      - name: Install C build and analysis dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential clang cppcheck pkg-config libsodium-dev
+
+      - name: Run release qualification
+        run: bash ./scripts/ci-release-qualification.sh
+
+      - name: Upload release qualification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-qualification-evidence
+          path: |
+            evidence/release-qualification/**
+            rust/evidence/**
+            python/evidence/**
+            c/evidence/**
+          if-no-files-found: ignore
+
   ci-complete:
     name: CI complete
     runs-on: ubuntu-latest
-    needs: [rust, python, c]
+    needs: [rust, python, c, release-qualification]
     if: always()
     steps:
       - name: Check required jobs
@@ -136,4 +191,8 @@ jobs:
             echo "C CI failed: ${{ needs.c.result }}" >&2
             exit 1
           fi
-          echo "All CI lanes passed."
+          if [ "${{ needs.release-qualification.result }}" != "success" ]; then
+            echo "Release qualification failed: ${{ needs.release-qualification.result }}" >&2
+            exit 1
+          fi
+          echo "All CI lanes and release qualification passed."

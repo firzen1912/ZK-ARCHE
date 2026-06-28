@@ -3,6 +3,7 @@ from __future__ import annotations
 import ctypes
 import ctypes.util
 import os
+from pathlib import Path
 
 from .errors import ErrorCode, ProtoError
 
@@ -15,9 +16,10 @@ SCALAR_ORDER = 2**252 + 27742317777372353535851937790883648493
 
 class Sodium:
     def __init__(self) -> None:
-        path = ctypes.util.find_library("sodium")
+        path = _find_libsodium()
         if not path:
             raise ProtoError.internal("libsodium not found; install libsodium with Ristretto255 support")
+        self._dll_dir = _add_windows_dll_directory(path)
         self.lib = ctypes.cdll.LoadLibrary(path)
         if self.lib.sodium_init() < 0:
             raise ProtoError.internal("libsodium initialization failed")
@@ -131,6 +133,32 @@ class Sodium:
 
 
 _SODIUM: Sodium | None = None
+
+
+def _find_libsodium() -> str | None:
+    override = os.environ.get("ZK_ARCHE_LIBSODIUM")
+    if override:
+        return override
+
+    path = ctypes.util.find_library("sodium")
+    if path:
+        return path
+
+    names = ("libsodium.dll", "libsodium-26.dll", "sodium.dll")
+    for directory in os.environ.get("PATH", "").split(os.pathsep):
+        if not directory:
+            continue
+        for name in names:
+            candidate = Path(directory) / name
+            if candidate.is_file():
+                return str(candidate)
+    return None
+
+
+def _add_windows_dll_directory(path: str):
+    if os.name != "nt" or not os.path.isabs(path) or not hasattr(os, "add_dll_directory"):
+        return None
+    return os.add_dll_directory(str(Path(path).parent))
 
 
 def sodium() -> Sodium:

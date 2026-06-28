@@ -25,5 +25,5 @@ command -v "$PYTHON" >/dev/null 2>&1 || PYTHON=python3
   echo "== python dependency audit =="
   "$PYTHON" -m pip_audit
   echo "== pytest =="
-  "$PYTHON" -m pytest -q
+  "$PYTHON" -m pytest -q --basetemp .pytest-tmp
 } 2>&1 | tee evidence/python-ci.log

@@ -6,6 +6,11 @@
 
 #include <string.h>
 
+static uint16_t load_u16_le(const uint8_t *p)
+{
+    return (uint16_t)((uint16_t)p[0] | (uint16_t)((uint16_t)p[1] << 8));
+}
+
 /* ---- Header ---- */
 
 auth_err_t auth_header_encode(
@@ -37,7 +42,7 @@ auth_err_t auth_header_decode(
 
     hdr->version  = buf[0];
     hdr->pkt_type = buf[1];
-    hdr->flags    = (uint16_t)buf[2] | ((uint16_t)buf[3] << 8);
+    hdr->flags    = load_u16_le(buf + 2);
     memcpy(hdr->session_id, buf + 4, AUTH_SESSION_ID_LEN);
     hdr->seq = (uint32_t)buf[20]
              | ((uint32_t)buf[21] <<  8)
@@ -109,7 +114,7 @@ auth_err_t auth_packet_parse_error(
     const char **msg_out, size_t *msg_len_out)
 {
     if (!payload || payload_len < 2) return AUTH_ERR_MALFORMED_PACKET;
-    uint16_t code = (uint16_t)payload[0] | ((uint16_t)payload[1] << 8);
+    uint16_t code = load_u16_le(payload);
     if (code_out)    *code_out    = (auth_err_t)code;
     if (msg_out)     *msg_out     = (const char *)(payload + 2);
     if (msg_len_out) *msg_len_out = payload_len - 2;
@@ -146,8 +151,8 @@ auth_err_t auth_tlv_read(
     if (*offset >= buf_len) return AUTH_ERR_PAYLOAD_TOO_SHORT;
     if (buf_len - *offset < 4) return AUTH_ERR_MALFORMED_PACKET;
 
-    uint16_t tag = (uint16_t)buf[*offset + 0] | ((uint16_t)buf[*offset + 1] << 8);
-    uint16_t len = (uint16_t)buf[*offset + 2] | ((uint16_t)buf[*offset + 3] << 8);
+    uint16_t tag = load_u16_le(buf + *offset);
+    uint16_t len = load_u16_le(buf + *offset + 2);
     if (4 + (size_t)len > buf_len - *offset) return AUTH_ERR_MALFORMED_PACKET;
     if (tag_out)      *tag_out      = tag;
     if (value_out)    *value_out    = buf + *offset + 4;
@@ -222,7 +227,7 @@ auth_err_t auth_hello_decode(
     if (buf_len < 3) return AUTH_ERR_PAYLOAD_TOO_SHORT;
     size_t off = 0;
     h->version = buf[off++];
-    uint16_t nsu = (uint16_t)buf[off] | ((uint16_t)buf[off + 1] << 8);
+    uint16_t nsu = load_u16_le(buf + off);
     off += 2;
     if (nsu > sizeof h->suites / sizeof h->suites[0])
         return AUTH_ERR_MALFORMED_PACKET;
@@ -231,7 +236,7 @@ auth_err_t auth_hello_decode(
 
     h->n_suites = nsu;
     for (size_t i = 0; i < nsu; ++i) {
-        h->suites[i] = (uint16_t)buf[off] | ((uint16_t)buf[off + 1] << 8);
+        h->suites[i] = load_u16_le(buf + off);
         off += 2;
     }
     h->caps = 0;
@@ -260,7 +265,7 @@ auth_err_t auth_hello_decode(
         case AUTH_TLV_MTU_HINT:
             if (value_len != 2) return AUTH_ERR_MALFORMED_PACKET;
             h->has_mtu_hint = 1;
-            h->mtu_hint = (uint16_t)value[0] | ((uint16_t)value[1] << 8);
+            h->mtu_hint = load_u16_le(value);
             break;
         case AUTH_TLV_VENDOR_ID:
             if (value_len > sizeof h->vendor_id) break;  /* silently truncate */

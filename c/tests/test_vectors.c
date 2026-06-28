@@ -94,7 +94,11 @@ static char *read_file(const char *path)
  * That is exactly libsodium's crypto_stream_chacha20_ietf.
  */
 
-static const uint8_t DRBG_SEED[32] = "iot-auth/test-vectors/v1        ";
+static const uint8_t DRBG_SEED[32] = {
+    'i','o','t','-','a','u','t','h','/',
+    't','e','s','t','-','v','e','c','t','o','r','s','/',
+    'v','1',' ',' ',' ',' ',' ',' ',' ',' '
+};
 
 /* Fill `buf` with the next `n` bytes from the stream starting at `offset`. */
 static int drbg_generate(uint8_t *buf, size_t n, size_t offset)

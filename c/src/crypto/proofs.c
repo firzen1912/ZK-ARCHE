@@ -660,7 +660,7 @@ auth_err_t auth_prove_role_set_membership_with_bytes(
      *                         A_i = h*s_i - Y_i*c_i
      */
     uint8_t w_true[32] = {0};
-    uint8_t A_all[AUTH_MAX_ROLES * 32];
+    uint8_t A_all[AUTH_MAX_ROLES * 32] = {0};
     memset(&branches[0], 0, sizeof(auth_set_branch_t) * n);
 
     for (size_t i = 0; i < n; ++i) {
