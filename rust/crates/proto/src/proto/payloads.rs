@@ -23,7 +23,7 @@ pub(crate) fn put_scalar(out: &mut Vec<u8>, s: &Scalar) {
     out.extend_from_slice(&s.to_bytes());
 }
 
-pub(crate) fn take_fixed<'a, const N: usize>(buf: &'a [u8]) -> Result<(&'a [u8; N], &'a [u8])> {
+pub(crate) fn take_fixed<const N: usize>(buf: &[u8]) -> Result<(&[u8; N], &[u8])> {
     if buf.len() < N {
         return Err(ProtoError::wire(ErrorCode::PayloadTooShort, "short read"));
     }
@@ -32,7 +32,10 @@ pub(crate) fn take_fixed<'a, const N: usize>(buf: &'a [u8]) -> Result<(&'a [u8; 
     Ok((head.try_into().unwrap(), tail))
 }
 
-pub(crate) fn take_point<'a>(buf: &'a [u8], what: &'static str) -> Result<(RistrettoPoint, &'a [u8])> {
+pub(crate) fn take_point<'a>(
+    buf: &'a [u8],
+    what: &'static str,
+) -> Result<(RistrettoPoint, &'a [u8])> {
     let (b, rest) = take_fixed::<32>(buf)?;
     Ok((decompress_point(b, what)?, rest))
 }
@@ -54,11 +57,11 @@ pub(crate) fn take_scalar<'a>(buf: &'a [u8], what: &'static str) -> Result<(Scal
 /// 32  role_commitment
 /// ```
 pub struct Setup1 {
-    pub pairing_token:    Option<Vec<u8>>,
-    pub device_id:        [u8; 32],
-    pub device_pub:       RistrettoPoint,
-    pub client_nonce:     [u8; 32],
-    pub role_commitment:  RistrettoPoint,
+    pub pairing_token: Option<Vec<u8>>,
+    pub device_id: [u8; 32],
+    pub device_pub: RistrettoPoint,
+    pub client_nonce: [u8; 32],
+    pub role_commitment: RistrettoPoint,
 }
 
 impl Setup1 {
@@ -77,23 +80,34 @@ impl Setup1 {
 
     pub fn decode(mut buf: &[u8]) -> Result<Self> {
         if buf.is_empty() {
-            return Err(ProtoError::wire(ErrorCode::PayloadTooShort, "SETUP_1 empty"));
+            return Err(ProtoError::wire(
+                ErrorCode::PayloadTooShort,
+                "SETUP_1 empty",
+            ));
         }
         let tlen = buf[0] as usize;
         buf = &buf[1..];
         if tlen > 128 {
-            return Err(ProtoError::wire(ErrorCode::MalformedPacket, "pairing token len > 128"));
+            return Err(ProtoError::wire(
+                ErrorCode::MalformedPacket,
+                "pairing token len > 128",
+            ));
         }
-        let pairing_token = if tlen == 0 { None } else {
+        let pairing_token = if tlen == 0 {
+            None
+        } else {
             let (t, rest) = buf.split_at(tlen.min(buf.len()));
             if t.len() != tlen {
-                return Err(ProtoError::wire(ErrorCode::PayloadTooShort, "pairing token truncated"));
+                return Err(ProtoError::wire(
+                    ErrorCode::PayloadTooShort,
+                    "pairing token truncated",
+                ));
             }
             buf = rest;
             Some(t.to_vec())
         };
 
-        let (device_id, rest)  = take_fixed::<32>(buf)?;
+        let (device_id, rest) = take_fixed::<32>(buf)?;
         let (device_pub, rest) = take_point(rest, "device_pub")?;
         let (client_nonce, rest) = take_fixed::<32>(rest)?;
         let (role_commitment, _rest) = take_point(rest, "role_commitment")?;
@@ -119,10 +133,10 @@ impl Setup1 {
 /// 32  s_s
 /// ```
 pub struct Setup2 {
-    pub server_nonce:    [u8; 32],
+    pub server_nonce: [u8; 32],
     pub setup_challenge: [u8; SETUP_CHALLENGE_LEN],
-    pub server_pub:      RistrettoPoint,
-    pub server_proof:    SchnorrProof,
+    pub server_pub: RistrettoPoint,
+    pub server_proof: SchnorrProof,
 }
 
 impl Setup2 {
@@ -130,8 +144,8 @@ impl Setup2 {
         let mut out = Vec::with_capacity(32 + SETUP_CHALLENGE_LEN + 32 * 3);
         out.extend_from_slice(&self.server_nonce);
         out.extend_from_slice(&self.setup_challenge);
-        put_point (&mut out, &self.server_pub);
-        put_point (&mut out, &self.server_proof.a);
+        put_point(&mut out, &self.server_pub);
+        put_point(&mut out, &self.server_proof.a);
         put_scalar(&mut out, &self.server_proof.s);
         out
     }
@@ -161,14 +175,16 @@ pub struct Setup3 {
 impl Setup3 {
     pub fn encode(&self) -> Vec<u8> {
         let mut out = Vec::with_capacity(64);
-        put_point (&mut out, &self.client_proof.a);
+        put_point(&mut out, &self.client_proof.a);
         put_scalar(&mut out, &self.client_proof.s);
         out
     }
     pub fn decode(buf: &[u8]) -> Result<Self> {
         let (a, rest) = take_point(buf, "setup a_c")?;
-        let (s, _)    = take_scalar(rest, "setup s_c")?;
-        Ok(Self { client_proof: SchnorrProof { a, s } })
+        let (s, _) = take_scalar(rest, "setup s_c")?;
+        Ok(Self {
+            client_proof: SchnorrProof { a, s },
+        })
     }
 }
 
@@ -188,13 +204,13 @@ impl Setup3 {
 /// branches_len * (32 A_i | 32 c_i | 32 s_i)
 /// ```
 pub struct Auth1 {
-    pub pid:          [u8; 32],
+    pub pid: [u8; 32],
     pub client_proof: SchnorrProof,
-    pub nonce_c:      [u8; 32],
-    pub eph_c:        RistrettoPoint,
-    pub c_prime:      RistrettoPoint,
+    pub nonce_c: [u8; 32],
+    pub eph_c: RistrettoPoint,
+    pub c_prime: RistrettoPoint,
     pub rerand_proof: SchnorrProof,
-    pub branches:     Vec<SetBranch>,
+    pub branches: Vec<SetBranch>,
 }
 
 impl Auth1 {
@@ -202,16 +218,16 @@ impl Auth1 {
         let n = self.branches.len();
         let mut out = Vec::with_capacity(32 * 8 + 2 + 96 * n);
         out.extend_from_slice(&self.pid);
-        put_point (&mut out, &self.client_proof.a);
+        put_point(&mut out, &self.client_proof.a);
         put_scalar(&mut out, &self.client_proof.s);
         out.extend_from_slice(&self.nonce_c);
-        put_point (&mut out, &self.eph_c);
-        put_point (&mut out, &self.c_prime);
-        put_point (&mut out, &self.rerand_proof.a);
+        put_point(&mut out, &self.eph_c);
+        put_point(&mut out, &self.c_prime);
+        put_point(&mut out, &self.rerand_proof.a);
         put_scalar(&mut out, &self.rerand_proof.s);
         out.extend_from_slice(&(n as u16).to_le_bytes());
         for (a, c, s) in &self.branches {
-            put_point (&mut out, a);
+            put_point(&mut out, a);
             put_scalar(&mut out, c);
             put_scalar(&mut out, s);
         }
@@ -220,27 +236,33 @@ impl Auth1 {
 
     pub fn decode(buf: &[u8]) -> Result<Self> {
         let (pid, rest) = take_fixed::<32>(buf)?;
-        let (ac, rest)  = take_point (rest, "a_c")?;
-        let (sc, rest)  = take_scalar(rest, "s_c")?;
-        let (nc, rest)  = take_fixed::<32>(rest)?;
+        let (ac, rest) = take_point(rest, "a_c")?;
+        let (sc, rest) = take_scalar(rest, "s_c")?;
+        let (nc, rest) = take_fixed::<32>(rest)?;
         let (eph_c, rest) = take_point(rest, "eph_c")?;
         let (c_prime, rest) = take_point(rest, "c_prime")?;
-        let (rand_a, rest) = take_point (rest, "rerand_a")?;
+        let (rand_a, rest) = take_point(rest, "rerand_a")?;
         let (rand_s, rest) = take_scalar(rest, "rerand_s")?;
 
         if rest.len() < 2 {
-            return Err(ProtoError::wire(ErrorCode::PayloadTooShort, "branch count missing"));
+            return Err(ProtoError::wire(
+                ErrorCode::PayloadTooShort,
+                "branch count missing",
+            ));
         }
         let n = u16::from_le_bytes([rest[0], rest[1]]) as usize;
         let mut rest = &rest[2..];
         if rest.len() < 96 * n {
-            return Err(ProtoError::wire(ErrorCode::PayloadTooShort, "branch payload truncated"));
+            return Err(ProtoError::wire(
+                ErrorCode::PayloadTooShort,
+                "branch payload truncated",
+            ));
         }
         let mut branches = Vec::with_capacity(n);
         for _ in 0..n {
-            let (a, r2) = take_point (rest, "branch A")?;
-            let (c, r2) = take_scalar(r2,   "branch c")?;
-            let (s, r2) = take_scalar(r2,   "branch s")?;
+            let (a, r2) = take_point(rest, "branch A")?;
+            let (c, r2) = take_scalar(r2, "branch c")?;
+            let (s, r2) = take_scalar(r2, "branch s")?;
             branches.push((a, c, s));
             rest = r2;
         }
@@ -251,7 +273,10 @@ impl Auth1 {
             nonce_c: *nc,
             eph_c,
             c_prime,
-            rerand_proof: SchnorrProof { a: rand_a, s: rand_s },
+            rerand_proof: SchnorrProof {
+                a: rand_a,
+                s: rand_s,
+            },
             branches,
         })
     }
@@ -261,33 +286,39 @@ impl Auth1 {
 
 /// `AUTH_2` payload: `server_pub(32) | a_s(32) | s_s(32) | nonce_s(32) | eph_s(32) | tag_s(32)`
 pub struct Auth2 {
-    pub server_pub:   RistrettoPoint,
+    pub server_pub: RistrettoPoint,
     pub server_proof: SchnorrProof,
-    pub nonce_s:      [u8; 32],
-    pub eph_s:        RistrettoPoint,
-    pub tag_s:        [u8; 32],
+    pub nonce_s: [u8; 32],
+    pub eph_s: RistrettoPoint,
+    pub tag_s: [u8; 32],
 }
 
 impl Auth2 {
     pub fn encode(&self) -> Vec<u8> {
         let mut out = Vec::with_capacity(192);
-        put_point (&mut out, &self.server_pub);
-        put_point (&mut out, &self.server_proof.a);
+        put_point(&mut out, &self.server_pub);
+        put_point(&mut out, &self.server_proof.a);
         put_scalar(&mut out, &self.server_proof.s);
         out.extend_from_slice(&self.nonce_s);
-        put_point (&mut out, &self.eph_s);
+        put_point(&mut out, &self.eph_s);
         out.extend_from_slice(&self.tag_s);
         out
     }
 
     pub fn decode(buf: &[u8]) -> Result<Self> {
-        let (sp, rest) = take_point (buf,  "server_pub")?;
-        let (a,  rest) = take_point (rest, "a_s")?;
-        let (s,  rest) = take_scalar(rest, "s_s")?;
+        let (sp, rest) = take_point(buf, "server_pub")?;
+        let (a, rest) = take_point(rest, "a_s")?;
+        let (s, rest) = take_scalar(rest, "s_s")?;
         let (ns, rest) = take_fixed::<32>(rest)?;
-        let (es, rest) = take_point (rest, "eph_s")?;
-        let (ts, _)    = take_fixed::<32>(rest)?;
-        Ok(Self { server_pub: sp, server_proof: SchnorrProof { a, s }, nonce_s: *ns, eph_s: es, tag_s: *ts })
+        let (es, rest) = take_point(rest, "eph_s")?;
+        let (ts, _) = take_fixed::<32>(rest)?;
+        Ok(Self {
+            server_pub: sp,
+            server_proof: SchnorrProof { a, s },
+            nonce_s: *ns,
+            eph_s: es,
+            tag_s: *ts,
+        })
     }
 }
 
@@ -299,7 +330,9 @@ pub struct Auth3 {
 }
 
 impl Auth3 {
-    pub fn encode(&self) -> Vec<u8> { self.tag_c.to_vec() }
+    pub fn encode(&self) -> Vec<u8> {
+        self.tag_c.to_vec()
+    }
     pub fn decode(buf: &[u8]) -> Result<Self> {
         let (tag, _) = take_fixed::<32>(buf)?;
         Ok(Self { tag_c: *tag })
@@ -311,7 +344,9 @@ impl Auth3 {
 /// `SETUP_ACK` and `AUTH_ACK` both carry a single `0x01` byte.
 pub const ACK_BYTE: u8 = 0x01;
 
-pub fn encode_ack() -> Vec<u8> { vec![ACK_BYTE] }
+pub fn encode_ack() -> Vec<u8> {
+    vec![ACK_BYTE]
+}
 
 pub fn decode_ack(buf: &[u8]) -> Result<()> {
     if buf.len() != 1 || buf[0] != ACK_BYTE {
@@ -325,7 +360,9 @@ mod tests {
     use super::*;
     use curve25519_dalek::constants::RISTRETTO_BASEPOINT_POINT;
 
-    fn dummy_scalar() -> Scalar { Scalar::from(7u64) }
+    fn dummy_scalar() -> Scalar {
+        Scalar::from(7u64)
+    }
 
     #[test]
     fn setup1_roundtrip() {
@@ -344,7 +381,10 @@ mod tests {
 
     #[test]
     fn auth1_roundtrip() {
-        let proof = SchnorrProof { a: RISTRETTO_BASEPOINT_POINT, s: dummy_scalar() };
+        let proof = SchnorrProof {
+            a: RISTRETTO_BASEPOINT_POINT,
+            s: dummy_scalar(),
+        };
         let msg = Auth1 {
             pid: [9u8; 32],
             client_proof: proof,

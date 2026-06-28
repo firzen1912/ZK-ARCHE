@@ -10,11 +10,11 @@ use hmac::{Hmac, Mac};
 use rand::{rngs::OsRng, RngCore};
 use sha2::{Digest, Sha256, Sha512};
 
-use blake2::{Blake2b512, Blake2bVar};
 use blake2::digest::{Update as _, VariableOutput};
+use blake2::{Blake2b512, Blake2bVar};
 
 use crate::error::{ErrorCode, ProtoError, Result};
-use crate::transcript::{self as tr, Transcript, TVal};
+use crate::transcript::{self as tr, TVal, Transcript};
 
 type HmacSha256 = Hmac<Sha256>;
 
@@ -127,10 +127,19 @@ pub fn prove_setup_client(
     setup_challenge: &[u8; SETUP_CHALLENGE_LEN],
 ) -> SchnorrProof {
     let mut rng = OsRng;
-    prove_setup_client_with_rng(&mut rng, x, device_id, device_pub, server_pub,
-                                client_nonce, server_nonce, setup_challenge)
+    prove_setup_client_with_rng(
+        &mut rng,
+        x,
+        device_id,
+        device_pub,
+        server_pub,
+        client_nonce,
+        server_nonce,
+        setup_challenge,
+    )
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn prove_setup_client_with_rng<R: RngCore>(
     rng: &mut R,
     x: &Scalar,
@@ -146,13 +155,13 @@ pub fn prove_setup_client_with_rng<R: RngCore>(
     let c = tr::challenge(
         tr::T_SETUP,
         &[
-            (b"role",            TVal::Bytes(b"client")),
-            (b"device_id",       TVal::Bytes(device_id)),
-            (b"device_pub",      TVal::Point(device_pub)),
-            (b"server_pub",      TVal::Point(server_pub)),
-            (b"a",               TVal::Point(&a)),
-            (b"client_nonce",    TVal::Bytes(client_nonce)),
-            (b"server_nonce",    TVal::Bytes(server_nonce)),
+            (b"role", TVal::Bytes(b"client")),
+            (b"device_id", TVal::Bytes(device_id)),
+            (b"device_pub", TVal::Point(device_pub)),
+            (b"server_pub", TVal::Point(server_pub)),
+            (b"a", TVal::Point(&a)),
+            (b"client_nonce", TVal::Bytes(client_nonce)),
+            (b"server_nonce", TVal::Bytes(server_nonce)),
             (b"setup_challenge", TVal::Bytes(setup_challenge)),
         ],
     );
@@ -171,13 +180,13 @@ pub fn verify_setup_client(
     let c = tr::challenge(
         tr::T_SETUP,
         &[
-            (b"role",            TVal::Bytes(b"client")),
-            (b"device_id",       TVal::Bytes(device_id)),
-            (b"device_pub",      TVal::Point(device_pub)),
-            (b"server_pub",      TVal::Point(server_pub)),
-            (b"a",               TVal::Point(&proof.a)),
-            (b"client_nonce",    TVal::Bytes(client_nonce)),
-            (b"server_nonce",    TVal::Bytes(server_nonce)),
+            (b"role", TVal::Bytes(b"client")),
+            (b"device_id", TVal::Bytes(device_id)),
+            (b"device_pub", TVal::Point(device_pub)),
+            (b"server_pub", TVal::Point(server_pub)),
+            (b"a", TVal::Point(&proof.a)),
+            (b"client_nonce", TVal::Bytes(client_nonce)),
+            (b"server_nonce", TVal::Bytes(server_nonce)),
             (b"setup_challenge", TVal::Bytes(setup_challenge)),
         ],
     );
@@ -194,10 +203,19 @@ pub fn prove_setup_server(
     setup_challenge: &[u8; SETUP_CHALLENGE_LEN],
 ) -> SchnorrProof {
     let mut rng = OsRng;
-    prove_setup_server_with_rng(&mut rng, server_sk, device_id, device_pub, server_pub,
-                                client_nonce, server_nonce, setup_challenge)
+    prove_setup_server_with_rng(
+        &mut rng,
+        server_sk,
+        device_id,
+        device_pub,
+        server_pub,
+        client_nonce,
+        server_nonce,
+        setup_challenge,
+    )
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn prove_setup_server_with_rng<R: RngCore>(
     rng: &mut R,
     server_sk: &Scalar,
@@ -213,17 +231,20 @@ pub fn prove_setup_server_with_rng<R: RngCore>(
     let c = tr::challenge(
         tr::T_SETUP_SERVER,
         &[
-            (b"role",            TVal::Bytes(b"server")),
-            (b"device_id",       TVal::Bytes(device_id)),
-            (b"device_pub",      TVal::Point(device_pub)),
-            (b"server_pub",      TVal::Point(server_pub)),
-            (b"a",               TVal::Point(&a)),
-            (b"client_nonce",    TVal::Bytes(client_nonce)),
-            (b"server_nonce",    TVal::Bytes(server_nonce)),
+            (b"role", TVal::Bytes(b"server")),
+            (b"device_id", TVal::Bytes(device_id)),
+            (b"device_pub", TVal::Point(device_pub)),
+            (b"server_pub", TVal::Point(server_pub)),
+            (b"a", TVal::Point(&a)),
+            (b"client_nonce", TVal::Bytes(client_nonce)),
+            (b"server_nonce", TVal::Bytes(server_nonce)),
             (b"setup_challenge", TVal::Bytes(setup_challenge)),
         ],
     );
-    SchnorrProof { a, s: r + c * server_sk }
+    SchnorrProof {
+        a,
+        s: r + c * server_sk,
+    }
 }
 
 pub fn verify_setup_server(
@@ -238,13 +259,13 @@ pub fn verify_setup_server(
     let c = tr::challenge(
         tr::T_SETUP_SERVER,
         &[
-            (b"role",            TVal::Bytes(b"server")),
-            (b"device_id",       TVal::Bytes(device_id)),
-            (b"device_pub",      TVal::Point(device_pub)),
-            (b"server_pub",      TVal::Point(server_pub)),
-            (b"a",               TVal::Point(&proof.a)),
-            (b"client_nonce",    TVal::Bytes(client_nonce)),
-            (b"server_nonce",    TVal::Bytes(server_nonce)),
+            (b"role", TVal::Bytes(b"server")),
+            (b"device_id", TVal::Bytes(device_id)),
+            (b"device_pub", TVal::Point(device_pub)),
+            (b"server_pub", TVal::Point(server_pub)),
+            (b"a", TVal::Point(&proof.a)),
+            (b"client_nonce", TVal::Bytes(client_nonce)),
+            (b"server_nonce", TVal::Bytes(server_nonce)),
             (b"setup_challenge", TVal::Bytes(setup_challenge)),
         ],
     );
@@ -276,11 +297,11 @@ pub fn prove_auth_client_with_rng<R: RngCore>(
     let c = tr::challenge(
         tr::T_CLIENT_V2,
         &[
-            (b"pid",     TVal::Bytes(pid)),
-            (b"pubkey",  TVal::Point(&pubkey)),
-            (b"a",       TVal::Point(&a)),
+            (b"pid", TVal::Bytes(pid)),
+            (b"pubkey", TVal::Point(&pubkey)),
+            (b"a", TVal::Point(&a)),
             (b"nonce_c", TVal::Bytes(nonce_c)),
-            (b"eph_c",   TVal::Point(eph_c)),
+            (b"eph_c", TVal::Point(eph_c)),
         ],
     );
     SchnorrProof { a, s: r + c * x }
@@ -296,11 +317,11 @@ pub fn verify_auth_client(
     let c = tr::challenge(
         tr::T_CLIENT_V2,
         &[
-            (b"pid",     TVal::Bytes(pid)),
-            (b"pubkey",  TVal::Point(device_pub)),
-            (b"a",       TVal::Point(&proof.a)),
+            (b"pid", TVal::Bytes(pid)),
+            (b"pubkey", TVal::Point(device_pub)),
+            (b"a", TVal::Point(&proof.a)),
             (b"nonce_c", TVal::Bytes(nonce_c)),
-            (b"eph_c",   TVal::Point(eph_c)),
+            (b"eph_c", TVal::Point(eph_c)),
         ],
     );
     RISTRETTO_BASEPOINT_POINT * proof.s == proof.a + device_pub * c
@@ -327,13 +348,16 @@ pub fn prove_auth_server_with_rng<R: RngCore>(
     let c = tr::challenge(
         tr::T_SERVER,
         &[
-            (b"pubkey",  TVal::Point(&server_pub)),
-            (b"a",       TVal::Point(&a)),
+            (b"pubkey", TVal::Point(&server_pub)),
+            (b"a", TVal::Point(&a)),
             (b"nonce_s", TVal::Bytes(nonce_s)),
-            (b"eph_s",   TVal::Point(eph_s)),
+            (b"eph_s", TVal::Point(eph_s)),
         ],
     );
-    SchnorrProof { a, s: r + c * server_sk }
+    SchnorrProof {
+        a,
+        s: r + c * server_sk,
+    }
 }
 
 pub fn verify_auth_server(
@@ -345,10 +369,10 @@ pub fn verify_auth_server(
     let c = tr::challenge(
         tr::T_SERVER,
         &[
-            (b"pubkey",  TVal::Point(server_pub)),
-            (b"a",       TVal::Point(&proof.a)),
+            (b"pubkey", TVal::Point(server_pub)),
+            (b"a", TVal::Point(&proof.a)),
             (b"nonce_s", TVal::Bytes(nonce_s)),
-            (b"eph_s",   TVal::Point(eph_s)),
+            (b"eph_s", TVal::Point(eph_s)),
         ],
     );
     RISTRETTO_BASEPOINT_POINT * proof.s == proof.a + server_pub * c
@@ -397,15 +421,18 @@ pub fn prove_rerandomization_with_rng<R: RngCore>(
     let c = tr::challenge(
         tr::T_ROLE_RERAND,
         &[
-            (b"pid",      TVal::Bytes(pid)),
-            (b"nonce_c",  TVal::Bytes(nonce_c)),
-            (b"eph_c",    TVal::Point(eph_c)),
+            (b"pid", TVal::Bytes(pid)),
+            (b"nonce_c", TVal::Bytes(nonce_c)),
+            (b"eph_c", TVal::Point(eph_c)),
             (b"stored_c", TVal::Point(stored_c)),
-            (b"c_prime",  TVal::Point(c_prime)),
-            (b"a",        TVal::Point(&a)),
+            (b"c_prime", TVal::Point(c_prime)),
+            (b"a", TVal::Point(&a)),
         ],
     );
-    SchnorrProof { a, s: r + c * delta }
+    SchnorrProof {
+        a,
+        s: r + c * delta,
+    }
 }
 
 pub fn verify_rerandomization(
@@ -420,12 +447,12 @@ pub fn verify_rerandomization(
     let c = tr::challenge(
         tr::T_ROLE_RERAND,
         &[
-            (b"pid",      TVal::Bytes(pid)),
-            (b"nonce_c",  TVal::Bytes(nonce_c)),
-            (b"eph_c",    TVal::Point(eph_c)),
+            (b"pid", TVal::Bytes(pid)),
+            (b"nonce_c", TVal::Bytes(nonce_c)),
+            (b"eph_c", TVal::Point(eph_c)),
             (b"stored_c", TVal::Point(stored_c)),
-            (b"c_prime",  TVal::Point(c_prime)),
-            (b"a",        TVal::Point(&proof.a)),
+            (b"c_prime", TVal::Point(c_prime)),
+            (b"a", TVal::Point(&proof.a)),
         ],
     );
     h * proof.s == proof.a + (c_prime - stored_c) * c
@@ -446,10 +473,18 @@ pub fn prove_role_set_membership(
 ) -> Vec<SetBranch> {
     let mut rng = OsRng;
     prove_role_set_membership_with_rng(
-        &mut rng, allowed_roles, c_prime, role_code, blind_prime, pid, nonce_c, eph_c,
+        &mut rng,
+        allowed_roles,
+        c_prime,
+        role_code,
+        blind_prime,
+        pid,
+        nonce_c,
+        eph_c,
     )
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn prove_role_set_membership_with_rng<R: RngCore>(
     rng: &mut R,
     allowed_roles: &[u64],
@@ -462,17 +497,20 @@ pub fn prove_role_set_membership_with_rng<R: RngCore>(
 ) -> Vec<SetBranch> {
     let h = attr_h();
     let n = allowed_roles.len();
-    let true_index = allowed_roles.iter().position(|r| *r == role_code)
+    let true_index = allowed_roles
+        .iter()
+        .position(|r| *r == role_code)
         .expect("role not in allowed_roles");
 
-    let y_points: Vec<RistrettoPoint> = allowed_roles.iter()
+    let y_points: Vec<RistrettoPoint> = allowed_roles
+        .iter()
         .map(|r| c_prime - RISTRETTO_BASEPOINT_POINT * Scalar::from(*r))
         .collect();
 
     let mut a_points = vec![RistrettoPoint::default(); n];
-    let mut c_vals   = vec![Scalar::from(0u64); n];
-    let mut s_vals   = vec![Scalar::from(0u64); n];
-    let mut w_true   = Scalar::from(0u64);
+    let mut c_vals = vec![Scalar::from(0u64); n];
+    let mut s_vals = vec![Scalar::from(0u64); n];
+    let mut w_true = Scalar::from(0u64);
 
     for i in 0..n {
         if i == true_index {
@@ -489,10 +527,10 @@ pub fn prove_role_set_membership_with_rng<R: RngCore>(
     }
 
     let mut t = Transcript::new(tr::T_ROLE_SET);
-    t.append_message(b"pid",     pid);
+    t.append_message(b"pid", pid);
     t.append_message(b"nonce_c", nonce_c);
-    t.append_point  (b"eph_c",   eph_c);
-    t.append_point  (b"c_prime", c_prime);
+    t.append_point(b"eph_c", eph_c);
+    t.append_point(b"c_prime", c_prime);
     for (i, r) in allowed_roles.iter().enumerate() {
         let label = format!("r_{i}");
         t.append_message(label.as_bytes(), &r.to_le_bytes());
@@ -503,7 +541,9 @@ pub fn prove_role_set_membership_with_rng<R: RngCore>(
     }
     let master_c = t.challenge_scalar();
 
-    let sum_sim: Scalar = c_vals.iter().enumerate()
+    let sum_sim: Scalar = c_vals
+        .iter()
+        .enumerate()
         .filter(|(i, _)| *i != true_index)
         .map(|(_, c)| *c)
         .sum();
@@ -513,7 +553,9 @@ pub fn prove_role_set_membership_with_rng<R: RngCore>(
     c_vals[true_index] = c_true;
     s_vals[true_index] = s_true;
 
-    (0..n).map(|i| (a_points[i], c_vals[i], s_vals[i])).collect()
+    (0..n)
+        .map(|i| (a_points[i], c_vals[i], s_vals[i]))
+        .collect()
 }
 
 pub fn verify_role_set_membership(
@@ -530,15 +572,16 @@ pub fn verify_role_set_membership(
         return false;
     }
 
-    let y_points: Vec<RistrettoPoint> = allowed_roles.iter()
+    let y_points: Vec<RistrettoPoint> = allowed_roles
+        .iter()
         .map(|r| c_prime - RISTRETTO_BASEPOINT_POINT * Scalar::from(*r))
         .collect();
 
     let mut t = Transcript::new(tr::T_ROLE_SET);
-    t.append_message(b"pid",     pid);
+    t.append_message(b"pid", pid);
     t.append_message(b"nonce_c", nonce_c);
-    t.append_point  (b"eph_c",   eph_c);
-    t.append_point  (b"c_prime", c_prime);
+    t.append_point(b"eph_c", eph_c);
+    t.append_point(b"c_prime", c_prime);
     for (i, r) in allowed_roles.iter().enumerate() {
         let label = format!("r_{i}");
         t.append_message(label.as_bytes(), &r.to_le_bytes());
@@ -590,10 +633,12 @@ pub fn derive_session_key(
 
     let hk = Hkdf::<Sha256>::new(Some(&salt), &shared_bytes);
     let mut okm = [0u8; 32];
-    hk.expand(&info, &mut okm).expect("HKDF expand 32B always succeeds");
+    hk.expand(&info, &mut okm)
+        .expect("HKDF expand 32B always succeeds");
     okm
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn kc_transcript_hash(
     pid: &[u8; 32],
     a_c: &RistrettoPoint,
@@ -607,16 +652,16 @@ pub fn kc_transcript_hash(
     eph_s: &RistrettoPoint,
 ) -> [u8; 32] {
     let mut t = Transcript::new(tr::T_KC_V2);
-    t.append_message(b"pid",        pid);
-    t.append_point  (b"a_c",        a_c);
-    t.append_scalar (b"s_c",        s_c);
-    t.append_message(b"nonce_c",    nonce_c);
-    t.append_point  (b"eph_c",      eph_c);
-    t.append_point  (b"server_pub", server_pub);
-    t.append_point  (b"a_s",        a_s);
-    t.append_scalar (b"s_s",        s_s);
-    t.append_message(b"nonce_s",    nonce_s);
-    t.append_point  (b"eph_s",      eph_s);
+    t.append_message(b"pid", pid);
+    t.append_point(b"a_c", a_c);
+    t.append_scalar(b"s_c", s_c);
+    t.append_message(b"nonce_c", nonce_c);
+    t.append_point(b"eph_c", eph_c);
+    t.append_point(b"server_pub", server_pub);
+    t.append_point(b"a_s", a_s);
+    t.append_scalar(b"s_s", s_s);
+    t.append_message(b"nonce_s", nonce_s);
+    t.append_point(b"eph_s", eph_s);
     t.hash_sha256()
 }
 
@@ -675,10 +720,34 @@ mod tests {
         let sc = [4u8; SETUP_CHALLENGE_LEN];
 
         let cp = prove_setup_client(&x, &device_id, &device_pub, &server_pub, &nc, &ns, &sc);
-        assert!(verify_setup_client(&device_id, &device_pub, &server_pub, &nc, &ns, &sc, &cp));
+        assert!(verify_setup_client(
+            &device_id,
+            &device_pub,
+            &server_pub,
+            &nc,
+            &ns,
+            &sc,
+            &cp
+        ));
 
-        let sp = prove_setup_server(&server_sk, &device_id, &device_pub, &server_pub, &nc, &ns, &sc);
-        assert!(verify_setup_server(&server_pub, &device_id, &device_pub, &nc, &ns, &sc, &sp));
+        let sp = prove_setup_server(
+            &server_sk,
+            &device_id,
+            &device_pub,
+            &server_pub,
+            &nc,
+            &ns,
+            &sc,
+        );
+        assert!(verify_setup_server(
+            &server_pub,
+            &device_id,
+            &device_pub,
+            &nc,
+            &ns,
+            &sc,
+            &sp
+        ));
     }
 
     #[test]
@@ -700,10 +769,22 @@ mod tests {
 
         let (c_prime, blind_prime, delta) = rerandomize_commitment(&stored_c, &blind);
         let rp = prove_rerandomization(&stored_c, &c_prime, &delta, &pid, &nc, &eph_c);
-        assert!(verify_rerandomization(&stored_c, &c_prime, &pid, &nc, &eph_c, &rp));
+        assert!(verify_rerandomization(
+            &stored_c, &c_prime, &pid, &nc, &eph_c, &rp
+        ));
 
-        let branches = prove_role_set_membership(allowed, &c_prime, role_code, &blind_prime, &pid, &nc, &eph_c);
-        assert!(verify_role_set_membership(allowed, &c_prime, &pid, &nc, &eph_c, &branches));
+        let branches = prove_role_set_membership(
+            allowed,
+            &c_prime,
+            role_code,
+            &blind_prime,
+            &pid,
+            &nc,
+            &eph_c,
+        );
+        assert!(verify_role_set_membership(
+            allowed, &c_prime, &pid, &nc, &eph_c, &branches
+        ));
 
         let cp = prove_auth_client(&x, &pid, &nc, &eph_c);
         assert!(verify_auth_client(&device_pub, &pid, &nc, &eph_c, &cp));
@@ -715,7 +796,7 @@ mod tests {
         assert!(verify_auth_server(&server_pub, &ns, &eph_s, &sp));
 
         let k_c = derive_session_key(&eph_secret, &eph_s, &nc, &ns, &pid, &eph_c, &eph_s);
-        let k_s = derive_session_key(&eph_s_sk,   &eph_c, &nc, &ns, &pid, &eph_c, &eph_s);
+        let k_s = derive_session_key(&eph_s_sk, &eph_c, &nc, &ns, &pid, &eph_c, &eph_s);
         assert_eq!(k_c, k_s);
     }
 }

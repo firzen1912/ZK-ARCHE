@@ -35,12 +35,12 @@ pub enum ProfileKind {
 
 #[derive(Clone, Copy, Debug)]
 pub struct Profile {
-    pub kind:                ProfileKind,
-    pub retransmit_timeout:  Duration,
-    pub max_retries:         usize,
-    pub max_backoff_shift:   u32,
-    pub io_timeout:          Duration,
-    pub session_ttl:         Duration,
+    pub kind: ProfileKind,
+    pub retransmit_timeout: Duration,
+    pub max_retries: usize,
+    pub max_backoff_shift: u32,
+    pub io_timeout: Duration,
+    pub session_ttl: Duration,
     pub max_active_sessions: usize,
     pub max_cached_responses: usize,
 }
@@ -48,22 +48,22 @@ pub struct Profile {
 impl Profile {
     pub const fn standard() -> Self {
         Self {
-            kind:                 ProfileKind::Standard,
-            retransmit_timeout:   DEFAULT_RETRANSMIT_TIMEOUT,
-            max_retries:          DEFAULT_MAX_RETRIES,
-            max_backoff_shift:    DEFAULT_MAX_BACKOFF_SHIFT,
-            io_timeout:           DEFAULT_IO_TIMEOUT,
-            session_ttl:          DEFAULT_SESSION_TTL,
-            max_active_sessions:  1024,
+            kind: ProfileKind::Standard,
+            retransmit_timeout: DEFAULT_RETRANSMIT_TIMEOUT,
+            max_retries: DEFAULT_MAX_RETRIES,
+            max_backoff_shift: DEFAULT_MAX_BACKOFF_SHIFT,
+            io_timeout: DEFAULT_IO_TIMEOUT,
+            session_ttl: DEFAULT_SESSION_TTL,
+            max_active_sessions: 1024,
             max_cached_responses: 2048,
         }
     }
 
     pub const fn minimal() -> Self {
         Self {
-            kind:                 ProfileKind::Minimal,
-            max_retries:          2,
-            max_active_sessions:  8,
+            kind: ProfileKind::Minimal,
+            max_retries: 2,
+            max_active_sessions: 8,
             max_cached_responses: 16,
             ..Self::standard()
         }
@@ -71,8 +71,8 @@ impl Profile {
 
     pub const fn gateway() -> Self {
         Self {
-            kind:                 ProfileKind::Gateway,
-            max_active_sessions:  8192,
+            kind: ProfileKind::Gateway,
+            max_active_sessions: 8192,
             max_cached_responses: 16384,
             ..Self::standard()
         }
@@ -80,5 +80,7 @@ impl Profile {
 }
 
 impl Default for Profile {
-    fn default() -> Self { Self::standard() }
+    fn default() -> Self {
+        Self::standard()
+    }
 }

@@ -18,25 +18,37 @@ use crate::wire::MAX_DATAGRAM;
 fn send_framed(stream: &mut TcpStream, packet: &[u8]) -> Result<()> {
     if packet.len() > MAX_DATAGRAM {
         return Err(ProtoError::transport(format!(
-            "packet {} > MAX_DATAGRAM {MAX_DATAGRAM}", packet.len())));
+            "packet {} > MAX_DATAGRAM {MAX_DATAGRAM}",
+            packet.len()
+        )));
     }
     let len = (packet.len() as u32).to_le_bytes();
-    stream.write_all(&len).map_err(|e| ProtoError::transport(format!("tcp write len: {e}")))?;
-    stream.write_all(packet).map_err(|e| ProtoError::transport(format!("tcp write: {e}")))?;
-    stream.flush().map_err(|e| ProtoError::transport(format!("tcp flush: {e}")))?;
+    stream
+        .write_all(&len)
+        .map_err(|e| ProtoError::transport(format!("tcp write len: {e}")))?;
+    stream
+        .write_all(packet)
+        .map_err(|e| ProtoError::transport(format!("tcp write: {e}")))?;
+    stream
+        .flush()
+        .map_err(|e| ProtoError::transport(format!("tcp flush: {e}")))?;
     Ok(())
 }
 
 fn recv_framed(stream: &mut TcpStream) -> Result<Vec<u8>> {
     let mut len_buf = [0u8; 4];
-    stream.read_exact(&mut len_buf)
+    stream
+        .read_exact(&mut len_buf)
         .map_err(|e| ProtoError::transport(format!("tcp read len: {e}")))?;
     let len = u32::from_le_bytes(len_buf) as usize;
     if len > MAX_DATAGRAM {
-        return Err(ProtoError::transport(format!("tcp frame {len} > MAX_DATAGRAM {MAX_DATAGRAM}")));
+        return Err(ProtoError::transport(format!(
+            "tcp frame {len} > MAX_DATAGRAM {MAX_DATAGRAM}"
+        )));
     }
     let mut buf = vec![0u8; len];
-    stream.read_exact(&mut buf)
+    stream
+        .read_exact(&mut buf)
         .map_err(|e| ProtoError::transport(format!("tcp read body: {e}")))?;
     Ok(buf)
 }
@@ -65,19 +77,25 @@ impl ClientTransport for TcpClientTransport {
         recv_framed(&mut self.stream)
     }
 
-    fn max_datagram(&self) -> usize { MAX_DATAGRAM }
-    fn is_reliable(&self) -> bool   { true }
+    fn max_datagram(&self) -> usize {
+        MAX_DATAGRAM
+    }
+    fn is_reliable(&self) -> bool {
+        true
+    }
 }
 
 /// Per-connection TCP server transport. A listener loop creates one of these
 /// for each accepted client.
 pub struct TcpServerPeer {
     stream: TcpStream,
-    peer:   SocketAddr,
+    peer: SocketAddr,
 }
 
 impl TcpServerPeer {
-    pub fn peer_addr(&self) -> SocketAddr { self.peer }
+    pub fn peer_addr(&self) -> SocketAddr {
+        self.peer
+    }
 }
 
 impl Transport for TcpServerPeer {
@@ -94,7 +112,9 @@ impl Transport for TcpServerPeer {
         Ok((bytes, self.peer))
     }
 
-    fn is_reliable(&self) -> bool { true }
+    fn is_reliable(&self) -> bool {
+        true
+    }
 }
 
 /// TCP listener helper.
@@ -104,19 +124,22 @@ pub struct TcpServerListener {
 
 impl TcpServerListener {
     pub fn bind<A: ToSocketAddrs>(addr: A) -> Result<Self> {
-        let listener = TcpListener::bind(addr)
-            .map_err(|e| ProtoError::transport(format!("tcp bind: {e}")))?;
+        let listener =
+            TcpListener::bind(addr).map_err(|e| ProtoError::transport(format!("tcp bind: {e}")))?;
         Ok(Self { listener })
     }
 
     pub fn local_addr(&self) -> Result<SocketAddr> {
-        self.listener.local_addr()
+        self.listener
+            .local_addr()
             .map_err(|e| ProtoError::transport(format!("tcp local_addr: {e}")))
     }
 
     /// Accept the next incoming connection and wrap it as a `TcpServerPeer`.
     pub fn accept(&self) -> Result<TcpServerPeer> {
-        let (stream, peer) = self.listener.accept()
+        let (stream, peer) = self
+            .listener
+            .accept()
             .map_err(|e| ProtoError::transport(format!("tcp accept: {e}")))?;
         stream.set_nodelay(true).ok();
         Ok(TcpServerPeer { stream, peer })

@@ -36,8 +36,7 @@ use proto::{
         Transport,
     },
     wire::{
-        build_error, parse_packet, PKT_AUTH_1, PKT_AUTH_3, PKT_SETUP_1, PKT_SETUP_3,
-        SESSION_ID_LEN,
+        build_error, parse_packet, PKT_AUTH_1, PKT_AUTH_3, PKT_SETUP_1, PKT_SETUP_3, SESSION_ID_LEN,
     },
     Profile, DEFAULT_ALLOWED_ROLES,
 };
@@ -50,15 +49,15 @@ enum TransportKind {
 }
 
 struct ServerArgs {
-    bind:                  String,
-    transport:             TransportKind,
-    state_dir:             Option<PathBuf>,
+    bind: String,
+    transport: TransportKind,
+    state_dir: Option<PathBuf>,
     require_pairing_token: Option<String>,
 }
 
 fn usage(prog: &str) {
     eprintln!(
-"Usage:
+        "Usage:
   {0} --bind 0.0.0.0:4000 [--transport udp|tcp|both] \\
       [--state-dir ./server-state] \\
       [--require-pairing-token TOKEN]
@@ -70,50 +69,81 @@ fn usage(prog: &str) {
 
 fn parse_args() -> Result<ServerArgs, std::io::Error> {
     let argv: Vec<String> = env::args().collect();
-    let prog = argv.get(0).cloned().unwrap_or_else(|| "server".to_string());
+    let prog = argv
+        .first()
+        .cloned()
+        .unwrap_or_else(|| "server".to_string());
     let mut out = ServerArgs {
-        bind:                  "0.0.0.0:4000".to_string(),
-        transport:             TransportKind::Udp,
-        state_dir:             None,
+        bind: "0.0.0.0:4000".to_string(),
+        transport: TransportKind::Udp,
+        state_dir: None,
         require_pairing_token: None,
     };
     let mut i = 1;
     while i < argv.len() {
         match argv[i].as_str() {
             "--bind" => {
-                out.bind = argv.get(i + 1).ok_or_else(|| {
-                    std::io::Error::new(std::io::ErrorKind::InvalidInput, "--bind missing value")
-                })?.clone();
+                out.bind = argv
+                    .get(i + 1)
+                    .ok_or_else(|| {
+                        std::io::Error::new(
+                            std::io::ErrorKind::InvalidInput,
+                            "--bind missing value",
+                        )
+                    })?
+                    .clone();
                 i += 2;
             }
             "--transport" => {
                 let v = argv.get(i + 1).ok_or_else(|| {
-                    std::io::Error::new(std::io::ErrorKind::InvalidInput, "--transport missing value")
+                    std::io::Error::new(
+                        std::io::ErrorKind::InvalidInput,
+                        "--transport missing value",
+                    )
                 })?;
                 out.transport = match v.as_str() {
-                    "udp"  => TransportKind::Udp,
-                    "tcp"  => TransportKind::Tcp,
+                    "udp" => TransportKind::Udp,
+                    "tcp" => TransportKind::Tcp,
                     "both" => TransportKind::Both,
-                    other => return Err(std::io::Error::new(
-                        std::io::ErrorKind::InvalidInput,
-                        format!("--transport must be udp|tcp|both, got {other}"),
-                    )),
+                    other => {
+                        return Err(std::io::Error::new(
+                            std::io::ErrorKind::InvalidInput,
+                            format!("--transport must be udp|tcp|both, got {other}"),
+                        ))
+                    }
                 };
                 i += 2;
             }
             "--state-dir" => {
-                out.state_dir = Some(argv.get(i + 1).ok_or_else(|| {
-                    std::io::Error::new(std::io::ErrorKind::InvalidInput, "--state-dir missing value")
-                })?.into());
+                out.state_dir = Some(
+                    argv.get(i + 1)
+                        .ok_or_else(|| {
+                            std::io::Error::new(
+                                std::io::ErrorKind::InvalidInput,
+                                "--state-dir missing value",
+                            )
+                        })?
+                        .into(),
+                );
                 i += 2;
             }
             "--require-pairing-token" => {
-                out.require_pairing_token = Some(argv.get(i + 1).ok_or_else(|| {
-                    std::io::Error::new(std::io::ErrorKind::InvalidInput, "--require-pairing-token missing value")
-                })?.clone());
+                out.require_pairing_token = Some(
+                    argv.get(i + 1)
+                        .ok_or_else(|| {
+                            std::io::Error::new(
+                                std::io::ErrorKind::InvalidInput,
+                                "--require-pairing-token missing value",
+                            )
+                        })?
+                        .clone(),
+                );
                 i += 2;
             }
-            "-h" | "--help" => { usage(&prog); std::process::exit(0); }
+            "-h" | "--help" => {
+                usage(&prog);
+                std::process::exit(0);
+            }
             other => {
                 usage(&prog);
                 return Err(std::io::Error::new(
@@ -137,35 +167,31 @@ fn main() {
 
 #[derive(Clone)]
 struct CachedResponse {
-    peer:       SocketAddr,
-    packet:     Vec<u8>,
+    peer: SocketAddr,
+    packet: Vec<u8>,
     created_at: Instant,
 }
 
 /// All state shared between the UDP and TCP dispatchers. Wrapped in a single
 /// `Mutex` for simplicity; a production deployment would split by concern.
 struct ServerState {
-    profile:               Profile,
-    server_pub:            RistrettoPoint,
-    registry:              FsRegistryStore,
-    key_store:             FsServerKeyStore,
-    setup_sessions:        HashMap<[u8; SESSION_ID_LEN], PendingSetup>,
-    auth_sessions:         HashMap<[u8; SESSION_ID_LEN], PendingAuth>,
-    response_cache:        HashMap<([u8; SESSION_ID_LEN], u32), CachedResponse>,
-    replay:                MemoryReplayCache,
+    profile: Profile,
+    server_pub: RistrettoPoint,
+    registry: FsRegistryStore,
+    key_store: FsServerKeyStore,
+    setup_sessions: HashMap<[u8; SESSION_ID_LEN], PendingSetup>,
+    auth_sessions: HashMap<[u8; SESSION_ID_LEN], PendingAuth>,
+    response_cache: HashMap<([u8; SESSION_ID_LEN], u32), CachedResponse>,
+    replay: MemoryReplayCache,
     require_pairing_token: Option<String>,
-    last_gc:               Instant,
+    last_gc: Instant,
 }
 
 /// Dispatch one already-received packet. Returns the response bytes to send
 /// back to the peer. This is the single entry point shared by the UDP and
 /// TCP drivers — proof that Layer A (state machines) and Layer B (framing)
 /// are fully transport-independent.
-fn dispatch_packet(
-    state: &mut ServerState,
-    peer:  SocketAddr,
-    bytes: &[u8],
-) -> Option<Vec<u8>> {
+fn dispatch_packet(state: &mut ServerState, peer: SocketAddr, bytes: &[u8]) -> Option<Vec<u8>> {
     let (hdr, payload) = match parse_packet(bytes) {
         Ok(v) => v,
         Err(e) => {
@@ -187,7 +213,9 @@ fn dispatch_packet(
         PKT_SETUP_1 => {
             let pending = handle_setup_1(
                 &mut state.key_store,
-                hdr.session_id, hdr.seq, payload,
+                hdr.session_id,
+                hdr.seq,
+                payload,
                 state.require_pairing_token.as_deref(),
             );
             pending.map(|p| {
@@ -197,28 +225,36 @@ fn dispatch_packet(
             })
         }
 
-        PKT_SETUP_3 => {
-            match state.setup_sessions.get(&hdr.session_id) {
-                None => Err(ProtoError::wire(
-                    ErrorCode::UnknownSession,
-                    "no setup session for SETUP_3",
-                )),
-                Some(pending) => {
-                    let r = handle_setup_3(
-                        &mut state.registry, pending, &state.server_pub,
-                        hdr.session_id, hdr.seq, payload,
-                    );
-                    if r.is_ok() { state.setup_sessions.remove(&hdr.session_id); }
-                    r
+        PKT_SETUP_3 => match state.setup_sessions.get(&hdr.session_id) {
+            None => Err(ProtoError::wire(
+                ErrorCode::UnknownSession,
+                "no setup session for SETUP_3",
+            )),
+            Some(pending) => {
+                let r = handle_setup_3(
+                    &mut state.registry,
+                    pending,
+                    &state.server_pub,
+                    hdr.session_id,
+                    hdr.seq,
+                    payload,
+                );
+                if r.is_ok() {
+                    state.setup_sessions.remove(&hdr.session_id);
                 }
+                r
             }
-        }
+        },
 
         PKT_AUTH_1 => {
             let pending = handle_auth_1(
-                &mut state.key_store, &state.registry, &mut state.replay,
+                &mut state.key_store,
+                &state.registry,
+                &mut state.replay,
                 DEFAULT_ALLOWED_ROLES,
-                hdr.session_id, hdr.seq, payload,
+                hdr.session_id,
+                hdr.seq,
+                payload,
             );
             pending.map(|p| {
                 let resp = p.response_packet.clone();
@@ -227,19 +263,19 @@ fn dispatch_packet(
             })
         }
 
-        PKT_AUTH_3 => {
-            match state.auth_sessions.get(&hdr.session_id) {
-                None => Err(ProtoError::wire(
-                    ErrorCode::UnknownSession,
-                    "no auth session for AUTH_3",
-                )),
-                Some(pending) => {
-                    let r = handle_auth_3(pending, hdr.session_id, hdr.seq, payload);
-                    if r.is_ok() { state.auth_sessions.remove(&hdr.session_id); }
-                    r
+        PKT_AUTH_3 => match state.auth_sessions.get(&hdr.session_id) {
+            None => Err(ProtoError::wire(
+                ErrorCode::UnknownSession,
+                "no auth session for AUTH_3",
+            )),
+            Some(pending) => {
+                let r = handle_auth_3(pending, hdr.session_id, hdr.seq, payload);
+                if r.is_ok() {
+                    state.auth_sessions.remove(&hdr.session_id);
                 }
+                r
             }
-        }
+        },
 
         other => Err(ProtoError::wire(
             ErrorCode::UnknownPacketType,
@@ -249,7 +285,7 @@ fn dispatch_packet(
 
     let response = match result {
         Ok(pkt) => pkt,
-        Err(e)  => {
+        Err(e) => {
             let (code, msg) = wire_code_and_msg(&e);
             eprintln!("{peer}: {code}: {msg}");
             build_error(&hdr.session_id, hdr.seq, code, msg)
@@ -257,9 +293,14 @@ fn dispatch_packet(
     };
 
     // Cache for idempotent retransmit.
-    state.response_cache.insert((hdr.session_id, hdr.seq), CachedResponse {
-        peer, packet: response.clone(), created_at: Instant::now(),
-    });
+    state.response_cache.insert(
+        (hdr.session_id, hdr.seq),
+        CachedResponse {
+            peer,
+            packet: response.clone(),
+            created_at: Instant::now(),
+        },
+    );
 
     Some(response)
 }
@@ -267,9 +308,9 @@ fn dispatch_packet(
 fn wire_code_and_msg(e: &ProtoError) -> (ErrorCode, &str) {
     match e {
         ProtoError::Wire { code, msg } => (*code, msg.as_str()),
-        ProtoError::Storage(m)         => (ErrorCode::StorageFailure, m.as_str()),
-        ProtoError::Transport(m)       => (ErrorCode::Unspecified,    m.as_str()),
-        ProtoError::Internal(m)        => (ErrorCode::Unspecified,    m.as_str()),
+        ProtoError::Storage(m) => (ErrorCode::StorageFailure, m.as_str()),
+        ProtoError::Transport(m) => (ErrorCode::Unspecified, m.as_str()),
+        ProtoError::Internal(m) => (ErrorCode::Unspecified, m.as_str()),
     }
 }
 
@@ -280,18 +321,24 @@ fn gc_if_due(state: &mut ServerState) {
     }
     state.last_gc = now;
     let ttl = state.profile.session_ttl;
-    state.response_cache.retain(|_, v| now.duration_since(v.created_at) <= ttl);
+    state
+        .response_cache
+        .retain(|_, v| now.duration_since(v.created_at) <= ttl);
 
     let cap = state.profile.max_active_sessions;
     while state.setup_sessions.len() > cap {
         if let Some(k) = state.setup_sessions.keys().next().copied() {
             state.setup_sessions.remove(&k);
-        } else { break; }
+        } else {
+            break;
+        }
     }
     while state.auth_sessions.len() > cap {
         if let Some(k) = state.auth_sessions.keys().next().copied() {
             state.auth_sessions.remove(&k);
-        } else { break; }
+        } else {
+            break;
+        }
     }
 }
 
@@ -415,12 +462,12 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         server_pub,
         registry,
         key_store,
-        setup_sessions:        HashMap::new(),
-        auth_sessions:         HashMap::new(),
-        response_cache:        HashMap::new(),
-        replay:                MemoryReplayCache::new(profile.max_cached_responses.saturating_mul(2)),
+        setup_sessions: HashMap::new(),
+        auth_sessions: HashMap::new(),
+        response_cache: HashMap::new(),
+        replay: MemoryReplayCache::new(profile.max_cached_responses.saturating_mul(2)),
         require_pairing_token: args.require_pairing_token,
-        last_gc:               Instant::now(),
+        last_gc: Instant::now(),
     }));
 
     println!(
@@ -430,8 +477,12 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     match args.transport {
-        TransportKind::Udp => { run_udp(&args.bind, state)?; }
-        TransportKind::Tcp => { run_tcp(&args.bind, state)?; }
+        TransportKind::Udp => {
+            run_udp(&args.bind, state)?;
+        }
+        TransportKind::Tcp => {
+            run_tcp(&args.bind, state)?;
+        }
         TransportKind::Both => {
             let bind_udp = args.bind.clone();
             let bind_tcp = args.bind.clone();

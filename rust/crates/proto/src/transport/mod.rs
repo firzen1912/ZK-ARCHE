@@ -55,7 +55,9 @@ pub trait Transport {
     /// additional logic (TCP, QUIC streams). False for UDP / CoAP unreliable.
     /// The state machines use this to decide whether to rely on the
     /// `ReliableUdp` retry layer or skip it.
-    fn is_reliable(&self) -> bool { false }
+    fn is_reliable(&self) -> bool {
+        false
+    }
 }
 
 /// Convenience: a client-side transport that is pre-bound to one peer, so
@@ -63,8 +65,12 @@ pub trait Transport {
 pub trait ClientTransport {
     fn send(&mut self, packet: &[u8]) -> Result<()>;
     fn recv(&mut self, timeout: Duration) -> Result<Vec<u8>>;
-    fn max_datagram(&self) -> usize { crate::wire::MAX_DATAGRAM }
-    fn is_reliable(&self) -> bool { false }
+    fn max_datagram(&self) -> usize {
+        crate::wire::MAX_DATAGRAM
+    }
+    fn is_reliable(&self) -> bool {
+        false
+    }
 }
 
 #[cfg(feature = "udp-transport")]

@@ -32,9 +32,12 @@ impl ClientTransport for UdpClientTransport {
     fn send(&mut self, packet: &[u8]) -> Result<()> {
         if packet.len() > MAX_DATAGRAM {
             return Err(ProtoError::transport(format!(
-                "packet {} > MAX_DATAGRAM {MAX_DATAGRAM}", packet.len())));
+                "packet {} > MAX_DATAGRAM {MAX_DATAGRAM}",
+                packet.len()
+            )));
         }
-        self.sock.send(packet)
+        self.sock
+            .send(packet)
             .map_err(|e| ProtoError::transport(format!("udp send: {e}")))?;
         Ok(())
     }
@@ -51,8 +54,12 @@ impl ClientTransport for UdpClientTransport {
         }
     }
 
-    fn max_datagram(&self) -> usize { MAX_DATAGRAM }
-    fn is_reliable(&self) -> bool   { false }
+    fn max_datagram(&self) -> usize {
+        MAX_DATAGRAM
+    }
+    fn is_reliable(&self) -> bool {
+        false
+    }
 }
 
 /// UDP server transport. Multi-peer: each `recv` returns the originating
@@ -63,13 +70,15 @@ pub struct UdpServerTransport {
 
 impl UdpServerTransport {
     pub fn bind<A: ToSocketAddrs>(addr: A) -> Result<Self> {
-        let sock = UdpSocket::bind(addr)
-            .map_err(|e| ProtoError::transport(format!("udp bind: {e}")))?;
+        let sock =
+            UdpSocket::bind(addr).map_err(|e| ProtoError::transport(format!("udp bind: {e}")))?;
         Ok(Self { sock })
     }
 
     pub fn local_addr(&self) -> Result<SocketAddr> {
-        self.sock.local_addr().map_err(|e| ProtoError::transport(format!("udp local_addr: {e}")))
+        self.sock
+            .local_addr()
+            .map_err(|e| ProtoError::transport(format!("udp local_addr: {e}")))
     }
 }
 
@@ -79,9 +88,12 @@ impl Transport for UdpServerTransport {
     fn send(&mut self, addr: &SocketAddr, packet: &[u8]) -> Result<()> {
         if packet.len() > MAX_DATAGRAM {
             return Err(ProtoError::transport(format!(
-                "packet {} > MAX_DATAGRAM {MAX_DATAGRAM}", packet.len())));
+                "packet {} > MAX_DATAGRAM {MAX_DATAGRAM}",
+                packet.len()
+            )));
         }
-        self.sock.send_to(packet, addr)
+        self.sock
+            .send_to(packet, addr)
             .map_err(|e| ProtoError::transport(format!("udp send_to: {e}")))?;
         Ok(())
     }
@@ -98,6 +110,10 @@ impl Transport for UdpServerTransport {
         }
     }
 
-    fn max_datagram(&self) -> usize { MAX_DATAGRAM }
-    fn is_reliable(&self) -> bool   { false }
+    fn max_datagram(&self) -> usize {
+        MAX_DATAGRAM
+    }
+    fn is_reliable(&self) -> bool {
+        false
+    }
 }

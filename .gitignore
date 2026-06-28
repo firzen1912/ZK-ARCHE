@@ -3,8 +3,11 @@
 /rust/target/
 /c/build/
 
-# Generated evidence and local state
+# Generated evidence and local state (top-level and per-lane)
 /evidence/*.log
+/c/evidence/
+/rust/evidence/
+/python/evidence/
 /shared-context/repo-map/cache/
 /shared-context/*.jsonl
 /shared-context/*.json

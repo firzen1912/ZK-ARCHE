@@ -13,12 +13,12 @@ use crate::wire::{build_packet, parse_packet, Header, PKT_ERROR, SESSION_ID_LEN}
 ///   exponential backoff up to `profile.max_retries`.
 /// * `PKT_ERROR` responses are decoded back into structured `ProtoError`s.
 pub(super) fn send_expect<T: ClientTransport>(
-    transport:     &mut T,
-    profile:       &Profile,
-    pkt_type:      u8,
-    session_id:    &[u8; SESSION_ID_LEN],
-    seq:           u32,
-    payload:       &[u8],
+    transport: &mut T,
+    profile: &Profile,
+    pkt_type: u8,
+    session_id: &[u8; SESSION_ID_LEN],
+    seq: u32,
+    payload: &[u8],
     expected_resp: u8,
 ) -> Result<Vec<u8>> {
     let packet = build_packet(pkt_type, session_id, seq, payload);
@@ -38,7 +38,8 @@ pub(super) fn send_expect<T: ClientTransport>(
     let mut last_err: Option<ProtoError> = None;
     for attempt in 0..=profile.max_retries {
         let shift = (attempt as u32).min(profile.max_backoff_shift);
-        let timeout = profile.retransmit_timeout
+        let timeout = profile
+            .retransmit_timeout
             .checked_mul(1u32 << shift)
             .unwrap_or(profile.retransmit_timeout);
         transport.send(&packet)?;
@@ -46,12 +47,20 @@ pub(super) fn send_expect<T: ClientTransport>(
             Ok(bytes) => {
                 let (hdr, resp) = match parse_packet(&bytes) {
                     Ok(v) => v,
-                    Err(e) => { last_err = Some(e); continue; }
+                    Err(e) => {
+                        last_err = Some(e);
+                        continue;
+                    }
                 };
-                if hdr.session_id != *session_id || hdr.seq != seq { continue; }
+                if hdr.session_id != *session_id || hdr.seq != seq {
+                    continue;
+                }
                 return handle_response_header(hdr, resp, expected_resp);
             }
-            Err(e) => { last_err = Some(e); continue; }
+            Err(e) => {
+                last_err = Some(e);
+                continue;
+            }
         }
     }
     Err(last_err.unwrap_or_else(|| ProtoError::transport("retries exhausted")))

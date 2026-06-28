@@ -61,8 +61,8 @@ use curve25519_dalek::scalar::Scalar;
 
 #[derive(Clone, Debug)]
 pub struct RoleCredential {
-    pub role_code:  u64,
-    pub blind:      Scalar,
+    pub role_code: u64,
+    pub blind: Scalar,
     pub commitment: RistrettoPoint,
 }
 
@@ -74,7 +74,7 @@ impl RoleCredential {
 
 #[derive(Clone, Copy, Debug)]
 pub struct DeviceRecord {
-    pub pubkey:          RistrettoPoint,
+    pub pubkey: RistrettoPoint,
     pub role_commitment: RistrettoPoint,
 }
 

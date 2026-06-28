@@ -24,14 +24,14 @@ enum TransportKind {
 }
 
 struct Args {
-    server:                String,
-    transport:             TransportKind,
-    do_setup:              bool,
-    pairing_token:         Option<String>,
-    allow_tofu_setup:      bool,
+    server: String,
+    transport: TransportKind,
+    do_setup: bool,
+    pairing_token: Option<String>,
+    allow_tofu_setup: bool,
     print_device_identity: bool,
-    pin_server_pub:        Option<String>,
-    state_dir:             Option<PathBuf>,
+    pin_server_pub: Option<String>,
+    state_dir: Option<PathBuf>,
 }
 
 fn usage(prog: &str) {
@@ -48,16 +48,19 @@ fn usage(prog: &str) {
 
 fn parse_args() -> Result<Args, std::io::Error> {
     let argv: Vec<String> = env::args().collect();
-    let prog = argv.get(0).cloned().unwrap_or_else(|| "client".to_string());
+    let prog = argv
+        .first()
+        .cloned()
+        .unwrap_or_else(|| "client".to_string());
     let mut args = Args {
-        server:                "127.0.0.1:4000".to_string(),
-        transport:             TransportKind::Udp,
-        do_setup:              false,
-        pairing_token:         None,
-        allow_tofu_setup:      false,
+        server: "127.0.0.1:4000".to_string(),
+        transport: TransportKind::Udp,
+        do_setup: false,
+        pairing_token: None,
+        allow_tofu_setup: false,
         print_device_identity: false,
-        pin_server_pub:        None,
-        state_dir:             None,
+        pin_server_pub: None,
+        state_dir: None,
     };
     let mut i = 1;
     while i < argv.len() {
@@ -66,44 +69,74 @@ fn parse_args() -> Result<Args, std::io::Error> {
                 let v = argv.get(i + 1).ok_or_else(|| {
                     std::io::Error::new(std::io::ErrorKind::InvalidInput, "--server missing value")
                 })?;
-                args.server = v.clone(); i += 2;
+                args.server = v.clone();
+                i += 2;
             }
             "--transport" => {
                 let v = argv.get(i + 1).ok_or_else(|| {
-                    std::io::Error::new(std::io::ErrorKind::InvalidInput, "--transport missing value")
+                    std::io::Error::new(
+                        std::io::ErrorKind::InvalidInput,
+                        "--transport missing value",
+                    )
                 })?;
                 args.transport = match v.as_str() {
                     "udp" => TransportKind::Udp,
                     "tcp" => TransportKind::Tcp,
-                    other => return Err(std::io::Error::new(
-                        std::io::ErrorKind::InvalidInput,
-                        format!("--transport must be udp|tcp, got {other}"),
-                    )),
+                    other => {
+                        return Err(std::io::Error::new(
+                            std::io::ErrorKind::InvalidInput,
+                            format!("--transport must be udp|tcp, got {other}"),
+                        ))
+                    }
                 };
                 i += 2;
             }
-            "--setup"                => { args.do_setup = true; i += 1; }
-            "--allow-tofu-setup"     => { args.allow_tofu_setup = true; i += 1; }
-            "--print-device-identity"=> { args.print_device_identity = true; i += 1; }
+            "--setup" => {
+                args.do_setup = true;
+                i += 1;
+            }
+            "--allow-tofu-setup" => {
+                args.allow_tofu_setup = true;
+                i += 1;
+            }
+            "--print-device-identity" => {
+                args.print_device_identity = true;
+                i += 1;
+            }
             "--pairing-token" => {
                 let v = argv.get(i + 1).ok_or_else(|| {
-                    std::io::Error::new(std::io::ErrorKind::InvalidInput, "--pairing-token missing value")
+                    std::io::Error::new(
+                        std::io::ErrorKind::InvalidInput,
+                        "--pairing-token missing value",
+                    )
                 })?;
-                args.pairing_token = Some(v.clone()); i += 2;
+                args.pairing_token = Some(v.clone());
+                i += 2;
             }
             "--pin-server-pub" => {
                 let v = argv.get(i + 1).ok_or_else(|| {
-                    std::io::Error::new(std::io::ErrorKind::InvalidInput, "--pin-server-pub missing value")
+                    std::io::Error::new(
+                        std::io::ErrorKind::InvalidInput,
+                        "--pin-server-pub missing value",
+                    )
                 })?;
-                args.pin_server_pub = Some(v.clone()); i += 2;
+                args.pin_server_pub = Some(v.clone());
+                i += 2;
             }
             "--state-dir" => {
                 let v = argv.get(i + 1).ok_or_else(|| {
-                    std::io::Error::new(std::io::ErrorKind::InvalidInput, "--state-dir missing value")
+                    std::io::Error::new(
+                        std::io::ErrorKind::InvalidInput,
+                        "--state-dir missing value",
+                    )
                 })?;
-                args.state_dir = Some(v.into()); i += 2;
+                args.state_dir = Some(v.into());
+                i += 2;
             }
-            "-h" | "--help" => { usage(&prog); std::process::exit(0); }
+            "-h" | "--help" => {
+                usage(&prog);
+                std::process::exit(0);
+            }
             other => {
                 usage(&prog);
                 return Err(std::io::Error::new(
@@ -127,23 +160,26 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let args = parse_args()?;
     let mut store = match &args.state_dir {
         Some(d) => FsCredentialStore::with_dir(d),
-        None    => FsCredentialStore::new_default(),
+        None => FsCredentialStore::new_default(),
     };
 
     // Out-of-band pin first (no network required).
     if let Some(hex_str) = args.pin_server_pub {
-        let decoded = hex::decode(&hex_str)
-            .map_err(|_| ProtoError::wire(ErrorCode::InvalidEncoding, "--pin-server-pub is not hex"))?;
+        let decoded = hex::decode(&hex_str).map_err(|_| {
+            ProtoError::wire(ErrorCode::InvalidEncoding, "--pin-server-pub is not hex")
+        })?;
         if decoded.len() != 32 {
             return Err(ProtoError::wire(
                 ErrorCode::InvalidPoint,
                 "--pin-server-pub must be 32 bytes",
-            ).into());
+            )
+            .into());
         }
         let mut bytes = [0u8; 32];
         bytes.copy_from_slice(&decoded);
-        let p = CompressedRistretto(bytes).decompress()
-            .ok_or_else(|| ProtoError::wire(ErrorCode::InvalidPoint, "not a valid Ristretto point"))?;
+        let p = CompressedRistretto(bytes).decompress().ok_or_else(|| {
+            ProtoError::wire(ErrorCode::InvalidPoint, "not a valid Ristretto point")
+        })?;
         reject_identity(&p, "pinned server pub")?;
         store.save_server_pub(&p)?;
         println!("Pinned server pubkey out-of-band.");
@@ -174,23 +210,39 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         TransportKind::Udp => {
             let mut tr = UdpClientTransport::connect(&args.server)?;
             if args.do_setup {
-                run_setup_client(&mut tr, &mut store, &profile,
-                    args.pairing_token.as_deref(), args.allow_tofu_setup)?;
+                run_setup_client(
+                    &mut tr,
+                    &mut store,
+                    &profile,
+                    args.pairing_token.as_deref(),
+                    args.allow_tofu_setup,
+                )?;
                 println!("Client[SETUP]: Enrollment OK over UDP.");
             } else {
                 let key = run_auth_client(&mut tr, &mut store, &profile, DEFAULT_ALLOWED_ROLES)?;
-                println!("Client[AUTH]: OK over UDP. session_key={}", hex::encode(&key[..8]));
+                println!(
+                    "Client[AUTH]: OK over UDP. session_key={}",
+                    hex::encode(&key[..8])
+                );
             }
         }
         TransportKind::Tcp => {
             let mut tr = TcpClientTransport::connect(&args.server)?;
             if args.do_setup {
-                run_setup_client(&mut tr, &mut store, &profile,
-                    args.pairing_token.as_deref(), args.allow_tofu_setup)?;
+                run_setup_client(
+                    &mut tr,
+                    &mut store,
+                    &profile,
+                    args.pairing_token.as_deref(),
+                    args.allow_tofu_setup,
+                )?;
                 println!("Client[SETUP]: Enrollment OK over TCP.");
             } else {
                 let key = run_auth_client(&mut tr, &mut store, &profile, DEFAULT_ALLOWED_ROLES)?;
-                println!("Client[AUTH]: OK over TCP. session_key={}", hex::encode(&key[..8]));
+                println!(
+                    "Client[AUTH]: OK over TCP. session_key={}",
+                    hex::encode(&key[..8])
+                );
             }
         }
     }

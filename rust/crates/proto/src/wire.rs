@@ -56,20 +56,20 @@ pub const MAX_DATAGRAM: usize = 2048;
 pub const MAX_PAYLOAD: usize = MAX_DATAGRAM - HEADER_LEN;
 
 // Packet types
-pub const PKT_HELLO:       u8 = 0x01;
+pub const PKT_HELLO: u8 = 0x01;
 pub const PKT_HELLO_REPLY: u8 = 0x02;
-pub const PKT_SETUP_1:     u8 = 0x11;
-pub const PKT_SETUP_2:     u8 = 0x12;
-pub const PKT_SETUP_3:     u8 = 0x13;
-pub const PKT_SETUP_ACK:   u8 = 0x14;
-pub const PKT_AUTH_1:      u8 = 0x21;
-pub const PKT_AUTH_2:      u8 = 0x22;
-pub const PKT_AUTH_3:      u8 = 0x23;
-pub const PKT_AUTH_ACK:    u8 = 0x24;
-pub const PKT_ERROR:       u8 = 0x7f;
+pub const PKT_SETUP_1: u8 = 0x11;
+pub const PKT_SETUP_2: u8 = 0x12;
+pub const PKT_SETUP_3: u8 = 0x13;
+pub const PKT_SETUP_ACK: u8 = 0x14;
+pub const PKT_AUTH_1: u8 = 0x21;
+pub const PKT_AUTH_2: u8 = 0x22;
+pub const PKT_AUTH_3: u8 = 0x23;
+pub const PKT_AUTH_ACK: u8 = 0x24;
+pub const PKT_ERROR: u8 = 0x7f;
 
 // Flags (u16 LE)
-pub const FLAG_NONE:       u16 = 0x0000;
+pub const FLAG_NONE: u16 = 0x0000;
 /// Indicates the packet is a retransmission. Peers MUST accept retransmitted
 /// packets with the same `(session_id, seq)` and idempotently re-send the
 /// cached response.
@@ -77,23 +77,23 @@ pub const FLAG_RETRANSMIT: u16 = 0x0001;
 
 // TLV tags (for extensibility in HELLO / HELLO_REPLY / future messages)
 pub mod tlv_tag {
-    pub const MIN_VERSION:   u16 = 0x0001;
-    pub const SUITE_LIST:    u16 = 0x0002;
-    pub const CAPS:          u16 = 0x0003;
-    pub const MTU_HINT:      u16 = 0x0004;
-    pub const VENDOR_ID:     u16 = 0x0100;
-    pub const DEVICE_MODEL:  u16 = 0x0101;
+    pub const MIN_VERSION: u16 = 0x0001;
+    pub const SUITE_LIST: u16 = 0x0002;
+    pub const CAPS: u16 = 0x0003;
+    pub const MTU_HINT: u16 = 0x0004;
+    pub const VENDOR_ID: u16 = 0x0100;
+    pub const DEVICE_MODEL: u16 = 0x0101;
 }
 
 // ---- Header ----
 
 #[derive(Clone, Copy, Debug)]
 pub struct Header {
-    pub version:    u8,
-    pub pkt_type:   u8,
-    pub flags:      u16,
+    pub version: u8,
+    pub pkt_type: u8,
+    pub flags: u16,
     pub session_id: [u8; SESSION_ID_LEN],
-    pub seq:        u32,
+    pub seq: u32,
 }
 
 impl Header {
@@ -117,27 +117,39 @@ impl Header {
 
     pub fn decode(bytes: &[u8]) -> Result<(Header, &[u8])> {
         if bytes.len() < HEADER_LEN {
-            return Err(ProtoError::wire(ErrorCode::PayloadTooShort, "datagram < 24B header"));
+            return Err(ProtoError::wire(
+                ErrorCode::PayloadTooShort,
+                "datagram < 24B header",
+            ));
         }
-        let version  = bytes[0];
+        let version = bytes[0];
         let pkt_type = bytes[1];
-        let flags    = u16::from_le_bytes([bytes[2], bytes[3]]);
+        let flags = u16::from_le_bytes([bytes[2], bytes[3]]);
         let mut session_id = [0u8; SESSION_ID_LEN];
         session_id.copy_from_slice(&bytes[4..4 + SESSION_ID_LEN]);
-        let seq = u32::from_le_bytes([
-            bytes[20], bytes[21], bytes[22], bytes[23],
-        ]);
+        let seq = u32::from_le_bytes([bytes[20], bytes[21], bytes[22], bytes[23]]);
 
         // Version gating is done at negotiation time, but reject obviously
         // wrong headers here.
         if version < crate::caps::MIN_SUPPORTED_VERSION {
             return Err(ProtoError::wire(
                 ErrorCode::UnsupportedVersion,
-                format!("packet version {version} < min supported {}",
-                    crate::caps::MIN_SUPPORTED_VERSION),
+                format!(
+                    "packet version {version} < min supported {}",
+                    crate::caps::MIN_SUPPORTED_VERSION
+                ),
             ));
         }
-        Ok((Header { version, pkt_type, flags, session_id, seq }, &bytes[HEADER_LEN..]))
+        Ok((
+            Header {
+                version,
+                pkt_type,
+                flags,
+                session_id,
+                seq,
+            },
+            &bytes[HEADER_LEN..],
+        ))
     }
 }
 
@@ -150,7 +162,10 @@ pub fn build_packet(
 ) -> Vec<u8> {
     if payload.len() > MAX_PAYLOAD {
         // Caller is expected to have validated this; panic would be a bug.
-        panic!("payload {} exceeds MAX_PAYLOAD {MAX_PAYLOAD}", payload.len());
+        panic!(
+            "payload {} exceeds MAX_PAYLOAD {MAX_PAYLOAD}",
+            payload.len()
+        );
     }
     let mut out = Vec::with_capacity(HEADER_LEN + payload.len());
     Header::new(pkt_type, *session_id, seq).encode_into(&mut out);
@@ -183,14 +198,20 @@ pub struct TlvWriter<'a> {
 }
 
 impl<'a> TlvWriter<'a> {
-    pub fn new(out: &'a mut Vec<u8>) -> Self { Self { out } }
+    pub fn new(out: &'a mut Vec<u8>) -> Self {
+        Self { out }
+    }
 
     pub fn put(&mut self, tag: u16, value: &[u8]) -> Result<()> {
         if value.len() > u16::MAX as usize {
-            return Err(ProtoError::wire(ErrorCode::PayloadTooLarge, "TLV value > u16"));
+            return Err(ProtoError::wire(
+                ErrorCode::PayloadTooLarge,
+                "TLV value > u16",
+            ));
         }
         self.out.extend_from_slice(&tag.to_le_bytes());
-        self.out.extend_from_slice(&(value.len() as u16).to_le_bytes());
+        self.out
+            .extend_from_slice(&(value.len() as u16).to_le_bytes());
         self.out.extend_from_slice(value);
         Ok(())
     }
@@ -201,13 +222,17 @@ pub struct TlvIter<'a> {
 }
 
 impl<'a> TlvIter<'a> {
-    pub fn new(buf: &'a [u8]) -> Self { Self { buf } }
+    pub fn new(buf: &'a [u8]) -> Self {
+        Self { buf }
+    }
 }
 
 impl<'a> Iterator for TlvIter<'a> {
     type Item = Result<(u16, &'a [u8])>;
     fn next(&mut self) -> Option<Self::Item> {
-        if self.buf.is_empty() { return None; }
+        if self.buf.is_empty() {
+            return None;
+        }
         if self.buf.len() < 4 {
             let e = ProtoError::wire(ErrorCode::MalformedPacket, "truncated TLV header");
             self.buf = &[];
@@ -243,12 +268,12 @@ use crate::caps::{cap, SuiteId};
 
 #[derive(Clone, Debug)]
 pub struct Hello {
-    pub version:     u8,
+    pub version: u8,
     pub min_version: u8,
-    pub suites:      Vec<SuiteId>,
-    pub caps:        cap::Bits,
-    pub mtu_hint:    Option<u16>,
-    pub vendor_id:   Option<Vec<u8>>,
+    pub suites: Vec<SuiteId>,
+    pub caps: cap::Bits,
+    pub mtu_hint: Option<u16>,
+    pub vendor_id: Option<Vec<u8>>,
     pub device_model: Option<Vec<u8>>,
 }
 
@@ -279,13 +304,19 @@ impl Hello {
 
     pub fn decode(bytes: &[u8]) -> Result<Self> {
         if bytes.len() < 1 + 2 {
-            return Err(ProtoError::wire(ErrorCode::PayloadTooShort, "HELLO truncated"));
+            return Err(ProtoError::wire(
+                ErrorCode::PayloadTooShort,
+                "HELLO truncated",
+            ));
         }
         let version = bytes[0];
         let n = u16::from_le_bytes([bytes[1], bytes[2]]) as usize;
         let suites_end = 3 + 2 * n;
         if bytes.len() < suites_end + 8 {
-            return Err(ProtoError::wire(ErrorCode::PayloadTooShort, "HELLO suite list truncated"));
+            return Err(ProtoError::wire(
+                ErrorCode::PayloadTooShort,
+                "HELLO suite list truncated",
+            ));
         }
         let mut suites = Vec::with_capacity(n);
         for i in 0..n {
@@ -306,23 +337,41 @@ impl Hello {
             match tag {
                 t if t == tlv_tag::MIN_VERSION => {
                     if value.len() != 1 {
-                        return Err(ProtoError::wire(ErrorCode::MalformedPacket, "MIN_VERSION must be 1 byte"));
+                        return Err(ProtoError::wire(
+                            ErrorCode::MalformedPacket,
+                            "MIN_VERSION must be 1 byte",
+                        ));
                     }
                     min_version = value[0];
                 }
                 t if t == tlv_tag::MTU_HINT => {
                     if value.len() != 2 {
-                        return Err(ProtoError::wire(ErrorCode::MalformedPacket, "MTU_HINT must be 2 bytes"));
+                        return Err(ProtoError::wire(
+                            ErrorCode::MalformedPacket,
+                            "MTU_HINT must be 2 bytes",
+                        ));
                     }
                     mtu_hint = Some(u16::from_le_bytes([value[0], value[1]]));
                 }
-                t if t == tlv_tag::VENDOR_ID    => { vendor_id    = Some(value.to_vec()); }
-                t if t == tlv_tag::DEVICE_MODEL => { device_model = Some(value.to_vec()); }
+                t if t == tlv_tag::VENDOR_ID => {
+                    vendor_id = Some(value.to_vec());
+                }
+                t if t == tlv_tag::DEVICE_MODEL => {
+                    device_model = Some(value.to_vec());
+                }
                 _ => { /* Unknown tag: ignore per spec. */ }
             }
         }
 
-        Ok(Self { version, min_version, suites, caps, mtu_hint, vendor_id, device_model })
+        Ok(Self {
+            version,
+            min_version,
+            suites,
+            caps,
+            mtu_hint,
+            vendor_id,
+            device_model,
+        })
     }
 }
 

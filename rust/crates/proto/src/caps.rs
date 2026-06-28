@@ -34,27 +34,26 @@ pub mod cap {
     pub type Bits = u64;
 
     /// Supports the full ZK-ARCHE v2 online auth flow (AUTH_1/2/3).
-    pub const AUTH_V2:                Bits = 1 << 0;
+    pub const AUTH_V2: Bits = 1 << 0;
     /// Supports role-commitment re-randomization proofs.
-    pub const ROLE_RERAND:            Bits = 1 << 1;
+    pub const ROLE_RERAND: Bits = 1 << 1;
     /// Supports role set-membership proofs.
-    pub const ROLE_SET_MEMBERSHIP:    Bits = 1 << 2;
+    pub const ROLE_SET_MEMBERSHIP: Bits = 1 << 2;
     /// Supports pairing-token-gated setup.
-    pub const PAIRING_TOKEN:          Bits = 1 << 3;
+    pub const PAIRING_TOKEN: Bits = 1 << 3;
     /// Supports opportunistic TOFU pinning on first setup (lab-mode only).
-    pub const TOFU_SETUP:             Bits = 1 << 4;
+    pub const TOFU_SETUP: Bits = 1 << 4;
     /// Supports the minimal profile (auth only; setup is out-of-band).
-    pub const PROFILE_MINIMAL:        Bits = 1 << 8;
+    pub const PROFILE_MINIMAL: Bits = 1 << 8;
     /// Supports the standard profile (full setup + auth with all proofs).
-    pub const PROFILE_STANDARD:       Bits = 1 << 9;
+    pub const PROFILE_STANDARD: Bits = 1 << 9;
     /// Supports the gateway profile (relaying / observability).
-    pub const PROFILE_GATEWAY:        Bits = 1 << 10;
+    pub const PROFILE_GATEWAY: Bits = 1 << 10;
     /// Supports CBOR framing in addition to the native TLV format.
-    pub const CBOR_FRAMING:           Bits = 1 << 16;
+    pub const CBOR_FRAMING: Bits = 1 << 16;
 
     /// Baseline every conforming implementation MUST advertise.
-    pub const BASELINE: Bits =
-        AUTH_V2 | ROLE_RERAND | ROLE_SET_MEMBERSHIP | PROFILE_STANDARD;
+    pub const BASELINE: Bits = AUTH_V2 | ROLE_RERAND | ROLE_SET_MEMBERSHIP | PROFILE_STANDARD;
 }
 
 /// The locally-supported capability set this build advertises.
@@ -68,13 +67,14 @@ pub fn local_capabilities() -> cap::Bits {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Negotiated {
     pub version: u8,
-    pub suite:   SuiteId,
-    pub caps:    cap::Bits,
+    pub suite: SuiteId,
+    pub caps: cap::Bits,
 }
 
 /// Intersect two capability sets, picking the highest mutually-supported
 /// version and a mutually-supported suite. Returns an error with a specific
 /// wire code on mismatch so the initiator can tell *why* negotiation failed.
+#[allow(clippy::too_many_arguments)]
 pub fn negotiate(
     local_version: u8,
     local_min_version: u8,
@@ -98,10 +98,12 @@ pub fn negotiate(
         .iter()
         .copied()
         .find(|s| peer_suites.contains(s))
-        .ok_or_else(|| ProtoError::wire(
-            ErrorCode::UnsupportedSuite,
-            "no mutually-supported cipher suite",
-        ))?;
+        .ok_or_else(|| {
+            ProtoError::wire(
+                ErrorCode::UnsupportedSuite,
+                "no mutually-supported cipher suite",
+            )
+        })?;
 
     let caps = local_caps & peer_caps;
     if caps & cap::BASELINE != cap::BASELINE {
@@ -111,7 +113,11 @@ pub fn negotiate(
         ));
     }
 
-    Ok(Negotiated { version, suite, caps })
+    Ok(Negotiated {
+        version,
+        suite,
+        caps,
+    })
 }
 
 #[cfg(test)]
@@ -121,20 +127,34 @@ mod tests {
     #[test]
     fn negotiates_common_version_and_suite() {
         let n = negotiate(
-            2, 2, &[SUITE_RISTRETTO255_SHA256], cap::BASELINE,
-            2, 2, &[SUITE_RISTRETTO255_SHA256], cap::BASELINE,
-        ).unwrap();
+            2,
+            2,
+            &[SUITE_RISTRETTO255_SHA256],
+            cap::BASELINE,
+            2,
+            2,
+            &[SUITE_RISTRETTO255_SHA256],
+            cap::BASELINE,
+        )
+        .unwrap();
         assert_eq!(n.version, 2);
-        assert_eq!(n.suite,   SUITE_RISTRETTO255_SHA256);
+        assert_eq!(n.suite, SUITE_RISTRETTO255_SHA256);
     }
 
     #[test]
     fn fails_on_version_floor() {
         // Peer requires >=3, we can only offer 2.
         let e = negotiate(
-            2, 2, &[SUITE_RISTRETTO255_SHA256], cap::BASELINE,
-            3, 3, &[SUITE_RISTRETTO255_SHA256], cap::BASELINE,
-        ).unwrap_err();
+            2,
+            2,
+            &[SUITE_RISTRETTO255_SHA256],
+            cap::BASELINE,
+            3,
+            3,
+            &[SUITE_RISTRETTO255_SHA256],
+            cap::BASELINE,
+        )
+        .unwrap_err();
         assert_eq!(e.wire_code(), Some(ErrorCode::UnsupportedVersion));
     }
 }

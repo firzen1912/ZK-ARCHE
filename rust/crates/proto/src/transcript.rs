@@ -39,7 +39,8 @@ impl Transcript {
         assert!(label.len() <= 255, "label too long");
         self.buf.push(label.len() as u8);
         self.buf.extend_from_slice(label);
-        self.buf.extend_from_slice(&(msg.len() as u32).to_le_bytes());
+        self.buf
+            .extend_from_slice(&(msg.len() as u32).to_le_bytes());
         self.buf.extend_from_slice(msg);
     }
 
@@ -96,10 +97,10 @@ pub fn build(domain: &[u8], fields: &[(&[u8], TVal<'_>)]) -> Transcript {
     let mut t = Transcript::new(domain);
     for (label, v) in fields {
         match v {
-            TVal::Bytes(b)  => t.append_message(label, b),
-            TVal::U8(n)     => t.append_u8(label, *n),
-            TVal::U64(n)    => t.append_u64(label, *n),
-            TVal::Point(p)  => t.append_point(label, p),
+            TVal::Bytes(b) => t.append_message(label, b),
+            TVal::U8(n) => t.append_u8(label, *n),
+            TVal::U64(n) => t.append_u64(label, *n),
+            TVal::Point(p) => t.append_point(label, p),
             TVal::Scalar(s) => t.append_scalar(label, s),
         }
     }
@@ -113,16 +114,16 @@ pub fn challenge(domain: &[u8], fields: &[(&[u8], TVal<'_>)]) -> Scalar {
 // ---- Domain separators (wire-stable constants) ----
 
 // Enrollment (setup) — stable since v1.
-pub const T_SETUP:        &[u8] = b"setup_client_schnorr_v1";
+pub const T_SETUP: &[u8] = b"setup_client_schnorr_v1";
 pub const T_SETUP_SERVER: &[u8] = b"setup_server_schnorr_v1";
-pub const T_SERVER:       &[u8] = b"server_schnorr_v1";
+pub const T_SERVER: &[u8] = b"server_schnorr_v1";
 
 // ZK-ARCHE v2 online auth.
-pub const T_PID:          &[u8] = b"iot-auth/pid/v1";
-pub const T_CLIENT_V2:    &[u8] = b"client_schnorr_v2";
-pub const T_KC_V2:        &[u8] = b"kc_v2";
-pub const T_ROLE_SET:     &[u8] = b"client_role_set_v1";
-pub const T_ROLE_RERAND:  &[u8] = b"client_role_rerand_v1";
+pub const T_PID: &[u8] = b"iot-auth/pid/v1";
+pub const T_CLIENT_V2: &[u8] = b"client_schnorr_v2";
+pub const T_KC_V2: &[u8] = b"kc_v2";
+pub const T_ROLE_SET: &[u8] = b"client_role_set_v1";
+pub const T_ROLE_RERAND: &[u8] = b"client_role_rerand_v1";
 
 /// PID = SHA-256( len(T_PID) || T_PID || device_pub || nonce_c || eph_c || server_pub ).
 /// Encoded exactly as in the reference implementation; used as the session
@@ -156,10 +157,8 @@ mod tests {
         t.append_message(b"x", b"hello");
         // [0b=11, "test-domain"=11b, label_len=1, label="x", len=5 LE, "hello"]
         let expected: &[u8] = &[
-            11, b't', b'e', b's', b't', b'-', b'd', b'o', b'm', b'a', b'i', b'n',
-            1, b'x',
-            5, 0, 0, 0,
-            b'h', b'e', b'l', b'l', b'o',
+            11, b't', b'e', b's', b't', b'-', b'd', b'o', b'm', b'a', b'i', b'n', 1, b'x', 5, 0, 0,
+            0, b'h', b'e', b'l', b'l', b'o',
         ];
         assert_eq!(t.as_bytes(), expected);
     }

@@ -25,52 +25,54 @@ use std::fmt;
 #[repr(u16)]
 pub enum ErrorCode {
     // Version / capability
-    UnsupportedVersion   = 0x0101,
-    UnsupportedSuite     = 0x0102,
-    CapabilityMismatch   = 0x0103,
+    UnsupportedVersion = 0x0101,
+    UnsupportedSuite = 0x0102,
+    CapabilityMismatch = 0x0103,
 
     // Packet framing
-    MalformedPacket      = 0x0201,
-    UnknownPacketType    = 0x0202,
-    PayloadTooLarge      = 0x0203,
-    PayloadTooShort      = 0x0204,
-    InvalidEncoding      = 0x0205,
+    MalformedPacket = 0x0201,
+    UnknownPacketType = 0x0202,
+    PayloadTooLarge = 0x0203,
+    PayloadTooShort = 0x0204,
+    InvalidEncoding = 0x0205,
 
     // Cryptographic validation
-    InvalidPoint         = 0x0301,
-    NonCanonicalScalar   = 0x0302,
-    IdentityPoint        = 0x0303,
-    ProofVerifyFailed    = 0x0304,
-    KeyConfirmFailed     = 0x0305,
-    PeerKeyMismatch      = 0x0306,
+    InvalidPoint = 0x0301,
+    NonCanonicalScalar = 0x0302,
+    IdentityPoint = 0x0303,
+    ProofVerifyFailed = 0x0304,
+    KeyConfirmFailed = 0x0305,
+    PeerKeyMismatch = 0x0306,
 
     // Session / replay
-    UnknownSession       = 0x0401,
-    SessionExpired       = 0x0402,
-    ReplayDetected       = 0x0403,
-    SequenceOutOfOrder   = 0x0404,
+    UnknownSession = 0x0401,
+    SessionExpired = 0x0402,
+    ReplayDetected = 0x0403,
+    SequenceOutOfOrder = 0x0404,
 
     // Authorization
-    UnknownDevice        = 0x0501,
-    DeviceNotEnrolled    = 0x0502,
-    RoleNotPermitted     = 0x0503,
-    PairingTokenInvalid  = 0x0504,
+    UnknownDevice = 0x0501,
+    DeviceNotEnrolled = 0x0502,
+    RoleNotPermitted = 0x0503,
+    PairingTokenInvalid = 0x0504,
 
     // Rate limiting / resource
-    RateLimited          = 0x0601,
-    ServerBusy           = 0x0602,
-    TooManyActive        = 0x0603,
+    RateLimited = 0x0601,
+    ServerBusy = 0x0602,
+    TooManyActive = 0x0603,
 
     // Storage / backend
-    StorageFailure       = 0x0701,
-    CredentialMissing    = 0x0702,
-    RegistryCorrupt      = 0x0703,
+    StorageFailure = 0x0701,
+    CredentialMissing = 0x0702,
+    RegistryCorrupt = 0x0703,
 
-    Unspecified          = 0x7FFF,
+    Unspecified = 0x7FFF,
 }
 
 impl ErrorCode {
-    pub fn as_u16(self) -> u16 { self as u16 }
+    pub fn as_u16(self) -> u16 {
+        self as u16
+    }
 
     pub fn from_u16(code: u16) -> Self {
         match code {
@@ -102,7 +104,7 @@ impl ErrorCode {
             0x0701 => Self::StorageFailure,
             0x0702 => Self::CredentialMissing,
             0x0703 => Self::RegistryCorrupt,
-            _      => Self::Unspecified,
+            _ => Self::Unspecified,
         }
     }
 }
@@ -133,12 +135,21 @@ pub enum ProtoError {
 
 impl ProtoError {
     pub fn wire(code: ErrorCode, msg: impl Into<String>) -> Self {
-        Self::Wire { code, msg: msg.into() }
+        Self::Wire {
+            code,
+            msg: msg.into(),
+        }
     }
 
-    pub fn transport(msg: impl Into<String>) -> Self { Self::Transport(msg.into()) }
-    pub fn storage  (msg: impl Into<String>) -> Self { Self::Storage  (msg.into()) }
-    pub fn internal (msg: impl Into<String>) -> Self { Self::Internal (msg.into()) }
+    pub fn transport(msg: impl Into<String>) -> Self {
+        Self::Transport(msg.into())
+    }
+    pub fn storage(msg: impl Into<String>) -> Self {
+        Self::Storage(msg.into())
+    }
+    pub fn internal(msg: impl Into<String>) -> Self {
+        Self::Internal(msg.into())
+    }
 
     /// Extract the wire code, if this error can be transmitted on the wire.
     pub fn wire_code(&self) -> Option<ErrorCode> {
@@ -152,9 +163,9 @@ impl ProtoError {
     pub fn to_wire_payload(&self) -> Vec<u8> {
         let (code, msg) = match self {
             Self::Wire { code, msg } => (*code, msg.as_str()),
-            Self::Transport(m) => (ErrorCode::Unspecified,    m.as_str()),
-            Self::Storage(m)   => (ErrorCode::StorageFailure, m.as_str()),
-            Self::Internal(m)  => (ErrorCode::Unspecified,    m.as_str()),
+            Self::Transport(m) => (ErrorCode::Unspecified, m.as_str()),
+            Self::Storage(m) => (ErrorCode::StorageFailure, m.as_str()),
+            Self::Internal(m) => (ErrorCode::Unspecified, m.as_str()),
         };
         let mut out = Vec::with_capacity(2 + msg.len());
         out.extend_from_slice(&code.as_u16().to_le_bytes());
@@ -169,12 +180,17 @@ impl ProtoError {
         }
         let code = ErrorCode::from_u16(u16::from_le_bytes([bytes[0], bytes[1]]));
         let msg = std::str::from_utf8(&bytes[2..]).unwrap_or("<non-utf8>");
-        Self::Wire { code, msg: msg.into() }
+        Self::Wire {
+            code,
+            msg: msg.into(),
+        }
     }
 }
 
 impl From<std::io::Error> for ProtoError {
-    fn from(e: std::io::Error) -> Self { Self::transport(e.to_string()) }
+    fn from(e: std::io::Error) -> Self {
+        Self::transport(e.to_string())
+    }
 }
 
 pub type Result<T> = std::result::Result<T, ProtoError>;

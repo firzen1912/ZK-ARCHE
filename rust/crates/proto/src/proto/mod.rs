@@ -11,7 +11,7 @@
 //! executes) is an easy refactor from here but is not required for the
 //! transport-abstraction goal.
 
-pub mod payloads;
-pub(crate) mod common;
-pub mod setup;
 pub mod auth;
+pub(crate) mod common;
+pub mod payloads;
+pub mod setup;

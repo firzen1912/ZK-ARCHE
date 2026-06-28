@@ -17,8 +17,8 @@ use super::{
     CredentialStore, DeviceRecord, RegistryStore, ReplayCache, RoleCredential, ServerKeyStore,
 };
 use crate::crypto::{
-    decode_scalar, decompress_point, encode_role, make_role_commitment,
-    random_bytes_32, random_scalar, reject_identity,
+    decode_scalar, decompress_point, encode_role, make_role_commitment, random_bytes_32,
+    random_scalar, reject_identity,
 };
 use crate::error::{ErrorCode, ProtoError, Result};
 
@@ -26,9 +26,8 @@ use crate::error::{ErrorCode, ProtoError, Result};
 
 fn ensure_parent_dir(path: &Path) -> Result<()> {
     if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent).map_err(|e| {
-            ProtoError::storage(format!("mkdir {}: {e}", parent.display()))
-        })?;
+        fs::create_dir_all(parent)
+            .map_err(|e| ProtoError::storage(format!("mkdir {}: {e}", parent.display())))?;
     }
     Ok(())
 }
@@ -39,20 +38,31 @@ pub fn write_private_file_atomic(path: &Path, data: &[u8]) -> Result<()> {
     #[cfg(unix)]
     {
         let mut f = std::fs::OpenOptions::new()
-            .write(true).create(true).truncate(true).mode(0o600)
-            .open(&tmp).map_err(|e| ProtoError::storage(format!("open {}: {e}", tmp.display())))?;
-        f.write_all(data).map_err(|e| ProtoError::storage(format!("write: {e}")))?;
-        f.sync_all().map_err(|e| ProtoError::storage(format!("fsync: {e}")))?;
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .mode(0o600)
+            .open(&tmp)
+            .map_err(|e| ProtoError::storage(format!("open {}: {e}", tmp.display())))?;
+        f.write_all(data)
+            .map_err(|e| ProtoError::storage(format!("write: {e}")))?;
+        f.sync_all()
+            .map_err(|e| ProtoError::storage(format!("fsync: {e}")))?;
         fs::set_permissions(&tmp, fs::Permissions::from_mode(0o600))
             .map_err(|e| ProtoError::storage(format!("chmod: {e}")))?;
     }
     #[cfg(not(unix))]
     {
         let mut f = std::fs::OpenOptions::new()
-            .write(true).create(true).truncate(true)
-            .open(&tmp).map_err(|e| ProtoError::storage(format!("open {}: {e}", tmp.display())))?;
-        f.write_all(data).map_err(|e| ProtoError::storage(format!("write: {e}")))?;
-        f.sync_all().map_err(|e| ProtoError::storage(format!("fsync: {e}")))?;
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open(&tmp)
+            .map_err(|e| ProtoError::storage(format!("open {}: {e}", tmp.display())))?;
+        f.write_all(data)
+            .map_err(|e| ProtoError::storage(format!("write: {e}")))?;
+        f.sync_all()
+            .map_err(|e| ProtoError::storage(format!("fsync: {e}")))?;
     }
     fs::rename(&tmp, path).map_err(|e| ProtoError::storage(format!("rename: {e}")))?;
     Ok(())
@@ -62,32 +72,37 @@ pub fn write_private_file_atomic(path: &Path, data: &[u8]) -> Result<()> {
 fn verify_private_permissions(path: &Path) -> Result<()> {
     let mode = fs::metadata(path)
         .map_err(|e| ProtoError::storage(format!("stat {}: {e}", path.display())))?
-        .permissions().mode() & 0o777;
+        .permissions()
+        .mode()
+        & 0o777;
     if mode & 0o077 != 0 {
         return Err(ProtoError::storage(format!(
             "{} must not be group/world accessible (mode {:o})",
-            path.display(), mode,
+            path.display(),
+            mode,
         )));
     }
     Ok(())
 }
 #[cfg(not(unix))]
-fn verify_private_permissions(_p: &Path) -> Result<()> { Ok(()) }
+fn verify_private_permissions(_p: &Path) -> Result<()> {
+    Ok(())
+}
 
 // ---- CredentialStore ----
 
 pub struct FsCredentialStore {
     pub device_root_file: PathBuf,
-    pub server_pub_file:  PathBuf,
-    pub role_cred_file:   PathBuf,
+    pub server_pub_file: PathBuf,
+    pub role_cred_file: PathBuf,
 }
 
 impl FsCredentialStore {
     pub fn new_default() -> Self {
         Self {
             device_root_file: "./client-state/device_root.bin".into(),
-            server_pub_file:  "./client-state/server_pub.bin".into(),
-            role_cred_file:   "./client-state/role_cred.bin".into(),
+            server_pub_file: "./client-state/server_pub.bin".into(),
+            role_cred_file: "./client-state/role_cred.bin".into(),
         }
     }
 
@@ -95,8 +110,8 @@ impl FsCredentialStore {
         let d = dir.as_ref();
         Self {
             device_root_file: d.join("device_root.bin"),
-            server_pub_file:  d.join("server_pub.bin"),
-            role_cred_file:   d.join("role_cred.bin"),
+            server_pub_file: d.join("server_pub.bin"),
+            role_cred_file: d.join("role_cred.bin"),
         }
     }
 }
@@ -108,7 +123,10 @@ impl CredentialStore for FsCredentialStore {
             let b = fs::read(&self.device_root_file)
                 .map_err(|e| ProtoError::storage(format!("read device_root: {e}")))?;
             if b.len() != 32 {
-                return Err(ProtoError::wire(ErrorCode::CredentialMissing, "device_root wrong length"));
+                return Err(ProtoError::wire(
+                    ErrorCode::CredentialMissing,
+                    "device_root wrong length",
+                ));
             }
             let mut root = [0u8; 32];
             root.copy_from_slice(&b);
@@ -118,16 +136,24 @@ impl CredentialStore for FsCredentialStore {
             write_private_file_atomic(&self.device_root_file, &root)?;
             Ok(root)
         } else {
-            Err(ProtoError::wire(ErrorCode::CredentialMissing, "device root missing; run --setup first"))
+            Err(ProtoError::wire(
+                ErrorCode::CredentialMissing,
+                "device root missing; run --setup first",
+            ))
         }
     }
 
     fn load_server_pub(&self) -> Result<Option<RistrettoPoint>> {
-        if !self.server_pub_file.exists() { return Ok(None); }
+        if !self.server_pub_file.exists() {
+            return Ok(None);
+        }
         let b = fs::read(&self.server_pub_file)
             .map_err(|e| ProtoError::storage(format!("read server_pub: {e}")))?;
         if b.len() != 32 {
-            return Err(ProtoError::wire(ErrorCode::RegistryCorrupt, "server_pub wrong length"));
+            return Err(ProtoError::wire(
+                ErrorCode::RegistryCorrupt,
+                "server_pub wrong length",
+            ));
         }
         let mut bb = [0u8; 32];
         bb.copy_from_slice(&b);
@@ -141,12 +167,17 @@ impl CredentialStore for FsCredentialStore {
     }
 
     fn load_role_credential(&self) -> Result<Option<RoleCredential>> {
-        if !self.role_cred_file.exists() { return Ok(None); }
+        if !self.role_cred_file.exists() {
+            return Ok(None);
+        }
         verify_private_permissions(&self.role_cred_file)?;
         let data = fs::read(&self.role_cred_file)
             .map_err(|e| ProtoError::storage(format!("read role_cred: {e}")))?;
         if data.len() != 72 {
-            return Err(ProtoError::wire(ErrorCode::RegistryCorrupt, "role_cred wrong length"));
+            return Err(ProtoError::wire(
+                ErrorCode::RegistryCorrupt,
+                "role_cred wrong length",
+            ));
         }
 
         let mut role_code_bytes = [0u8; 8];
@@ -164,10 +195,17 @@ impl CredentialStore for FsCredentialStore {
 
         let expected = make_role_commitment(&role_scalar, &blind);
         if expected.compress().to_bytes() != commitment.compress().to_bytes() {
-            return Err(ProtoError::wire(ErrorCode::RegistryCorrupt, "role credential commitment mismatch"));
+            return Err(ProtoError::wire(
+                ErrorCode::RegistryCorrupt,
+                "role credential commitment mismatch",
+            ));
         }
 
-        Ok(Some(RoleCredential { role_code, blind, commitment }))
+        Ok(Some(RoleCredential {
+            role_code,
+            blind,
+            commitment,
+        }))
     }
 
     fn save_role_credential(&mut self, cred: &RoleCredential) -> Result<()> {
@@ -183,7 +221,7 @@ impl CredentialStore for FsCredentialStore {
 
 pub struct FsRegistryStore {
     pub registry_file: PathBuf,
-    pub backup_file:   PathBuf,
+    pub backup_file: PathBuf,
     cache: HashMap<[u8; 32], DeviceRecord>,
     dirty: bool,
 }
@@ -198,11 +236,18 @@ impl FsRegistryStore {
 
     pub fn with_files(registry_file: PathBuf, backup_file: PathBuf) -> Result<Self> {
         let cache = load_registry(&registry_file)?;
-        Ok(Self { registry_file, backup_file, cache, dirty: false })
+        Ok(Self {
+            registry_file,
+            backup_file,
+            cache,
+            dirty: false,
+        })
     }
 
     pub fn flush(&mut self) -> Result<()> {
-        if !self.dirty { return Ok(()); }
+        if !self.dirty {
+            return Ok(());
+        }
         save_registry_atomic(&self.registry_file, &self.backup_file, &self.cache)?;
         self.dirty = false;
         Ok(())
@@ -215,7 +260,10 @@ fn load_registry(path: &Path) -> Result<HashMap<[u8; 32], DeviceRecord>> {
     }
     let data = fs::read(path).map_err(|e| ProtoError::storage(format!("read registry: {e}")))?;
     if data.len() % 96 != 0 {
-        return Err(ProtoError::wire(ErrorCode::RegistryCorrupt, "registry length not multiple of 96"));
+        return Err(ProtoError::wire(
+            ErrorCode::RegistryCorrupt,
+            "registry length not multiple of 96",
+        ));
     }
     let mut map = HashMap::new();
     for chunk in data.chunks_exact(96) {
@@ -226,13 +274,21 @@ fn load_registry(path: &Path) -> Result<HashMap<[u8; 32], DeviceRecord>> {
         let mut rc_bytes = [0u8; 32];
         rc_bytes.copy_from_slice(&chunk[64..96]);
 
-        let pubkey = CompressedRistretto(pub_bytes).decompress()
-            .ok_or_else(|| ProtoError::wire(ErrorCode::RegistryCorrupt, "registry pubkey invalid"))?;
-        let role_commitment = CompressedRistretto(rc_bytes).decompress()
-            .ok_or_else(|| ProtoError::wire(ErrorCode::RegistryCorrupt, "registry commitment invalid"))?;
+        let pubkey = CompressedRistretto(pub_bytes).decompress().ok_or_else(|| {
+            ProtoError::wire(ErrorCode::RegistryCorrupt, "registry pubkey invalid")
+        })?;
+        let role_commitment = CompressedRistretto(rc_bytes).decompress().ok_or_else(|| {
+            ProtoError::wire(ErrorCode::RegistryCorrupt, "registry commitment invalid")
+        })?;
         reject_identity(&pubkey, "registry pubkey")?;
         reject_identity(&role_commitment, "registry role commitment")?;
-        map.insert(device_id, DeviceRecord { pubkey, role_commitment });
+        map.insert(
+            device_id,
+            DeviceRecord {
+                pubkey,
+                role_commitment,
+            },
+        );
     }
     Ok(map)
 }
@@ -278,9 +334,13 @@ pub struct FsServerKeyStore {
 
 impl FsServerKeyStore {
     pub fn new_default() -> Self {
-        Self { path: "./server-state/server_sk.bin".into() }
+        Self {
+            path: "./server-state/server_sk.bin".into(),
+        }
     }
-    pub fn with_path(path: impl Into<PathBuf>) -> Self { Self { path: path.into() } }
+    pub fn with_path(path: impl Into<PathBuf>) -> Self {
+        Self { path: path.into() }
+    }
 }
 
 impl ServerKeyStore for FsServerKeyStore {
@@ -290,7 +350,10 @@ impl ServerKeyStore for FsServerKeyStore {
             let b = fs::read(&self.path)
                 .map_err(|e| ProtoError::storage(format!("read server_sk: {e}")))?;
             if b.len() != 32 {
-                return Err(ProtoError::wire(ErrorCode::RegistryCorrupt, "server_sk wrong length"));
+                return Err(ProtoError::wire(
+                    ErrorCode::RegistryCorrupt,
+                    "server_sk wrong length",
+                ));
             }
             let mut bb = [0u8; 32];
             bb.copy_from_slice(&b);
@@ -311,7 +374,12 @@ pub struct MemoryReplayCache {
 }
 
 impl MemoryReplayCache {
-    pub fn new(cap: usize) -> Self { Self { set: HashSet::with_capacity(cap.min(1024)), cap } }
+    pub fn new(cap: usize) -> Self {
+        Self {
+            set: HashSet::with_capacity(cap.min(1024)),
+            cap,
+        }
+    }
 }
 
 impl ReplayCache for MemoryReplayCache {
@@ -319,21 +387,21 @@ impl ReplayCache for MemoryReplayCache {
         if self.set.len() >= self.cap {
             // Simple eviction: drop an arbitrary entry. For production, use
             // a generation-based cache (matches the reference implementation).
-            if let Some(&k) = self.set.iter().next() { self.set.remove(&k); }
+            if let Some(&k) = self.set.iter().next() {
+                self.set.remove(&k);
+            }
         }
         self.set.insert(key)
     }
-    fn contains(&self, key: &[u8; 32]) -> bool { self.set.contains(key) }
+    fn contains(&self, key: &[u8; 32]) -> bool {
+        self.set.contains(key)
+    }
 }
 
 // Compute a canonical replay key from (pid, nonce_c, eph_c). This is the same
 // binding as `T_CLIENT_V2` uses, so no two successful AUTH_1 messages can
 // share a key without the client having reused randomness.
-pub fn replay_key(
-    pid: &[u8; 32],
-    nonce_c: &[u8; 32],
-    eph_c: &RistrettoPoint,
-) -> [u8; 32] {
+pub fn replay_key(pid: &[u8; 32], nonce_c: &[u8; 32], eph_c: &RistrettoPoint) -> [u8; 32] {
     use sha2::{Digest, Sha256};
     let mut h = Sha256::new();
     h.update(b"iot-auth/replay-key/v2");
@@ -346,4 +414,7 @@ pub fn replay_key(
 }
 
 // Silence unused-import warnings when compiling without Unix cfg.
-#[allow(dead_code)] fn _rbp_ref() -> RistrettoPoint { RISTRETTO_BASEPOINT_POINT }
+#[allow(dead_code)]
+fn _rbp_ref() -> RistrettoPoint {
+    RISTRETTO_BASEPOINT_POINT
+}
