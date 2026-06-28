@@ -22,7 +22,11 @@ Rust test vectors under `rust/test-vectors/0x0001/` are the primary byte-level i
 - Do not claim production-ready cryptographic security, side-channel resistance, memory-safety completeness, formal verification, replay-resistance completeness, external review completion, IoT field readiness, or certification without checked-in evidence.
 - Rust, C, and Python must remain byte-compatible at the vector, transcript, wire-header, TLV, proof, KDF, MAC, and protocol-state-machine boundaries where each lane implements the feature. Python is a reference/interoperability lane, not an `iot-core` constrained-device target.
 - Normal `AUTH` must remain proof of prior enrollment. Unknown-device self-registration inside `AUTH` is not allowed unless a future checkpoint explicitly proves equivalent authorization, replay, privacy, and abuse resistance.
-- `iot-core` must remain ZK-minimal: no general-purpose zkSNARK/STARK/Plonk/Groth16 prover, large anonymous-credential prover, post-quantum hybrid, large Merkle tree, certificate-chain parser, or heap-heavy policy engine may become mandatory for MCU-class devices.
+- `iot-core` and `p2p-iot-core` must remain ZK-minimal: no general-purpose zkSNARK/STARK/Plonk/Groth16 implementation path, large anonymous-credential prover, post-quantum hybrid, large Merkle tree, certificate-chain parser, heavy trust-graph evaluator, or heap-heavy policy engine may become mandatory for MCU-class devices.
+- The mandatory P2P baseline must stay close to proven, portable primitives: ECDH, signatures, HKDF, MAC, AEAD, hashes, canonical encoding, replay protection, transcript binding, and small Sigma/Schnorr-style proofs only where they are bounded and vector-tested.
+- Every P2P-capable implementation must support a constrained baseline profile that lets the lowest supported processor authenticate the highest supported processor. High-end peers must negotiate down to the constrained baseline instead of forcing MCUs into gateway-class features.
+- P2P mode must use `initiator` and `responder` message roles rather than permanent client/server identity. Any device may initiate or respond, but every handshake still has explicit direction for transcript binding, replay checks, and reflection protection.
+- A zero-trust web of trust must spread scoped, revocable evidence, not implicit transitive trust. Trust edges must be local-policy evaluated, bounded by depth/scope/epoch, and unable to auto-enroll unknown devices through normal `AUTH`.
 - Protected telemetry/data-sovereignty features must be encrypted-by-default. Any plaintext protected-data path must be explicitly marked public/test-only and must fail CI for sovereignty profiles.
 - Per-device data sovereignty claims require checked-in evidence for device-controlled encryption, policy-bound release, auditability, revocation behavior, replay resistance, and target profile footprint.
 - The C implementation must preserve strict warnings and sanitizer-clean validation as release-gate evidence.
@@ -31,41 +35,42 @@ Rust test vectors under `rust/test-vectors/0x0001/` are the primary byte-level i
 - Automated agents may improve clarity, tests, scripts, and validation, but must not weaken assurance-status truthfulness.
 
 
-
 ## IoT Capability and Assurance Contract
 
-This roadmap must stay implementable across heterogeneous IoT targets rather than drifting toward gateway-only assumptions.
+This roadmap must stay implementable across heterogeneous IoT targets rather than drifting toward gateway-only assumptions. The smallest supported device must be able to mutually authenticate the largest supported device using the mandatory constrained profile.
 
 Target classes:
 
 | Class | Representative devices | Expected role |
 |---|---|---|
-| MCU-core | STM32-class bare-metal/RTOS targets | constrained client, minimal storage, no heap-heavy protocol requirements |
-| MCU-plus | ESP32-S3-class RTOS targets | constrained client, optional commissioner, small registry only if explicitly benchmarked |
-| Linux-edge | Raspberry Pi-class Linux targets | client, server, commissioner, test harness, local gateway |
-| Accelerated-edge | Jetson Orin-class Linux targets | gateway/server, large-registry benchmarks, fuzz/formal/review artifact generation |
+| MCU-core | STM32-class bare-metal/RTOS targets | `p2p-iot-core` peer, direct trust, tiny trust store, fixed-buffer authentication |
+| MCU-plus | ESP32/ESP32-S3-class RTOS targets | `p2p-iot-plus` peer, optional small registry, optional commissioner-lite behavior if benchmarked |
+| Linux-edge | Raspberry Pi-class Linux targets | `p2p-edge` peer, commissioner, trust-grant resolver, local gateway, test harness |
+| Accelerated-edge | Jetson Orin-class Linux targets | `p2p-accelerated-edge` peer/gateway, large-registry benchmarks, fuzz/formal/review artifact generation |
 
 Profile policy:
 
-- `iot-core` features must fit a classical, low-memory client/server profile using fixed-size buffers where practical, bounded parsing, deterministic error handling, and no mandatory dynamic allocation in C hot paths.
-- `iot-edge` features may require Linux-class storage, larger registries, and more benchmarking infrastructure, but must not become mandatory for `iot-core` authentication.
-- Heavy cryptographic upgrades, privacy-credential experiments, and post-quantum experiments must be suite-negotiated and optional until target-specific byte, RAM, CPU, and interop evidence exists.
-- Any feature that cannot fit `iot-core` must provide a safe fallback or be explicitly marked `iot-edge-only`; it cannot be a hidden dependency of baseline `AUTH`.
+- `p2p-iot-core` is mandatory for P2P interoperability. It must use fixed-size buffers where practical, bounded parsing, deterministic error handling, no mandatory dynamic allocation in C hot paths, and no mandatory full trust-graph validation.
+- `p2p-iot-plus` may add small delegated grants, small local registries, encrypted lookup hints, and small resumption caches only after explicit byte/RAM/CPU evidence.
+- `p2p-edge` and `p2p-accelerated-edge` may resolve trust graphs, aggregate threshold approvals, maintain large registries, bridge audit logs, and generate review artifacts, but these features must compile down into compact grants or credentials when interacting with constrained peers.
+- The high-end peer adapts downward. Raspberry Pi, Jetson, laptop, and server implementations must be able to speak the same `p2p-iot-core` authentication profile as ESP32/STM32-class devices.
+- Heavy cryptographic upgrades, privacy-credential experiments, post-quantum experiments, large graph proofs, and general-purpose ZK proving systems must be suite-negotiated research or edge-only work. They must not become hidden dependencies of baseline `AUTH`, `P2P_AUTH`, or `LINK`.
+- Any feature that cannot fit `p2p-iot-core` must provide a safe fallback or be explicitly marked `p2p-edge-only`/`research-only`; it cannot be a hidden dependency of baseline peer authentication.
 - UDP profiles should preserve the current small-datagram design target. Any feature that exceeds the configured datagram budget must require TCP, fragmentation, or an explicit gateway-only profile.
-- Hardware-specific acceleration is allowed only as an optimization. Correctness and security semantics must not depend on vendor-specific acceleration.
+- Hardware-specific acceleration is allowed only as an optimization. Correctness, security semantics, and interoperability must not depend on vendor-specific acceleration.
 
 Minimum metrics every new protocol feature must report before moving beyond design:
 
 | Metric | Required evidence |
 |---|---|
-| Wire cost | measured bytes for each new message and total exchange, with `R=1`, `R=4`, and `R=8` role branches where relevant |
+| Wire cost | measured bytes for each new message and total exchange, with constrained defaults and upper-profile variants where relevant |
 | RAM profile | peak stack/heap estimate or measurement for C/Rust implementations on constrained builds |
 | CPU profile | benchmark against the current baseline on at least one constrained-class and one Linux-edge-class target, or an explicit evidence gap |
-| Registry scaling | lookup cost for 1k, 10k, and 100k records where server-side lookup is affected |
-| Replay behavior | duplicate, reordered, stale, cross-session, and wrong-sequence negative tests |
-| Transcript binding | mutation tests proving each negotiated security field is covered by key confirmation or an equivalent binder |
+| Registry/trust scaling | lookup and trust-evidence validation cost for direct trust, small grants, and 1k/10k/100k-record edge registries where affected |
+| Replay behavior | duplicate, reordered, stale, cross-session, wrong-sequence, reflected, and wrong-direction negative tests |
+| Transcript binding | mutation tests proving each negotiated security field, peer commitment, trust-evidence hash, transport label, role/policy hash, and epoch is covered by key confirmation or an equivalent binder |
 | Interop | Rust/C byte-level vectors before compatibility is claimed; Python follows the same vector suite where available |
-| Failure behavior | malformed input, oversized input, storage exhaustion, RNG failure, clock skew, and restart behavior are explicit tests or documented gaps |
+| Failure behavior | malformed input, oversized input, storage exhaustion, RNG failure, clock skew, restart behavior, and trust-store exhaustion are explicit tests or documented gaps |
 
 IoT-readiness claim rule:
 
@@ -73,6 +78,14 @@ IoT-readiness claim rule:
 No roadmap item may claim IoT field readiness merely because it builds on a workstation.
 An IoT-readiness claim requires checked-in target profile notes, byte/RAM/CPU measurements,
 negative security tests, and implementation gap disclosure.
+```
+
+P2P interoperability rule:
+
+```text
+Every P2P implementation MUST implement p2p-iot-core.
+Every P2P implementation MUST be able to authenticate every other P2P implementation
+using p2p-iot-core, even if both sides also support higher profiles.
 ```
 
 ## Review Policy
@@ -127,7 +140,10 @@ negative security tests, and implementation gap disclosure.
 | zk235 | Planned | Local audit hash-chain and gateway transparency-log bridge |
 | zk236 | Planned | Sovereignty CI gates for plaintext prevention, replay rejection, vector parity, fuzzing, and footprint budgets |
 | zk237 | Planned | Channel-bound sovereignty mode for EDHOC/OSCORE, TLS/mTLS, and DTLS deployments |
-| zk238 | Planned | Advanced anonymous-credential and zkSNARK sovereignty research kept outside `iot-core` |
+| zk238 | Planned | Advanced credential and sovereignty research kept outside the implementation baseline |
+| zk239 | Planned | P2P zero-trust trust graph with initiator/responder mutual authentication |
+| zk240 | Planned | P2P IoT profile contract so constrained devices remain first-class peers |
+| zk241 | Planned | Conservative crypto baseline with no SNARK/STARK implementation path |
 
 ## zk201 — Baseline
 
@@ -1193,13 +1209,24 @@ ZK-ARCHE-CORE
   profile identifiers, extension negotiation, error handling, and test-vector rules.
 
 ZK-ARCHE-AUTH
-  Native privacy-preserving role authentication and constrained session establishment.
+  Native privacy-preserving role authentication, classic AUTH compatibility,
+  P2P mutual authentication, and constrained session establishment.
+
+ZK-ARCHE-LINK
+  Transport-independent secure peer association, link identifiers, session export,
+  replay windows, resumption, and per-transport binding labels.
+
+ZK-ARCHE-TRUST
+  Peer records, direct trust, domain trust, scoped trust edges, compact grants,
+  revocation epochs, threshold approvals, and local policy decision inputs.
 
 ZK-ARCHE-BIND
-  Channel-bound mode for EDHOC/OSCORE, TLS/mTLS, and DTLS deployments.
+  Channel-bound mode for EDHOC/OSCORE, TLS/mTLS, DTLS, UDP/TCP, BLE, serial,
+  and Reticulum-style carrier deployments.
 
 ZK-ARCHE-ENROLL
-  Setup, late enrollment, delegated enrollment, rekey, revocation, and registry epochs.
+  Setup, late enrollment, delegated enrollment, rekey, revocation, registry epochs,
+  and commissioner-issued grants.
 
 ZK-ARCHE-DATA
   Device-controlled encrypted data records, policy-bound release, auditability,
@@ -1212,6 +1239,8 @@ Required specification artifacts:
 |---|---|
 | Architecture document | `spec/zk-arche-architecture.md` |
 | AUTH protocol document | `spec/zk-arche-auth.md` |
+| LINK peer-association document | `spec/zk-arche-link.md` |
+| TRUST graph and grant document | `spec/zk-arche-trust.md` |
 | Enrollment document | `spec/zk-arche-setup-enrollment.md` |
 | Wire-format document | `spec/zk-arche-wire-format.md` |
 | Crypto-suite registry | `spec/zk-arche-crypto-suites.md` |
@@ -1230,10 +1259,11 @@ Protocol layering target:
 Layer 0: Wire framing and canonical encoding
 Layer 1: Crypto-suite and profile registries
 Layer 2: Enrollment, late enrollment, rekey, and revocation
-Layer 3: AUTH handshake and role-membership proof
-Layer 4: Session export and channel binding
-Layer 5: Application policy binding and data release
-Layer 6: IoT profile constraints and deployment guidance
+Layer 3: AUTH handshake, P2P initiator/responder flow, and role-membership proof
+Layer 4: LINK session export, replay windows, and channel binding
+Layer 5: TRUST evidence, compact grants, revocation epochs, and local policy binding
+Layer 6: Application policy binding and data release
+Layer 7: IoT profile constraints and deployment guidance
 ```
 
 Formal security goals to state explicitly:
@@ -1241,7 +1271,8 @@ Formal security goals to state explicitly:
 - server authentication;
 - device enrollment authentication;
 - role-membership authentication;
-- optional mutual authentication;
+- mandatory mutual authentication for P2P profiles;
+- optional mutual authentication for classic client/server compatibility profiles;
 - session-key secrecy and forward secrecy;
 - downgrade resistance;
 - unknown-key-share resistance;
@@ -1260,7 +1291,7 @@ Non-goals and limitations that must remain visible:
 - ZK-ARCHE does not protect a device after its root/private key is compromised.
 - Custom role proofs are not production-grade anonymous credentials without external review.
 - ZK-ARCHE does not replace transport security in binding modes.
-- `iot-core` does not make post-quantum or general-purpose zkSNARK claims.
+- `iot-core` does not make post-quantum, large anonymous-credential, or general-purpose ZK proving claims.
 - Traffic-analysis correlation by timing, radio metadata, and packet size is not solved by default.
 
 Acceptance gates:
@@ -1295,7 +1326,7 @@ Core constraint:
 ```text
 ESP32-S3/STM32-class devices run only small, bounded crypto.
 Gateways, issuers, and servers handle heavy policy indexing, anonymous credentials,
-large Merkle structures, formal audit verification, or zkSNARK research modes.
+large Merkle structures, formal audit verification, or non-baseline policy research modes.
 ```
 
 Device-local sovereignty root:
@@ -1350,7 +1381,7 @@ Add a per-device data-sovereignty architecture document. Define device_root_sk d
 
 ## zk232 — ZK-Minimal Proof-Carrying Data Profile
 
-Goal: use small zero-knowledge or proof-like primitives for constrained devices while reserving heavyweight anonymous credentials and zkSNARKs for gateway/research profiles.
+Goal: use small zero-knowledge or proof-like primitives for constrained devices while keeping heavyweight anonymous credentials and general-purpose ZK proving systems outside the implementation baseline.
 
 Allowed `iot-core` proof primitives:
 
@@ -1379,7 +1410,7 @@ Proof hierarchy:
 | Enrolled device | Schnorr proof | anonymous credential |
 | Allowed role | small OR/set-membership proof | BBS-style selective disclosure |
 | Release authorized | MAC ticket or signature | Privacy Pass-style unlinkable token |
-| Data belongs to policy | hash commitment | Merkle proof or zkSNARK |
+| Data belongs to policy | hash commitment | Merkle proof or gateway-computed policy proof |
 | Audit not tampered | hash chain | Merkle transparency log |
 | Recipient allowed | policy token | ZK policy proof |
 
@@ -1405,7 +1436,7 @@ Acceptance gates:
 Suggested task:
 
 ```text
-Define a ZK-minimal proof-carrying data profile. Restrict iot-core to Schnorr, bounded role membership, MAC tickets, hash commitments, and small optional Merkle proofs. Keep BBS, Privacy Pass, zkSNARK, and post-quantum work gateway/research-only unless measured and reviewed.
+Define a ZK-minimal proof-carrying data profile. Restrict iot-core to Schnorr, bounded role membership, MAC tickets, hash commitments, and small optional Merkle proofs. Keep BBS, Privacy Pass-style, large policy-proof, and post-quantum work outside `iot-core` unless separately measured, reviewed, and profile-gated.
 ```
 
 ## zk233 — ZK-ARCHE-DATA Minimal Sovereignty Protocol
@@ -1769,9 +1800,9 @@ Suggested task:
 Design channel-bound sovereignty modes for EDHOC/OSCORE, TLS/mTLS, and DTLS. Bind ZK-ARCHE AUTH and DATA proofs to exporter/context material, server/application identity, suite/profile, policy hash, and epoch state, with negative tests for wrong-channel mutations.
 ```
 
-## zk238 — Advanced Sovereignty Research Outside iot-core
+## zk238 — Advanced Sovereignty Research Outside the Implementation Baseline
 
-Goal: evaluate stronger anonymous-credential and zero-knowledge policy systems without increasing the baseline code footprint or compute requirement of constrained devices.
+Goal: evaluate stronger credential, audit, and policy ideas without increasing the baseline code footprint or compute requirement of constrained devices.
 
 Research candidates:
 
@@ -1779,16 +1810,18 @@ Research candidates:
 - Privacy Pass-style unlinkable authorization tokens;
 - Direct Anonymous Attestation-style hardware-backed authorization;
 - Merkle transparency logs for gateway audit aggregation;
-- zkSNARK policy proofs for complex release policies;
-- post-quantum hybrid suites only for gateway/research profiles.
+- post-quantum hybrid suites only for gateway/research profiles;
+- non-baseline policy-proof research notes with no implementation requirement.
 
 Strict separation policy:
 
 ```text
-Research features MAY inform future suites.
-Research features MUST NOT become baseline `iot-core` requirements.
+Research features MAY inform future suite design.
+Research features MUST NOT become baseline `iot-core` or `p2p-iot-core` requirements.
 Research features MUST be suite-negotiated, profile-gated, measured, and externally reviewed
 before any production or constrained-device claim is made.
+General-purpose SNARK/STARK-style proving systems are not part of the checked-in
+implementation roadmap unless a future charter explicitly reopens that scope.
 ```
 
 Evaluation criteria:
@@ -1804,15 +1837,214 @@ Evaluation criteria:
 
 Acceptance gates:
 
-- Research suites cannot be enabled by default in `iot-core`.
+- Research suites cannot be enabled by default in `iot-core` or `p2p-iot-core`.
 - All research claims include measured or explicitly missing byte/RAM/CPU evidence.
 - External review is required before production-grade privacy or cryptographic claims.
 - Existing classical vectors and constrained profiles remain valid.
+- No SNARK/STARK implementation work is accepted under this item.
 
 Suggested task:
 
 ```text
-Evaluate advanced anonymous credentials, Privacy Pass-style tokens, DAA-style device authorization, Merkle transparency logs, zkSNARK policy proofs, and post-quantum hybrids as gateway/research-only sovereignty extensions. Preserve iot-core minimalism and require measurement, suite isolation, and external review.
+Evaluate advanced anonymous credentials, Privacy Pass-style tokens, DAA-style device authorization, Merkle transparency logs, non-baseline policy-proof research, and post-quantum hybrids as research-only sovereignty extensions. Preserve constrained-profile minimalism and require measurement, suite isolation, and external review.
+```
+
+## zk239 — P2P Zero-Trust Trust Graph
+
+Goal: add a peer-to-peer mutual-authentication profile where every enrolled device can act as initiator or responder, while authorization remains local, scoped, revocable, and policy-bound.
+
+Core principle:
+
+```text
+A web of trust spreads verifiable evidence, not implicit trust.
+A peer is authorized for a specific action, in a specific context, for a specific epoch,
+only after fresh authentication and local policy evaluation.
+```
+
+Required artifacts:
+
+| Artifact | Suggested path |
+|---|---|
+| P2P design note | `docs/p2p-zero-trust-design.md` |
+| P2P AUTH/LINK spec | `spec/zk-arche-link.md` |
+| TRUST spec | `spec/zk-arche-trust.md` |
+| Peer record format | `spec/peer-record.md` |
+| Trust edge/grant format | `spec/trust-edge-grant.md` |
+| P2P transcript-v3 vectors | `rust/test-vectors/0x0002/p2p/` |
+| P2P negative-test inventory | `security/P2P_NEGATIVE_TEST_INVENTORY.md` |
+
+Candidate trust objects:
+
+```text
+PeerRecord {
+  version
+  suite_id
+  peer_commitment_or_public_key
+  domain_id
+  role_mask_or_role_commitment
+  capability_mask
+  registry_epoch
+  revocation_epoch
+  policy_hash
+  status
+}
+
+TrustEdge {
+  issuer
+  subject
+  domain_id
+  scope
+  capability_mask
+  delegation_allowed
+  max_delegation_depth
+  valid_from_epoch
+  valid_until_epoch
+  revocation_epoch
+  policy_hash
+  issuer_signature
+}
+```
+
+Candidate P2P flow:
+
+```text
+PEER_HELLO   initiator -> responder: version, suite, profile, domain hash, nonce_i, eph_i, lookup hint, requested capability
+PEER_REPLY   responder -> initiator: nonce_r, eph_r, responder proof, responder grant/proof, retry/state binding
+PEER_AUTH    initiator -> responder: initiator proof, initiator grant/proof, transcript MAC
+PEER_FINISH  responder -> initiator: transcript MAC, optional session ticket
+```
+
+Rules:
+
+- `client` and `server` become compatibility wrappers over `initiator` and `responder`.
+- Either peer may initiate; both peers must authenticate and confirm the same transcript.
+- No unrestricted transitive trust is allowed.
+- Unknown-device self-registration remains outside normal `AUTH` and `P2P_AUTH`.
+- Delegation is off by default, depth-limited, role-limited, epoch-limited, revocable, and auditable.
+- Threshold approval is required for sensitive roles such as commissioner/admin/root issuer.
+- Trust evidence must be transcript-bound by hash or canonical bytes.
+
+Acceptance gates:
+
+- Either peer can initiate and either peer can respond.
+- Both peers mutually authenticate and derive the same session/link keys.
+- Reflection, replay, downgrade, unknown-key-share, wrong-role, wrong-policy, wrong-domain, stale-epoch, revoked-peer, excessive-depth, and graph-poisoning tests are present.
+- Trust paths are locally evaluated and bounded by policy.
+- Rust/C vectors exist before interop is claimed; Python follows once the Rust vector set stabilizes.
+- No P2P maturity claim is made until transcript, state-machine, replay, retry-cookie, and trust-evidence mutation tests exist.
+
+Suggested task:
+
+```text
+Design and implement a ZK-ARCHE-P2P profile using initiator/responder roles, mutual authentication, scoped trust evidence, compact grants, revocation epochs, and local policy evaluation. Preserve classic AUTH as a compatibility profile while adding P2P vectors and negative tests.
+```
+
+## zk240 — P2P IoT Profile Contract
+
+Goal: ensure ZK-ARCHE-P2P supports MCU-class, RTOS-class, Linux-edge, and accelerated-edge devices without forcing gateway-class trust-graph features onto constrained devices.
+
+Required profiles:
+
+| Profile | Target | Required behavior |
+|---|---|---|
+| `p2p-iot-core` | STM32/ESP32-class constrained peers | direct mutual auth, compact grants, small trust store, fixed buffers, no graph search |
+| `p2p-iot-plus` | larger ESP32/STM32 and RTOS peers | optional small delegation, small resumption cache, optional encrypted lookup hints |
+| `p2p-edge` | Raspberry Pi/laptop/gateway peers | commissioner, trust resolver, threshold aggregation, revocation distribution |
+| `p2p-accelerated-edge` | Jetson/server peers | large-registry benchmarks, audit bridge, fuzz/formal/review artifact generation |
+
+Constrained baseline requirements:
+
+```text
+Every P2P implementation MUST implement p2p-iot-core.
+Every high-end peer MUST be able to authenticate and be authenticated by a p2p-iot-core peer.
+No p2p-iot-core peer is required to parse a certificate chain, evaluate a full trust graph,
+run a heavy policy engine, or verify gateway-class proof systems.
+```
+
+Initial target budgets:
+
+| Budget | Initial target or rule |
+|---|---|
+| Single datagram | 512-1024 bytes target, profile-configured |
+| Full handshake wire | measured target under 2-4 KiB, or explicit evidence gap |
+| C hot-path heap | 0 bytes preferred after initialization |
+| Peer records | 4/8/16/32 benchmark tiers |
+| Trust edges on MCU | 0 by default, 1-8 only for `p2p-iot-plus` with evidence |
+| Delegation depth on MCU | 0 for `p2p-iot-core`, at most 1 for measured `p2p-iot-plus` |
+| Replay entries | 8/16/32 benchmark tiers |
+| Required wall clock | avoided unless counter/epoch fallback is specified |
+
+Acceptance gates:
+
+- `p2p-iot-core` uses fixed-size buffers where practical.
+- No mandatory heap-heavy policy engine, full graph validation, anonymous-credential prover, post-quantum hybrid, certificate-chain parser, or general-purpose ZK prover exists in `p2p-iot-core`.
+- Every optional feature is suite/profile negotiated and transcript-bound.
+- Every feature reports wire bytes, RAM, CPU, replay behavior, failure behavior, and interop evidence before IoT-readiness claims.
+- Missing hardware measurements are recorded as evidence gaps, not passes.
+
+Suggested task:
+
+```text
+Add a P2P IoT profile contract and benchmark harness. Keep p2p-iot-core as the mandatory interoperability floor, define p2p-iot-plus/edge/accelerated-edge profiles, and enforce profile negotiation so constrained devices are never forced into gateway-class features.
+```
+
+## zk241 — Conservative Crypto Baseline
+
+Goal: ensure the smallest supported devices can mutually authenticate the largest supported devices using a mandatory baseline built from proven, portable cryptographic primitives.
+
+Mandatory baseline direction:
+
+```text
+ZK-ARCHE-SUITE-CORE-25519-V1
+  KEX:       X25519 or existing Curve25519/Ristretto255-compatible ECDH path
+  Signature: Ed25519 or the existing reviewed Schnorr/Ristretto proof-of-possession path
+  KDF:       HKDF-SHA256
+  MAC:       HMAC-SHA256 or keyed BLAKE2s/BLAKE2b as profiled
+  AEAD:      ChaCha20-Poly1305 or an existing measured AEAD profile
+  Hash:      SHA-256 or BLAKE2s/BLAKE2b as profiled
+  Encoding:  fixed canonical TLV or compact canonical binary encoding
+```
+
+Optional hardware-aligned suite:
+
+```text
+ZK-ARCHE-SUITE-CORE-P256-V1
+  KEX:       ECDH P-256
+  Signature: ECDSA P-256
+  KDF:       HKDF-SHA256
+  AEAD:      AES-CCM or AES-GCM where hardware support and side-channel evidence exist
+  Hash:      SHA-256
+```
+
+Rules:
+
+- No zkSNARK, zkSTARK, recursive proof, general circuit proof, trusted-setup proof, large anonymous-credential prover, or heavy graph proof is part of any mandatory authentication profile.
+- `ZK` in the implementation baseline means compact Sigma/Schnorr-style proofs, commitments, pairwise pseudonyms, signed grants, and selective disclosure patterns that are bounded and vector-tested.
+- Optional suites must never change the meaning of the mandatory baseline vectors.
+- The high-end peer must negotiate down to the constrained suite when the low-end peer selects it.
+- Any primitive change, suite addition, domain separator change, or transcript-field change requires checkpoint-style review.
+
+Required vectors:
+
+- cross-language ECDH/KDF/MAC/AEAD vectors;
+- signature or proof-of-possession vectors;
+- transcript-v3 vectors;
+- role/capability grant vectors;
+- P2P reflection/replay/downgrade/UKS negative vectors;
+- constrained-profile maximum-length and malformed-input vectors.
+
+Acceptance gates:
+
+- ESP32/STM32-class devices can authenticate Raspberry Pi/Jetson-class peers using the same mandatory baseline suite.
+- Rust and C pass byte-level vectors before compatibility is claimed; Python follows the same vector semantics.
+- No required feature needs dynamic allocation in the C hot path after initialization.
+- All optional extensions are safely ignorable only when policy allows and transcript binding prevents downgrade confusion.
+- No SNARK/STARK implementation work is accepted under the conservative baseline.
+
+Suggested task:
+
+```text
+Define and implement a conservative mandatory P2P crypto baseline using standard ECDH/signature or existing Schnorr/Ristretto proof primitives, HKDF, MAC, AEAD, hashes, canonical encoding, transcript binding, replay protection, and fixed vectors. Exclude SNARK/STARK implementation work from the authentication roadmap.
 ```
 
 ## Agent Editing Contract
@@ -1821,7 +2053,10 @@ Future automated edits may improve implementation quality, validation, documenta
 
 - Rust/C byte-level compatibility;
 - the Rust vector corpus as the primary checked-in interop anchor unless a checkpoint-approved migration occurs;
+- `p2p-iot-core` as the mandatory interoperability floor for P2P profiles;
+- conservative primitive-based authentication as the implementation baseline;
 - strict separation between evidence and claims;
 - truthful assurance-status wording;
 - no production/security/certification claims without evidence;
+- no SNARK/STARK implementation work unless a future charter explicitly reopens that scope;
 - checkpoint-style review for protocol, crypto, parsing, replay, RNG, memory-safety, formal-model, side-channel, and interop changes.
