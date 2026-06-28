@@ -1,6 +1,6 @@
 # ZK-ARCHE Unified Repository
 
-This repository is the latest unified iteration of ZK-ARCHE. It consolidates the previously separate Rust, C, Python, and comparison workspaces into one Commander-ready repository for protocol development, cross-language validation, and IoT-focused hardening.
+This repository is the latest unified iteration of ZK-ARCHE. It consolidates the previously separate Rust, C, Python, and comparison workspaces into one repository for protocol development, cross-language validation, and IoT-focused hardening.
 
 ## Repository lineage
 
@@ -55,7 +55,7 @@ spec/
 
 Do not treat this repository as production-ready, formally verified, side-channel certified, externally reviewed, or field-ready unless the claim is backed by checked-in evidence.
 
-Cryptographic/protocol changes should go through Hermes Legion Commander checkpoint competition, not alternating-only mode. This includes changes to setup, auth, replay protection, role-membership proofs, key derivation, packet parsing, RNG, transcript binding, anti-DoS behavior, session resumption, and post-quantum research paths.
+Cryptographic/protocol changes should go through checkpoint-style review with explicit evidence. This includes changes to setup, auth, replay protection, role-membership proofs, key derivation, packet parsing, RNG, transcript binding, anti-DoS behavior, session resumption, and post-quantum research paths.
 
 Consolidated security, hardening, replay, DRBG, external-review, and local-validation guidance lives in:
 

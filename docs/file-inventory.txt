@@ -1,6 +1,6 @@
 # File Inventory
 
-Generated on 2026-06-27 after the python-lane parity work and the Commander/shared-context documentation cleanup. Excludes ignored build output, runtime state, and generated evidence logs.
+Generated on 2026-06-27 after removing the Commander/Hermes orchestration material (config examples, shared-context, and command-runner terminology). Excludes ignored build output, runtime state, and generated evidence logs.
 
 .gitattributes
 .github\workflows\c.yml
@@ -61,8 +61,6 @@ c\tests\test_e2e.c
 c\tests\test_vectors.c
 c\tests\test_wire.c
 c\wire-spec.md
-config\checkpoint_competition.zk-arche.local.example.toml
-config\model_council.zk-arche.local.example.toml
 docs\assurance-and-validation.md
 docs\cross-language-validation.md
 docs\improvement-roadmap.md

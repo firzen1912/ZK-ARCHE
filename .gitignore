@@ -8,9 +8,6 @@
 /c/evidence/
 /rust/evidence/
 /python/evidence/
-/shared-context/repo-map/cache/
-/shared-context/*.jsonl
-/shared-context/*.json
 
 # Runtime state
 /client-state/
