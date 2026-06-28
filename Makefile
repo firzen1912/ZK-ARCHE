@@ -1,4 +1,4 @@
-.PHONY: ci rust-ci c-ci python-ci c-vectors clean graph-help
+.PHONY: ci rust-ci c-ci python-ci c-vectors clean
 
 ci:
 	./scripts/ci-all.sh
@@ -20,7 +20,3 @@ clean:
 	cd c && make clean || true
 	rm -rf python/.pytest_cache python/build python/dist python/*.egg-info
 	rm -rf evidence/*.log
-
-graph-help:
-	@echo 'Run Hermes Legion Commander repo graph:'
-	@echo 'hermes-legion-commander repo-graph build . --out shared-context/repo-map --task "ZK-ARCHE Rust/C validation"'

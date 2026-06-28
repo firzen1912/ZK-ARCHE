@@ -1,7 +1,11 @@
 # File Inventory
 
-Generated on 2026-06-27 after integrating the Python lane, RFC-style spec skeleton, and roadmap/sovereignty material. Excludes ignored build output, runtime state, and generated evidence logs.
+Generated on 2026-06-27 after the python-lane parity work and the Commander/shared-context documentation cleanup. Excludes ignored build output, runtime state, and generated evidence logs.
 
+.gitattributes
+.github\workflows\c.yml
+.github\workflows\python.yml
+.github\workflows\rust.yml
 .gitignore
 LICENSE
 Makefile
@@ -60,12 +64,16 @@ c\wire-spec.md
 config\checkpoint_competition.zk-arche.local.example.toml
 config\model_council.zk-arche.local.example.toml
 docs\assurance-and-validation.md
-docs\commander-usage.md
 docs\cross-language-validation.md
 docs\improvement-roadmap.md
 docs\rfc-evolution-plan.md
+python\Makefile
 python\README.md
+python\fuzz\fuzz_payloads.py
+python\fuzz\fuzz_wire.py
+python\models\proverif\zk_arche_auth_skeleton.pv
 python\pyproject.toml
+python\scripts\ci-python.sh
 python\test-vectors\0x0001\kdf_kc.json
 python\test-vectors\0x0001\pid.json
 python\test-vectors\0x0001\rerandomization.json
@@ -75,6 +83,7 @@ python\test-vectors\0x0001\transcript.json
 python\tests\test_state_machine.py
 python\tests\test_vectors.py
 python\tests\test_wire_payloads.py
+python\wire-spec.md
 python\zk_arche\__init__.py
 python\zk_arche\caps.py
 python\zk_arche\cli\__init__.py
@@ -141,7 +150,6 @@ scripts\ci-all.sh
 scripts\ci-c.sh
 scripts\ci-python.sh
 scripts\ci-rust.sh
-shared-context\README.md
 spec\README.md
 spec\implementation-requirements.md
 spec\iot-profiles.md

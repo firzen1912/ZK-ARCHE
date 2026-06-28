@@ -27,8 +27,7 @@ ZK-ARCHE/
 ├── docs/                 # Combined roadmap, RFC-evolution plan, and validation notes
 ├── spec/                 # RFC-style specification skeleton and registries
 ├── scripts/              # Parent-level validation helpers
-├── evidence/             # Parent-level validation logs
-└── shared-context/       # Hermes Legion Commander repo graph / prompt context outputs
+└── evidence/             # Parent-level validation logs
 ```
 
 ## Target deployment posture
@@ -107,19 +106,3 @@ make
 ```
 
 The Python lane carries a mirrored vector fixture under `python/test-vectors/0x0001/` and should remain byte-compatible with the Rust vector semantics. Prefer adding a sync/check script before changing vector meanings.
-
-## Hermes Legion Commander usage
-
-Build repo graph context first:
-
-```powershell
-$CommanderExe = "$env:LOCALAPPDATA\HermesLegionCommander\venv\Scripts\hermes-legion-commander.exe"
-$Repo = "C:\Users\firze\OneDrive\Documents\GitHub\ZK-ARCHE"
-
-& $CommanderExe repo-graph build `
-  $Repo `
-  --out "$Repo\shared-context\repo-map" `
-  --task "ZK-ARCHE unified Rust/C/Python validation, RFC-style protocol evolution, and security roadmap"
-```
-
-Use alternating mode for low-risk validation infrastructure and documentation. Use checkpoint competition for protocol, crypto, parsing, replay, RNG, side-channel, memory-safety, and interop changes.

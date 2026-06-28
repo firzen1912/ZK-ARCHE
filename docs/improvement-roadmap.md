@@ -142,8 +142,6 @@ Required artifacts:
 | Rust lane preserved | `rust/` |
 | C lane preserved | `c/` |
 | Parent validation scripts | `scripts/` |
-| Commander repo graph | `shared-context/repo-map/graph.json` |
-| Commander graph report | `shared-context/repo-map/GRAPH_REPORT.md` |
 
 Acceptance gates:
 
