@@ -2,6 +2,7 @@
 /target/
 /rust/target/
 /c/build/
+.vscode/
 
 # Generated evidence and local state (top-level and per-lane)
 /evidence/
