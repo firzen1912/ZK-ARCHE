@@ -7,6 +7,7 @@ This directory is the intake layer for recurring external research relevant to Z
 ```text
 docs/research/
 ├── README.md
+├── PIPELINE.md
 ├── backlog.md
 └── daily/
     ├── README.md
@@ -108,11 +109,20 @@ A research report must not claim that a roadmap item, ADR, spec requirement, or 
 
 When evidence becomes actionable, promote the item by linking it to the appropriate roadmap phase or ADR rather than copying research prose into normative documents.
 
-## Research automation boundary
+## Automated daily pipeline
 
-If recurring research automation is enabled later, the safest default is least-write access: read repository context as needed, but write only under `docs/research/**`. Recommendations affecting roadmaps, specs, code, CI, or release claims should be recorded for explicit review rather than modified automatically.
+The recurring research workflow is governed by [`PIPELINE.md`](PIPELINE.md).
 
-An automated run should prefer one atomic commit for its report/index/backlog updates and must not fabricate evidence or maturity status.
+The automation operates on the `dev` branch under a strict least-write-access rule:
+
+- it may read the entire repository to understand current code, specification, roadmap, assurance, and technical-debt state;
+- everything outside `docs/research/**` is read-only context;
+- it may write only `docs/research/**`;
+- it must never write to `main`;
+- each completed daily run may create at most one commit and one `dev` ref update;
+- findings that imply code, spec, roadmap, ADR, CI, or release changes are recorded as recommendations for explicit review rather than applied automatically.
+
+The report, index update, and any justified backlog update must be assembled into the same atomic commit. The automation must verify after writing that no path outside `docs/research/**` changed.
 
 ## Index
 
