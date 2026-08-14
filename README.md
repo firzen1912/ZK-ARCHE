@@ -1,95 +1,120 @@
 # ZK-ARCHE Unified Repository
 
-This repository is the latest unified iteration of ZK-ARCHE. It consolidates the previously separate Rust, C, and comparison workspaces into one repository for protocol development, cross-language validation, and IoT-focused hardening.
+ZK-ARCHE is a privacy-preserving authentication, authorization, and secure-session research framework for heterogeneous IoT and edge systems. This unified repository contains the Rust reference implementation, the C constrained-device implementation, shared protocol specifications, validation tooling, and evidence-gated improvement planning.
 
 ## Repository lineage
 
-This unified workspace carries forward the work from these earlier repositories:
+This workspace carries forward work from:
 
 | Previous repository | Role in this unified iteration |
 |---|---|
 | <https://github.com/firzen1912/ZK-ARCHE-Rust.git> | Rust reference implementation, deterministic test vectors, protocol modeling, and higher-level validation. |
-| <https://github.com/firzen1912/ZK-ARCHE-C.git> | Low-level C implementation intended for constrained and heterogeneous IoT targets. |
-| <https://github.com/firzen1912/zk-arche-compare.git> | Cross-implementation comparison, interop notes, and validation planning. |
+| <https://github.com/firzen1912/ZK-ARCHE-C.git> | Low-level C implementation for constrained and heterogeneous IoT targets. |
+| <https://github.com/firzen1912/zk-arche-compare.git> | Cross-implementation comparison, interoperability notes, and validation planning. |
 
-Use this repository as the canonical place for new ZK-ARCHE work unless a task explicitly targets one of the historical repositories. The older repositories remain useful for source lineage, audit trail, and implementation history, but the roadmap, shared protocol notes, and future hardening work should live here.
+Use this repository as the canonical location for new ZK-ARCHE work unless a task explicitly targets a historical repository.
 
-## Workspace layout
-
-The repository is intentionally arranged as two implementation lanes plus shared validation and planning material:
+## Repository map
 
 ```text
 ZK-ARCHE/
-├── rust/                 # Rust reference workspace and canonical test vectors
-├── c/                    # C implementation, tests, fuzz harnesses, libsodium build
-├── docs/                 # Combined roadmap, RFC-evolution plan, and validation notes
-├── spec/                 # RFC-style specification skeleton and registries
-├── scripts/              # Parent-level validation helpers
-└── evidence/             # Parent-level validation logs
+├── README.md                  # Project overview and entry point
+├── ROADMAP.md                 # Short roadmap pointer / current focus
+├── rust/                      # Rust reference implementation + canonical vectors
+├── c/                         # C constrained-device implementation
+├── spec/                      # Normative protocol/specification package
+├── docs/
+│   ├── README.md              # Documentation index and ownership map
+│   ├── architecture/          # Architecture and repository boundaries
+│   ├── research/              # External research intake, backlog, and daily reports
+│   ├── roadmaps/              # Canonical improvement and standards-evolution plans
+│   ├── assurance/             # Security, validation, interoperability, evidence policy
+│   ├── adr/                   # Architecture Decision Records
+│   ├── release/               # Maturity, claim, and release-governance rules
+│   └── technical-debt/        # Explicit unresolved protocol/implementation/assurance debt
+├── scripts/                   # Parent-level validation helpers
+└── evidence/                  # Generated/curated validation evidence when present
 ```
+
+Start with the [documentation index](docs/README.md) for navigation and the [architecture overview](docs/architecture/architecture-overview.md) for ownership boundaries.
+
+## Documentation workflow
+
+ZK-ARCHE separates discovery, planning, decisions, normative protocol requirements, implementation, and evidence so that research cannot silently become protocol behavior:
+
+```text
+external research
+      ↓
+docs/research/
+      ↓ explicit promotion
+docs/roadmaps/
+      ↓ architecture/security decision when required
+docs/adr/
+      ↓ normative protocol requirement
+spec/
+      ↓ implementation
+rust/ + c/
+      ↓ validation
+docs/assurance/ + evidence/
+      ↓ evidence-gated claim
+docs/release/
+```
+
+The [research archive](docs/research/README.md) is the intake point for future literature, standards, implementation, and cryptographic research. The [improvement roadmap](docs/roadmaps/improvement-roadmap.md) remains the canonical engineering plan.
 
 ## Target deployment posture
 
-ZK-ARCHE is being developed for heterogeneous IoT and edge environments, including STM32-class MCUs, ESP32-S3-class devices, Raspberry Pi-class gateways, and Jetson Orin-class edge nodes. Protocol improvements should preserve a low-footprint path for constrained devices and avoid making heavyweight research features mandatory for the core IoT profile.
+ZK-ARCHE is developed for heterogeneous IoT and edge environments including STM32-class MCUs, ESP32-S3-class devices, Raspberry Pi-class gateways, and Jetson Orin-class edge nodes. Protocol improvements should preserve a low-footprint constrained path and must not make heavyweight research features mandatory for the core IoT profile without measurements and review.
 
-The controlling roadmap defines which work belongs in the deployable IoT profiles versus optional research profiles:
+## Specification posture
 
-```text
-docs/improvement-roadmap.md
-```
+The `spec/` directory is the normative staging area for ZK-ARCHE protocol behavior. It should evolve toward an RFC-like package with explicit message grammar, transcript construction, registries, profiles, state machines, security/privacy considerations, and conformance vectors.
 
-## RFC-style protocol evolution
-
-ZK-ARCHE should evolve toward an RFC-like protocol package rather than only implementation-specific documentation. The standards-track work should define normative message grammar, transcript construction, suite registries, profile requirements, state machines, security considerations, privacy considerations, IANA-style registries, and implementation conformance tests.
-
-The comparison targets are EDHOC-style compact authenticated key exchange for constrained IoT, TLS/mTLS-style transcript and endpoint-authentication rigor, and DTLS-style datagram robustness. This does not mean copying TLS or DTLS; it means adopting their specification discipline, downgrade resistance, alert/error taxonomy, extension negotiation, and interop-test culture. See:
-
-```text
-docs/rfc-evolution-plan.md
-spec/
-```
+EDHOC/OSCORE, TLS/mTLS, and DTLS are engineering references and optional binding targets; they are not claims that ZK-ARCHE replaces those protocols or is an IETF standard. See the [RFC-style evolution plan](docs/roadmaps/rfc-evolution-plan.md).
 
 ## Safety and assurance posture
 
-Do not treat this repository as production-ready, formally verified, side-channel certified, externally reviewed, or field-ready unless the claim is backed by checked-in evidence.
+Do not describe ZK-ARCHE as production-ready, formally verified, side-channel certified, externally reviewed, or field-ready unless the corresponding evidence is checked in and the applicable release gate permits that claim.
 
-Cryptographic/protocol changes should go through checkpoint-style review with explicit evidence. This includes changes to setup, auth, replay protection, role-membership proofs, key derivation, packet parsing, RNG, transcript binding, anti-DoS behavior, session resumption, and post-quantum research paths.
+Cryptographic or protocol changes require evidence appropriate to their risk, especially changes to enrollment, authentication, replay protection, role-membership proofs, key derivation, parsers, RNG, transcript binding, anti-DoS behavior, resumption, transport/channel binding, or cryptographic suites.
 
-Consolidated security, hardening, replay, DRBG, external-review, and local-validation guidance lives in:
-
-```text
-docs/assurance-and-validation.md
-```
+See [assurance and validation](docs/assurance/assurance-and-validation.md), [cross-language validation](docs/assurance/cross-language-validation.md), and [release governance](docs/release/release-governance.md).
 
 ## Quick validation
 
-Run both implementation lanes from the parent repository:
+Run both implementation lanes from the repository root:
 
 ```bash
 ./scripts/ci-all.sh
 ```
 
-Run only Rust:
+Rust only:
 
 ```bash
 ./scripts/ci-rust.sh
 ```
 
-Run only C:
+C only:
 
 ```bash
 ./scripts/ci-c.sh
 ```
 
+Release qualification:
+
+```bash
+./scripts/ci-release-qualification.sh
+```
+
 ## Cross-language test-vector anchor
 
-The Rust implementation owns the checked-in deterministic vectors at:
+Rust owns the canonical checked-in deterministic vectors:
 
 ```text
 rust/test-vectors/0x0001/
 ```
 
-The C vector harness should be run against that path from the C directory:
+The C implementation validates against those vectors:
 
 ```bash
 cd c
@@ -97,4 +122,4 @@ make
 ./build/tests/test_vectors ../rust/test-vectors/0x0001
 ```
 
-Rust remains the canonical vector source, and C interoperability is evaluated against the same byte-level vector semantics.
+Rust remains the canonical vector source and C remains the independent constrained implementation used to test byte-level interoperability.

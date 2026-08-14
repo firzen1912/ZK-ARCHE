@@ -53,7 +53,13 @@ The vector harness checks byte-level agreement with the Rust vectors for transcr
 Runtime state directories are ignored by default. Use the shared assurance document for validation, fuzzing, replay, and review guidance:
 
 ```text
-../docs/assurance-and-validation.md
+../docs/assurance/assurance-and-validation.md
+```
+
+The repository-wide documentation map is:
+
+```text
+../docs/README.md
 ```
 
 ## Embedded Design Notes
