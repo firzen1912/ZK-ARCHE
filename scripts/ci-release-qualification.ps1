@@ -37,24 +37,6 @@ function Convert-ToBashPath([string]$Path) {
     return "/$drive$tail"
 }
 
-if (-not $env:PYTHON) {
-    $pythonCandidates = @(
-        "$root\.venv\Scripts\python.exe",
-        "$env:LOCALAPPDATA\HermesLegionCommander\venv\Scripts\python.exe",
-        "$env:LOCALAPPDATA\hermes\hermes-agent\venv\Scripts\python.exe",
-        "$env:LOCALAPPDATA\LegionCommander\venv\Scripts\python.exe"
-    )
-    foreach ($candidate in $pythonCandidates) {
-        if (Test-Path -LiteralPath $candidate) {
-            & $candidate -V *> $null
-            if ($LASTEXITCODE -eq 0) {
-                $env:PYTHON = Convert-ToBashPath $candidate
-                break
-            }
-        }
-    }
-}
-
 if (Test-Path -LiteralPath "C:\tmp\msys64\ucrt64\bin") {
     $env:PATH = "C:\tmp\msys64\ucrt64\bin;C:\tmp\msys64\usr\bin;$env:PATH"
 }

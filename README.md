@@ -1,6 +1,6 @@
 # ZK-ARCHE Unified Repository
 
-This repository is the latest unified iteration of ZK-ARCHE. It consolidates the previously separate Rust, C, Python, and comparison workspaces into one repository for protocol development, cross-language validation, and IoT-focused hardening.
+This repository is the latest unified iteration of ZK-ARCHE. It consolidates the previously separate Rust, C, and comparison workspaces into one repository for protocol development, cross-language validation, and IoT-focused hardening.
 
 ## Repository lineage
 
@@ -10,20 +10,18 @@ This unified workspace carries forward the work from these earlier repositories:
 |---|---|
 | <https://github.com/firzen1912/ZK-ARCHE-Rust.git> | Rust reference implementation, deterministic test vectors, protocol modeling, and higher-level validation. |
 | <https://github.com/firzen1912/ZK-ARCHE-C.git> | Low-level C implementation intended for constrained and heterogeneous IoT targets. |
-| New Implementation | Python reference implementation, CLI harness, and Rust-vector validation used for readable protocol experimentation. |
 | <https://github.com/firzen1912/zk-arche-compare.git> | Cross-implementation comparison, interop notes, and validation planning. |
 
 Use this repository as the canonical place for new ZK-ARCHE work unless a task explicitly targets one of the historical repositories. The older repositories remain useful for source lineage, audit trail, and implementation history, but the roadmap, shared protocol notes, and future hardening work should live here.
 
 ## Workspace layout
 
-The repository is intentionally arranged as preserved implementation lanes plus shared validation and planning material:
+The repository is intentionally arranged as two implementation lanes plus shared validation and planning material:
 
 ```text
 ZK-ARCHE/
 ├── rust/                 # Rust reference workspace and canonical test vectors
 ├── c/                    # C implementation, tests, fuzz harnesses, libsodium build
-├── python/               # Python reference implementation, CLI, and vector tests
 ├── docs/                 # Combined roadmap, RFC-evolution plan, and validation notes
 ├── spec/                 # RFC-style specification skeleton and registries
 ├── scripts/              # Parent-level validation helpers
@@ -65,7 +63,7 @@ docs/assurance-and-validation.md
 
 ## Quick validation
 
-Run all implementation lanes from the parent repository:
+Run both implementation lanes from the parent repository:
 
 ```bash
 ./scripts/ci-all.sh
@@ -81,12 +79,6 @@ Run only C:
 
 ```bash
 ./scripts/ci-c.sh
-```
-
-Run only Python:
-
-```bash
-./scripts/ci-python.sh
 ```
 
 ## Cross-language test-vector anchor
@@ -105,4 +97,4 @@ make
 ./build/tests/test_vectors ../rust/test-vectors/0x0001
 ```
 
-The Python lane carries a mirrored vector fixture under `python/test-vectors/0x0001/` and should remain byte-compatible with the Rust vector semantics. Prefer adding a sync/check script before changing vector meanings.
+Rust remains the canonical vector source, and C interoperability is evaluated against the same byte-level vector semantics.

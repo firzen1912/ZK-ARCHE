@@ -8,13 +8,7 @@ Canonical source today:
 rust/test-vectors/0x0001/
 ```
 
-Python mirrored fixture today:
-
-```text
-python/test-vectors/0x0001/
-```
-
-Vector categories to define:
+The C implementation validates against the canonical Rust vector corpus. Vector categories to define include:
 
 - transcript bytes;
 - PID derivation;
@@ -26,4 +20,4 @@ Vector categories to define:
 - SETUP/AUTH state-machine traces;
 - negative vectors for mutation, replay, wrong sequence, wrong suite, wrong profile, malformed input, and downgrade attempts.
 
-Vector changes require versioning and migration notes. Do not replace vector semantics silently.
+Vector changes require versioning, review, and migration notes. Do not replace vector semantics silently.

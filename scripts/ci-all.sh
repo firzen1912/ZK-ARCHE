@@ -14,9 +14,6 @@ LOG="$ROOT/evidence/ci-all.log"
   echo "== c lane =="
   bash "$ROOT/scripts/ci-c.sh"
   echo
-  echo "== python lane =="
-  bash "$ROOT/scripts/ci-python.sh"
-  echo
   echo "== c vector harness against rust vectors =="
   cd "$ROOT/c"
   if [ -x ./build/tests/test_vectors ]; then
