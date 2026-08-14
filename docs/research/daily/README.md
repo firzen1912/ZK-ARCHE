@@ -10,7 +10,7 @@ Do not create empty reports for future dates. A file exists only when research w
 
 ## Report template
 
-```markdown
+````markdown
 # ZK-ARCHE Research — YYYY-MM-DD
 
 ## Executive synthesis
@@ -63,7 +63,7 @@ roadmap_impact:
 ## Follow-up sources
 
 Prioritize the primary sources that deserve deeper review next.
-```
+````
 
 ## Quality rule
 
