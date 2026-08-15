@@ -1,6 +1,6 @@
 # ZK-ARCHE Protocol Specification Skeleton
 
-Status: draft skeleton. Rust/C/Python implementation behavior and checked vectors remain the source of evidence until this document is completed and reviewed.
+Status: draft skeleton. Rust and C implementation behavior and checked vectors remain the source of evidence until this document is completed and reviewed.
 
 Planned structure:
 
