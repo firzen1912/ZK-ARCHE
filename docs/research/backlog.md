@@ -18,11 +18,11 @@ This file tracks research questions and external technologies that may affect ZK
 
 | ID | Topic / question | Status | Evidence needed | Potential destination | Last reviewed |
 |---|---|---|---|---|---|
-| R-001 | EDHOC/OSCORE-inspired constrained binding and exporter semantics | queued | exact wire/footprint comparison, transcript-binding model, interop implications | `docs/roadmaps/rfc-evolution-plan.md` / `spec/` | — |
-| R-002 | Reviewed anonymous/selective-disclosure credential options for role authorization | queued | privacy gain, proof size, RAM/CPU, dependency footprint, external-review status | research-only or future suite ADR | — |
-| R-003 | Post-quantum hybrid key establishment for edge/gateway profiles | queued | exact KEM sizes, RAM/CPU, MTU impact, hybrid-KDF review, downgrade model | research-only / optional suite roadmap | — |
+| R-001 | EDHOC/OSCORE-inspired constrained binding and exporter semantics | benchmark | exact ZK-ARCHE-vs-EDHOC wire/footprint comparison, transcript/exporter mapping, interop implications | `docs/roadmaps/rfc-evolution-plan.md` / `spec/` | 2026-08-15 |
+| R-002 | Reviewed anonymous/selective-disclosure credential options for role authorization | researching | BBS/property comparison, proof size, RAM/CPU/flash, dependency footprint, external-review status | research-only or future suite ADR | 2026-08-15 |
+| R-003 | Post-quantum hybrid key establishment for edge/gateway profiles | benchmark | ML-KEM + traditional hybrid wire sizes, RAM/CPU, MTU/fragmentation impact, hybrid-KDF review, downgrade model | research-only / optional suite roadmap | 2026-08-15 |
 | R-004 | Formal verification expansion beyond current symbolic skeletons | queued | property list, model/code traceability, reproducible ProVerif/Tamarin results | assurance roadmap / evidence | — |
-| R-005 | STM32/ESP32-class AUTH and P2P benchmark methodology | queued | target hardware, compiler/profile, stack/heap measurement, packet and latency data | IoT profile roadmap / assurance evidence | — |
+| R-005 | STM32/ESP32-class AUTH and P2P benchmark methodology | benchmark | target hardware/build profile, acceleration/RNG/key-storage configuration, stack/heap/flash measurement, packet and latency data | IoT profile roadmap / assurance evidence | 2026-08-15 |
 
 Add new items when a research question is concrete enough to state what evidence would change a ZK-ARCHE decision. Do not use this table as a feature wishlist.
 

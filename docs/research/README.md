@@ -126,8 +126,6 @@ The report, index update, and any justified backlog update must be assembled int
 
 ## Index
 
-No dated research reports are registered yet in this directory. Add each completed report to this index when it is created.
-
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
-| — | — | — | — |
+| 2026-08-15 | [Daily research](daily/2026-08-15.md) | EDHOC benchmark baseline, Fiat–Shamir transcript audit, Ascon, BBS credentials, hybrid PQ/T KEMs, ESP32-S3 target benchmarking | benchmark / research-only; explicit review required |
