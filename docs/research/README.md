@@ -128,4 +128,5 @@ The report, index update, and any justified backlog update must be assembled int
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-08-16 | [Daily research](daily/2026-08-16.md) | Explicit profile negotiation, reboot-safe rekey lifecycle, optional remote attestation, formal-model reproducibility | reproduce / benchmark / research-only; explicit review required |
 | 2026-08-15 | [Daily research](daily/2026-08-15.md) | EDHOC benchmark baseline, Fiat–Shamir transcript audit, Ascon, BBS credentials, hybrid PQ/T KEMs, ESP32-S3 target benchmarking | benchmark / research-only; explicit review required |
