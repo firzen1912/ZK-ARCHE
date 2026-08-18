@@ -128,6 +128,7 @@ The report, index update, and any justified backlog update must be assembled int
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-08-18 | [Daily research](daily/2026-08-18.md) | Authentication/authorization context separation, Tamarin 1.12 reproducibility baseline, AEAD key-usage exhaustion and rekey triggers | investigate / reproduce; explicit review required |
 | 2026-08-17 | [Daily research](daily/2026-08-17.md) | CDS OR-proof review contract, ESP32-S3 entropy/key-storage assurance, concrete PQ/T packet budget, BBS maturity/footprint | reproduce / benchmark; explicit review required |
 | 2026-08-16 | [Daily research](daily/2026-08-16.md) | Explicit profile negotiation, reboot-safe rekey lifecycle, optional remote attestation, formal-model reproducibility | reproduce / benchmark / research-only; explicit review required |
 | 2026-08-15 | [Daily research](daily/2026-08-15.md) | EDHOC benchmark baseline, Fiat–Shamir transcript audit, Ascon, BBS credentials, hybrid PQ/T KEMs, ESP32-S3 target benchmarking | benchmark / research-only; explicit review required |
