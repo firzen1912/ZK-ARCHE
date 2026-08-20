@@ -128,6 +128,7 @@ The report, index update, and any justified backlog update must be assembled int
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-08-20 | [Daily research](daily/2026-08-20.md) | GREASE-style extension agility, constrained enrollment authority placement, credential/authorization invalidation propagation | reproduce / investigate; explicit review required |
 | 2026-08-19 | [Daily research](daily/2026-08-19.md) | TLS-exporter AUTH-instance uniqueness, constrained key-generation/seed-storage contract, replay continuity-break recovery | reproduce / benchmark; explicit review required |
 | 2026-08-18 | [Daily research](daily/2026-08-18.md) | Authentication/authorization context separation, Tamarin 1.12 reproducibility baseline, AEAD key-usage exhaustion and rekey triggers | investigate / reproduce; explicit review required |
 | 2026-08-17 | [Daily research](daily/2026-08-17.md) | CDS OR-proof review contract, ESP32-S3 entropy/key-storage assurance, concrete PQ/T packet budget, BBS maturity/footprint | reproduce / benchmark; explicit review required |
