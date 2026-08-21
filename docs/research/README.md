@@ -128,6 +128,7 @@ The report, index update, and any justified backlog update must be assembled int
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-08-21 | [Daily research](daily/2026-08-21.md) | NO-LEARNING trust-store policy, credential-reference misbinding formal analysis, method/suite registry compatibility for PQ transition | reproduce / benchmark; explicit review required |
 | 2026-08-20 | [Daily research](daily/2026-08-20.md) | GREASE-style extension agility, constrained enrollment authority placement, credential/authorization invalidation propagation | reproduce / investigate; explicit review required |
 | 2026-08-19 | [Daily research](daily/2026-08-19.md) | TLS-exporter AUTH-instance uniqueness, constrained key-generation/seed-storage contract, replay continuity-break recovery | reproduce / benchmark; explicit review required |
 | 2026-08-18 | [Daily research](daily/2026-08-18.md) | Authentication/authorization context separation, Tamarin 1.12 reproducibility baseline, AEAD key-usage exhaustion and rekey triggers | investigate / reproduce; explicit review required |
