@@ -128,6 +128,7 @@ The report, index update, and any justified backlog update must be assembled int
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-08-23 | [Daily research](daily/2026-08-23.md) | SAPIC+ single-source multi-backend formal verification, anonymity-vs-unlinkability and observable-failure privacy contract, Ascon/COSE benchmark maturity | reproduce / benchmark; explicit review required |
 | 2026-08-22 | [Daily research](daily/2026-08-22.md) | HPKE encrypted O(1) lookup hints, VOPRF/POPRF comparator, holder-of-key + audience authorization binding | prototype / reproduce / research-only; explicit review required |
 | 2026-08-21 | [Daily research](daily/2026-08-21.md) | NO-LEARNING trust-store policy, credential-reference misbinding formal analysis, method/suite registry compatibility for PQ transition | reproduce / benchmark; explicit review required |
 | 2026-08-20 | [Daily research](daily/2026-08-20.md) | GREASE-style extension agility, constrained enrollment authority placement, credential/authorization invalidation propagation | reproduce / investigate; explicit review required |
