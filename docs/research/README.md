@@ -128,6 +128,7 @@ The report, index update, and any justified backlog update must be assembled int
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-08-25 | [Daily research](daily/2026-08-25.md) | resumption authorization revalidation and PSK/ticket reuse, crypto execution-context evidence, IoT deployment-context claim boundaries | reproduce / benchmark; explicit review required |
 | 2026-08-24 | [Daily research](daily/2026-08-24.md) | revocation convergence and stale-window bounds, scoped/expiring role authorization, dynamic rights lineage, correlation metadata privacy | reproduce; explicit review required |
 | 2026-08-23 | [Daily research](daily/2026-08-23.md) | SAPIC+ single-source multi-backend formal verification, anonymity-vs-unlinkability and observable-failure privacy contract, Ascon/COSE benchmark maturity | reproduce / benchmark; explicit review required |
 | 2026-08-22 | [Daily research](daily/2026-08-22.md) | HPKE encrypted O(1) lookup hints, VOPRF/POPRF comparator, holder-of-key + audience authorization binding | prototype / reproduce / research-only; explicit review required |
