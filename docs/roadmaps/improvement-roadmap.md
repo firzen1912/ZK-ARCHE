@@ -8,6 +8,8 @@ The long-term interoperability north star is a **ZK-ARCHE Common Contract Archit
 
 The architectural inspiration is similar to the way Reticulum handles heterogeneous communication media through a common interface contract: ZK-ARCHE should normalize **identity, authentication, authorization, trust, and secure-association semantics** across heterogeneous IoT and edge platforms instead of binding protocol correctness to one hardware family, operating system, transport, or deployment topology. This is an architectural analogy only; Reticulum is not a dependency and does not define ZK-ARCHE's cryptographic or trust model.
 
+The organization of this roadmap also takes inspiration from the [Reticulum development roadmap](https://github.com/markqvist/Reticulum/blob/master/Roadmap.md): enduring development efforts are kept distinct from individual milestones so that portability, comprehensibility, functionality, interfaceability, usability, and assurance can progress together without forcing every useful ecosystem feature into the protocol core.
+
 ## 1. Roadmap authority and evidence flow
 
 Use the documentation layers as follows:
@@ -169,6 +171,40 @@ sensors, actuators, UAVs, UGVs, and other embedded peers
 ```
 
 A new target should normally require a platform/transport adaptation layer, build profile, crypto-backend integration, storage/RNG integration, and conformance evidence—not a redesign of the ZK-ARCHE protocol.
+
+### 3.6 RFC-class reference doctrine
+
+ZK-ARCHE targets **RFC-class engineering quality** without claiming IETF adoption or RFC status. The detailed standards/reference matrix, current RFC numbers, protocol-by-protocol lessons, WireGuard comparison, standards-process guidance, and RFC-class completion gate are owned by [`rfc-evolution-plan.md`](./rfc-evolution-plan.md). This roadmap intentionally does **not** duplicate that matrix.
+
+The main roadmap instead enforces the following stable doctrine across all phases:
+
+- security- or wire-relevant behavior must be independently implementable from normative specification text rather than source code alone;
+- normative requirements use BCP 14 discipline only when behavior is precise and testable;
+- threat and Security Considerations work follows the rigor expected by RFC 3552-class analysis;
+- versions, suites, methods, profiles, extensions, alerts, and bindings use explicit registry/change-control discipline comparable to RFC 8126;
+- protocol state machines, transcript/key-schedule behavior, replay/retry/rekey/resumption lifecycle, and error semantics must be explicit;
+- promoted behavior requires positive and negative vectors, executable tests, or an explicit retained evidence gap;
+- important flows should have annotated/reproducible traces and independent implementation interoperability evidence comparable in spirit to mature TLS/DTLS/EDHOC ecosystems;
+- security, privacy, constrained-resource, formal-analysis, and external-review claims remain independently scoped;
+- reference protocols are comparators, not automatic dependencies or proof that an analogous ZK-ARCHE design is secure.
+
+The current reference families include TLS 1.3 and mutual-authentication/channel-binding patterns, DTLS 1.3, EDHOC, OSCORE/CoAP, ACE, IKEv2/IPsec, QUIC, CBOR/CDDL/COSE, HKDF, X25519/EdDSA, ChaCha20-Poly1305, HPKE, RATS, MLS, and related standards tracked in `rfc-evolution-plan.md`. WireGuard is retained there as a non-RFC reference for small attack surface, simple peer semantics, automatic lifecycle management, and implementation consistency; Reticulum remains an architectural reference for universality and interfaceability.
+
+The intended synthesis is:
+
+```text
+Reticulum-like universality / interfaceability
+              +
+WireGuard-like mandatory-core simplicity
+              +
+TLS / DTLS / EDHOC-class protocol discipline
+              +
+RFC / BCP specification and change-control rigor
+              ↓
+        ZK-ARCHE Common Contract
+```
+
+When an external RFC or comparator is revised or superseded, update `rfc-evolution-plan.md` first. The main roadmap should change only when the resulting lesson materially changes ZK-ARCHE architecture, sequencing, evidence gates, or acceptance criteria.
 
 ## 4. Non-negotiable boundaries
 
@@ -348,6 +384,41 @@ Extensions must be:
 
 A new extension must not require changing `ZK-ARCHE-CORE` unless an explicitly reviewed versioned migration is approved.
 
+### 6.7 Reticulum-inspired development effort axes
+
+Reticulum's roadmap separates long-lived **Primary Efforts** from individual release items. ZK-ARCHE adopts the same planning principle while adapting the effort areas to a security protocol and constrained-computing framework.
+
+| ZK-ARCHE effort axis | Purpose | Typical roadmap ownership |
+|---|---|---|
+| **Comprehensibility & Specification** | make the protocol understandable and independently implementable | RFC-class specification, diagrams, annotated traces, threat model, examples, implementation guidance, TD-004 |
+| **Universality & Portability** | maximize platform/language coverage without changing security semantics | Rust/C parity, MCU/Linux/edge targets, portable crypto/storage/RNG boundaries, future bindings, TD-002 |
+| **Security Functionality & Lifecycle** | improve core authentication, authorization, trust, replay, rekey, revocation, resumption, and P2P behavior | zk211–zk224, zk239–zk241 |
+| **Usability & Utility** | lower integration, diagnosis, deployment, and evidence-generation burden | wrappers, manifests, diagnostics, examples, benchmark tooling, reproducible clean-checkout workflows |
+| **Interfaceability** | broaden physical, virtual, transport, and middleware integration through adapters rather than protocol forks | BLE, 802.15.4, LoRa-class links, UART, CAN, UDP/TCP, CoAP mappings, IPC, robotics/industrial adapters, zk227–zk230 |
+| **Assurance & Verifiability** | continuously raise confidence without overstating claims | deterministic vectors, negative corpora, fuzzing, formal models, side-channel/RNG evidence, independent review, TD-001/TD-003 |
+
+The first five axes parallel the useful roadmap separation demonstrated by Reticulum—comprehensibility, universality, functionality, usability/utility, and interfaceability. **Assurance & Verifiability** is an additional ZK-ARCHE axis because a cryptographic authentication protocol cannot treat security evidence as merely auxiliary work.
+
+A capability can contribute to more than one axis. The axes are a planning/readability lens, not separate protocol layers and not permission to duplicate implementation.
+
+### 6.8 Active-work selection and auxiliary-effort rule
+
+For each development cycle or weekly request set, select a bounded set of active work areas from the effort axes according to current evidence, debt, dependencies, and explicit human priorities. Phase numbers remain ownership identifiers; the effort axes explain *why* the work advances the project.
+
+The current near-term emphasis is:
+
+| Priority | Active effort | Evidence/debt driver |
+|---|---|---|
+| P0 | Assurance & Verifiability | TD-001 custom proof review and TD-003 formal-model completeness |
+| P0 | Comprehensibility & Specification | TD-004 RFC-class normative package and conformance material |
+| P0 | Universality & Portability | TD-002 constrained-target measurements and Common Contract feasibility |
+| P1 | Security Functionality & Lifecycle | authorization/revocation/resumption lifecycle, P2P local trust, mandatory floor |
+| P1 | Interfaceability | prove transport adapters do not alter AUTH/TRUST semantics across materially different links |
+| P2 | Usability & Utility | improve tooling/documentation only where it reduces reproducibility or deployment friction |
+| Research-only | Advanced suites/features | BBS, PQ hybrids, large trust graphs, remote attestation, or other optional extensions until promotion evidence exists |
+
+Reticulum also distinguishes auxiliary ecosystem efforts from core work. ZK-ARCHE adopts the equivalent rule: tools, bindings, dashboards, gateways, discovery services, policy administration, transport helpers, and ecosystem integrations may greatly improve reach and utility, but they must not become hidden prerequisites for the mandatory Common Contract unless a future reviewed profile explicitly promotes them.
+
 ## 7. Review policy
 
 | Work type | Minimum review posture |
@@ -390,7 +461,7 @@ A new extension must not require changing `ZK-ARCHE-CORE` unless an explicitly r
 | zk223 | Optional anonymous-credential migration evaluation | exact footprint/privacy/review comparison |
 | zk224 | Optional PQ hybrid suite research | exact packet/resource/fragmentation/downgrade evidence |
 | zk225 | Rust/C interop hardening and common-contract vector governance | profile/capability/extension/transport interoperability corpus |
-| zk226 | RFC-style specification package and registry discipline | normative grammar/state/registry/common-contract text backed by evidence |
+| zk226 | RFC-class specification package and registry discipline | normative grammar/state/registry/common-contract text backed by the RFC-class evidence gate |
 | zk227 | EDHOC/CoAP/OSCORE-inspired constrained-profile research | measured comparator, not dependency by analogy |
 | zk228 | TLS/mTLS exporter-bound channel binding | unique AUTH-instance exporter context + negative fixtures |
 | zk229 | Native datagram robustness and transport-adapter semantics | retry/replay/retransmit/address-context behavior + adapter evidence |
@@ -431,7 +502,7 @@ zk219 retry + zk220 lookup + zk221 resumption
         ↓
 zk225 common-contract vector/interoperability governance
         ↓
-zk226 normative specification
+zk226 RFC-class normative specification
         ↓
 zk227–zk230 transport adapter / binding / module decomposition
         ↓
@@ -503,6 +574,7 @@ The release gate must separate at least:
 implementation tests pass
 protocol/vector conformance
 common-contract conformance
+RFC-class documentation/conformance status
 transport-adapter conformance
 cryptographic review status
 formal-model status
@@ -657,7 +729,7 @@ Live random GREASE traffic is optional and must respect constrained-link budgets
 
 ## 14. Specification maturity and module ownership — zk226–zk230
 
-ZK-ARCHE should evolve toward an RFC-like package with normative grammar, registries, state machines, security/privacy considerations, implementation requirements, transport-adapter requirements, and deterministic positive/negative vectors.
+ZK-ARCHE should evolve toward an RFC-class package with normative grammar, registries, state machines, security/privacy considerations, implementation requirements, transport-adapter requirements, deterministic positive/negative vectors, annotated traces, and independent interoperability evidence. The detailed protocol-reference matrix and full RFC-class exit gate remain centralized in [`rfc-evolution-plan.md`](./rfc-evolution-plan.md).
 
 Target suite ownership remains:
 
@@ -673,7 +745,7 @@ ZK-ARCHE-DATA   encrypted data records, policy-bound release, auditability
 
 Every normative security behavior needs at least one of: positive vector, negative vector, executable test, scoped formal-model result, reviewed proof argument, or explicit evidence gap.
 
-EDHOC/OSCORE, TLS/mTLS, DTLS, ACE, BRSKI/FDO/Matter, Reticulum, and related systems are engineering comparators. They do not become dependencies merely because they motivate a requirement.
+EDHOC/OSCORE, TLS/mTLS, DTLS, ACE, IKEv2/IPsec, QUIC, RATS, MLS, WireGuard, Reticulum, and related systems are engineering comparators. They do not become dependencies merely because they motivate a requirement.
 
 ### zk230 Common Contract decomposition
 
@@ -916,6 +988,7 @@ IMPLEMENTED           code path exists
 TESTED                deterministic tests pass
 INTEROPERABLE         declared implementations agree
 COMMON-CONFORMANT      mandatory common-contract corpus passes
+RFC-CLASS DOCUMENTED   RFC-class specification/conformance gate in rfc-evolution-plan.md is satisfied
 MEASURED              target/resource evidence exists
 FORMALLY ANALYZED      scoped model result exists
 EXTERNALLY REVIEWED    independent review exists
@@ -924,7 +997,9 @@ DEPLOYMENT-QUALIFIED   platform/product context and required field evidence exis
 
 Never infer a stronger state from a weaker one.
 
-A device may be **platform-supported** without yet being **Common Contract conformant**. A transport adapter may be **implemented** without being **interop-qualified**. A P2P demo may work without proving **infrastructure independence**, **same-assurance cross-class interoperability**, or **field readiness**.
+`RFC-CLASS DOCUMENTED` is an internal engineering maturity label, not a claim that ZK-ARCHE is an RFC, Internet Standard, IETF product, or externally standardized protocol.
+
+A device may be **platform-supported** without yet being **Common Contract conformant**. A transport adapter may be **implemented** without being **interop-qualified**. A P2P demo may work without proving **infrastructure independence**, **same-assurance cross-class interoperability**, **RFC-class documentation**, or **field readiness**.
 
 ## 20. Agent editing contract
 
@@ -934,6 +1009,8 @@ Future automated edits must preserve:
 - canonical vector governance;
 - the ZK-ARCHE Common Contract as the cross-platform interoperability boundary;
 - bottom-up interoperability: capability scales upward, mandatory security does not scale downward;
+- the RFC-class reference doctrine, with `rfc-evolution-plan.md` as the single detailed owner of RFC numbers, standards comparators, and the full RFC-class evidence gate;
+- the Reticulum-inspired effort-axis model as a planning/readability lens while preventing auxiliary ecosystem work from becoming hidden core dependencies;
 - NO-LEARNING normal AUTH;
 - separation of authentication, authorization, and trust mutation;
 - local/non-transitive P2P trust unless explicit delegation is verified;
