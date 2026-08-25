@@ -15,7 +15,27 @@ docs/research/
     └── ...
 ```
 
+Related sibling control layers are deliberately outside the daily automation write scope:
+
+```text
+docs/findings/   # weekly repository-grounded conclusions/reproductions/reviews
+docs/requests/   # weekly explicit human-authorized work and acceptance conditions
+```
+
 A dated report should be created only after research for that date has actually been performed. Do not pre-create empty future reports.
+
+## Documentation ownership boundary
+
+ZK-ARCHE uses four distinct layers so research does not turn into an autonomous work queue:
+
+| Layer | Owns | Does not own |
+|---|---|---|
+| `docs/research/` | external evidence, hypotheses, source provenance, unresolved research questions | implementation commitments or maturity claims |
+| `docs/findings/` | consolidated repository-grounded conclusions, reproduced/measured/review outcomes | human work authorization or long-term sequencing |
+| `docs/requests/` | explicit requested work, acceptance criteria, execution status/control | durable architecture ownership or evidence-free completion claims |
+| `docs/technical-debt/` | durable reproducible gaps and clearing evidence | weekly task planning |
+
+`docs/roadmaps/`, `docs/adr/`, `spec/`, implementation/tests, assurance evidence, and release governance retain their existing authority.
 
 ## Research scope
 
@@ -29,7 +49,7 @@ Research should prioritize developments that can materially affect ZK-ARCHE arch
 - replay resistance, anti-amplification, retry cookies, resumption, and denial-of-service controls;
 - transcript binding, downgrade/UKS/reflection resistance, and protocol state-machine design;
 - deterministic vectors, differential testing, parser fuzzing, and interoperability methodology;
-- formal verification and symbolic analysis with tools such as ProVerif and Tamarin;
+- formal verification and symbolic analysis with tools such as ProVerif, Tamarin, and SAPIC+ when useful;
 - embedded cryptography, constant-time behavior, RNG/DRBG design, secure storage, and side-channel considerations;
 - Rust and C cryptographic implementation practices;
 - STM32/ESP32-class footprint and performance constraints;
@@ -53,61 +73,74 @@ A repository issue, benchmark screenshot, blog post, or single implementation be
 
 ## Daily finding contract
 
-Each meaningful finding should record:
+Future daily reports follow [`daily/README.md`](daily/README.md). Each material finding should record:
 
-1. source, publication/release date, and source type;
-2. verified claim supported by the source;
-3. protocol/security/privacy problem addressed;
-4. strongest distinct engineering idea;
-5. evidence maturity: concept, formal, simulation, software, constrained-hardware, deployed, or externally reviewed;
-6. assumptions, limitations, uncertainty, and reproduction caveats;
-7. likely ZK-ARCHE impact area;
-8. expected wire/RAM/CPU/dependency implications where relevant;
-9. compatibility or migration implications for Rust/C and existing vectors;
-10. recommended disposition: investigate, reproduce, benchmark, prototype, promote, defer, reject, or research-only.
+1. stable per-report ID and novelty class (`new`, `corroborates`, `refines`, `contradicts`, `supersedes`);
+2. source, publication/release date, source type, and primary link;
+3. verified source-supported claim;
+4. exact existing owner when one exists (`R-*`, `TD-*`, phase/spec section, or `none`);
+5. concrete repository fact or implementation/spec/test anchor;
+6. protocol/security/privacy problem addressed;
+7. strongest distinct engineering idea;
+8. evidence maturity: `concept`, `formal`, `software`, `constrained-hardware`, `deployed`, or `externally-reviewed`;
+9. assumptions, limitations, uncertainty, and reproduction caveats;
+10. likely wire/RAM/CPU/flash/dependency/trust-model implications where relevant;
+11. compatibility or migration implications for Rust/C and existing vectors;
+12. required next evidence and recommended disposition;
+13. whether it is a candidate for later weekly findings consolidation.
 
-Separate **source-supported facts** from **ZK-ARCHE inference** explicitly.
+Separate **source-supported facts**, **repository facts**, and **ZK-ARCHE inference** explicitly.
 
 ## Promotion boundary
 
-Research does not directly become a protocol requirement.
+Research does not directly become a protocol requirement or engineering request.
 
 Use this progression:
 
 ```text
-research finding
-    ↓
-research backlog entry
-    ↓ evidence sufficient?
-roadmap candidate
-    ↓ consequential architecture/protocol choice?
-ADR
-    ↓ normative behavior approved?
+external source / research idea
+        ↓
+docs/research/daily/YYYY-MM-DD.md
+        ↓
+docs/research/backlog.md
+        ↓  human-reviewed consolidation when repo implication is concrete
+docs/findings/week-of-*-findings.md
+        ↓  explicit human intent / authorized work
+docs/requests/week-of-*-request.md
+        ↓  long-term sequencing or decision required?
+docs/roadmaps/ and/or docs/adr/
+        ↓  normative behavior approved?
 spec change + versioned vectors/tests
-    ↓
+        ↓
 Rust/C implementation and validation
+        ↓
+docs/assurance/ + retained evidence
+        ↓
+docs/release/
 ```
 
-Each report may include a promotion record:
+A finding may stop at any stage. Rejection, deferral, research-only classification, or an explicit evidence gap are valid outcomes.
+
+Each daily report may include advisory promotion metadata:
 
 ```yaml
 roadmap_impact:
   candidate_phase: null
   recommendation: investigate | reproduce | benchmark | prototype | promote | defer | reject | research-only
-  evidence_maturity: concept | formal | software | hardware | deployed | externally-reviewed
+  evidence_maturity: concept | formal | software | constrained-hardware | deployed | externally-reviewed
   protocol_impact: none | compatible | extension | versioned-breaking-change
   required_next_evidence: null
   roadmap_action: none
-  promotion_requirement: explicit review
+  promotion_requirement: explicit human review
 ```
 
-A research report must not claim that a roadmap item, ADR, spec requirement, or maturity gate changed unless that separate artifact was deliberately updated and reviewed.
+A research report must not claim that a weekly request, roadmap item, ADR, spec requirement, debt status, or maturity gate changed unless that separate artifact was deliberately updated through the appropriate process.
 
 ## Research backlog
 
-[`backlog.md`](backlog.md) tracks unresolved research questions and promising leads. The backlog is not a roadmap. Its entries can be closed as rejected or deferred without implementation.
+[`backlog.md`](backlog.md) tracks unresolved research questions and promising leads. The backlog is not a roadmap or weekly request queue. Its entries can be closed as rejected or deferred without implementation.
 
-When evidence becomes actionable, promote the item by linking it to the appropriate roadmap phase or ADR rather than copying research prose into normative documents.
+When evidence becomes actionable, first consolidate the repository implication in weekly findings where useful; then promote work only through explicit human request/review and link the appropriate roadmap phase or ADR rather than copying research prose into normative documents.
 
 ## Automated daily pipeline
 
@@ -115,14 +148,26 @@ The recurring research workflow is governed by [`PIPELINE.md`](PIPELINE.md).
 
 The automation operates on the `dev` branch under a strict least-write-access rule:
 
-- it may read the entire repository to understand current code, specification, roadmap, assurance, and technical-debt state;
+- it may read the entire repository, including current weekly findings/requests, to understand code, specification, roadmap, assurance, technical-debt, and current human intent;
 - everything outside `docs/research/**` is read-only context;
 - it may write only `docs/research/**`;
 - it must never write to `main`;
+- it must not create/update `docs/findings/**` or `docs/requests/**`;
 - each completed daily run may create at most one commit and one `dev` ref update;
-- findings that imply code, spec, roadmap, ADR, CI, or release changes are recorded as recommendations for explicit review rather than applied automatically.
+- findings that imply code, spec, roadmap, ADR, CI, release, findings, request, or assurance changes are recorded as recommendations/hand-off candidates rather than applied automatically.
 
 The report, index update, and any justified backlog update must be assembled into the same atomic commit. The automation must verify after writing that no path outside `docs/research/**` changed.
+
+## Daily-report quality direction
+
+The historical 2026-08-15 through 2026-08-25 reports remain valid provenance. Future reports should be more delta-oriented:
+
+- state repository change once rather than repeating unchanged context;
+- distinguish new evidence from corroboration/refinement;
+- map findings to exact R-/TD-/spec/phase owners;
+- synthesize sources that support one engineering conclusion;
+- include an actionability matrix and explicit claim/no-change boundary;
+- identify weekly finding candidates without autonomously creating them.
 
 ## Index
 
