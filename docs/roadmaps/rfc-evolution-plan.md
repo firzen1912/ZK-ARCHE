@@ -1,582 +1,952 @@
-# ZK-ARCHE RFC-Style Protocol Evolution Plan
+# ZK-ARCHE RFC-Class Protocol Evolution Plan
 
-This document defines how ZK-ARCHE should evolve from a working Rust/C research implementation into a protocol package that can be specified, implemented, tested, reviewed, and compared with the discipline expected of mature Internet security protocols.
+This document defines how ZK-ARCHE should evolve from a working Rust/C research implementation into a protocol package that can be specified, implemented, tested, reviewed, and interoperated with the discipline expected of mature Internet security protocols.
 
-The goal is **not** to claim IETF adoption or RFC status. The goal is to remove ambiguity between implementation behavior, research hypotheses, security claims, and normative protocol requirements while preserving constrained-device feasibility.
+The objective is **RFC-class engineering quality**, not a claim of IETF adoption. ZK-ARCHE is not an Internet Standard or RFC unless it actually completes the applicable IETF process. The purpose of this plan is to hold ZK-ARCHE to comparable standards of specification precision, interoperability, security analysis, change control, implementation independence, and reproducible evidence.
+
+ZK-ARCHE must remain its own protocol. RFCs and external protocols are engineering references and comparators. They do not become dependencies merely because ZK-ARCHE borrows a successful design discipline.
+
+---
 
 ## 1. Specification authority and promotion boundary
 
 The RFC-style package sits downstream of research and roadmap decisions:
 
 ```text
-research source
-  ↓
-research backlog
-  ↓
-weekly findings
-  ↓ explicit human promotion
-roadmap / ADR
-  ↓
+external RFC / paper / implementation / benchmark
+        ↓
+docs/research/
+        ↓
+docs/findings/
+        ↓ explicit human promotion
+docs/roadmaps/ + docs/adr/
+        ↓
 spec/ normative text
-  ↓
+        ↓
 Rust + C + vectors/tests
-  ↓
-assurance evidence
+        ↓
+formal / fuzz / benchmark / review evidence
+        ↓
+conformance + release claims
 ```
 
-A research paper, RFC, Internet-Draft, implementation, or benchmark is a design comparator until ZK-ARCHE explicitly adopts a behavior. Likewise, source code does not become normative merely because it exists. Security- or wire-relevant behavior belongs in `spec/` and must be tied to executable evidence or an explicit unresolved gap.
+An RFC, Internet-Draft, academic protocol, or successful implementation is a comparator until ZK-ARCHE explicitly adopts a behavior. Source code is not normative merely because it exists. Security- or wire-relevant behavior belongs in `spec/` and must be tied to executable evidence or an explicit unresolved gap.
+
+---
 
 ## 2. Current specification baseline — 2026-08-25
 
-The unified repository has two active implementation lanes, Rust and C, but the normative package is still incomplete. The controlling specification debt remains TD-004, with adjacent dependencies on:
+The repository has two active implementation lanes:
+
+- Rust reference implementation and canonical deterministic vectors;
+- independent C implementation and constrained-device portability anchor.
+
+The controlling specification debt remains TD-004, with adjacent dependencies on:
 
 - TD-001: independent cryptographic review of the custom role-membership proof;
 - TD-002: target-class constrained-device evidence;
 - TD-003: formal model expansion and model-to-code traceability.
 
-The strongest current findings that must now shape the RFC-style work are:
+The Common Contract and bottom-up doctrine in `improvement-roadmap.md` are normative roadmap intent for this evolution plan:
 
-1. authentication, authorization, and trust mutation require separate semantics;
-2. normal AUTH is NO-LEARNING and cannot silently enroll a peer;
-3. profile selection, capabilities, methods, suites, and extensions require compatibility rules and fail-closed semantics;
-4. revocation is a convergence/lifecycle protocol, not merely a local record deletion;
-5. replay, key usage, rekey, resumption, invalidation, and channel binding are connected lifecycle state;
-6. resumption must revalidate authorization context and bound credential reuse;
-7. anonymity and unlinkability are distinct properties and observable failures are part of privacy behavior;
-8. protocol conformance and deployment/field readiness are separate claims;
-9. target benchmarks require pinned cryptographic execution context;
-10. advanced credentials and PQ hybrids remain optional profile research until measured and reviewed.
+- less-capable and more-capable peers must share the same mandatory authentication assurance floor;
+- basic P2P authentication must not require a CA or always-online external infrastructure;
+- transport/platform differences must be normalized below the common security contract;
+- optional capabilities may scale upward without weakening or replacing the constrained interoperability floor;
+- authentication, authorization, and trust mutation remain separate semantics;
+- normal AUTH is NO-LEARNING.
 
-## 3. Scope and non-goals
+---
 
-ZK-ARCHE is a privacy-preserving device authentication, scoped authorization, trust/lifecycle, and secure-association framework for heterogeneous peers. It may define native, constrained, P2P, transport-bound, and data-sovereignty profiles, but it must not silently become a replacement for TLS, DTLS, EDHOC, OSCORE, ACE, or a general-purpose credential ecosystem.
+## 3. RFC-class quality target
 
-The specification effort should define:
+A ZK-ARCHE specification-grade release should be reviewable as if an independent standards body were evaluating it. At minimum, the protocol package must provide:
 
-- native ZK-ARCHE wire semantics;
-- explicit negotiated profiles for constrained and edge deployments;
-- optional CoAP/OSCORE-oriented mappings when measured;
-- optional TLS/mTLS exporter-bound operation;
-- native datagram robustness informed by DTLS practice;
-- explicit ENROLL/TRUST lifecycle behavior separate from AUTH;
-- a shared Rust/C conformance and interoperability corpus;
-- exact claim boundaries for protocol conformance, target support, external review, and deployment readiness.
+```text
+scope and applicability
+precise terminology
+threat model
+security goals and non-goals
+wire grammar / canonical encoding
+protocol state machines
+cryptographic computations
+key schedule / domain separation
+mandatory-to-implement floor
+negotiation and downgrade behavior
+extension rules
+registries and allocation policy
+error/alert behavior
+replay / retry / retransmission behavior
+rekey and resumption lifecycle
+trust / enrollment / revocation semantics
+privacy considerations
+security considerations
+implementation requirements
+resource / MTU limits for constrained profiles
+positive vectors
+negative vectors
+annotated traces
+independent implementation interoperability
+formal-analysis scope and results
+external review status
+change-control / versioning policy
+known limitations
+claim boundaries
+```
 
-Non-goals:
+The protocol is not “RFC-class” merely because the prose resembles an RFC. The package must be independently implementable from the specification and produce the same wire bytes and accept/reject decisions across conformant implementations.
 
-- no claim of IETF standardization without the IETF process;
-- no mandatory TLS, DTLS, CBOR, COSE, OAuth/ACE, BBS, PQ, or general-purpose ZK dependency for the constrained core without explicit reviewed adoption;
-- no trust-on-first-use side effect hidden inside normal AUTH;
-- no stable identity or authorization shortcut introduced merely for lookup convenience;
-- no maturity claim inferred from RFC-style prose alone.
+---
 
-## 4. Standards and research used as engineering comparators
+## 4. Standards-process references
 
-| Reference family | Useful discipline | ZK-ARCHE implication |
+These references define the **quality discipline** around the protocol, not the ZK-ARCHE wire design itself.
+
+| Reference | Discipline to adopt | ZK-ARCHE requirement |
 |---|---|---|
-| EDHOC / LAKE | compact authenticated exchange, profile negotiation, exporter/context discipline, retransmission considerations | benchmark and adopt explicit profile/context semantics where appropriate |
-| OSCORE / KUDOS | replay/key-usage/rekey lifecycle and constrained state handling | define lifecycle transitions, exhaustion, restart, and rekey behavior |
-| ACE | separation of authentication and authorization, scoped/expiring rights, revocation convergence | keep authn/authz distinct and model authorization lineage/epochs |
-| TLS 1.3 / RFC 9266 / exporters | transcript binding and upper-layer channel binding | bind a unique ZK-ARCHE AUTH instance, not only a transport connection |
-| DTLS 1.3 | datagram replay/retransmit/source validation | define native UDP robustness explicitly |
-| BRSKI/FDO/Matter-style onboarding | commissioning/enrollment as an authorized lifecycle act | keep enrollment/trust mutation separate from AUTH |
-| CFRG Sigma / Fiat-Shamir work | proof interface, canonical serialization, composition/domain-separation review | make the custom proof review contract explicit |
-| SAPIC+/ProVerif/Tamarin work | formal traceability and privacy properties | model one canonical state machine with explicit attacker/property matrix |
-| NIST constrained/module guidance | execution boundary, entropy/key-storage/self-test context | require benchmark manifests without implying certification |
+| BCP 14 — RFC 2119 + RFC 8174 | precise normative keywords | use MUST/SHOULD/MAY only for behavior that is sufficiently specified and testable |
+| BCP 72 — RFC 3552 | rigorous Security Considerations | explicitly enumerate in-scope, out-of-scope, mitigated, and residual threats |
+| BCP 26 — RFC 8126 | registry/change-control discipline | define internal registries with ranges, allocation policy, reserved values, deprecation, and change control |
+| RFC 7322 and RFC-series style guidance | readable standards structure | keep terminology, references, examples, appendices, and normative/informative material clearly separated |
 
-Comparators provide evidence and design vocabulary; they do not override ZK-ARCHE’s own threat model, wire format, or profile constraints.
+Reference links:
 
-## 5. RFC-style deliverables
+- https://www.rfc-editor.org/info/rfc2119
+- https://www.rfc-editor.org/info/rfc8174
+- https://www.rfc-editor.org/info/rfc3552
+- https://www.rfc-editor.org/info/rfc8126
+- https://www.rfc-editor.org/info/rfc7322
 
-Before specification-grade claims, maintain and cross-link at least:
+ZK-ARCHE registries are repository-managed until and unless an external standards process adopts them. The design should nevertheless be structured so that migration to formal registries would not require redesigning the protocol.
+
+---
+
+## 5. Primary secure-channel and authenticated-key-exchange references
+
+### 5.1 TLS 1.3 — RFC 9846
+
+Current reference: https://www.rfc-editor.org/info/rfc9846
+
+RFC 9846 supersedes RFC 8446 while retaining TLS 1.3 compatibility. ZK-ARCHE should study and emulate:
+
+- transcript-bound negotiation;
+- downgrade resistance;
+- explicit handshake state;
+- separation of handshake keys and application/traffic keys;
+- structured key schedule and domain-separated derivation;
+- Finished/key-confirmation semantics;
+- authenticated parameter negotiation;
+- resumption treated as a distinct security mode with explicit replay/privacy consequences;
+- clear security properties and limitations;
+- algorithm registry discipline;
+- removal/deprecation of legacy behavior rather than indefinite accumulation.
+
+ZK-ARCHE does **not** inherit TLS's PKI assumptions. TLS is a secure-channel reference, not a requirement that ZK-ARCHE use X.509 or a CA.
+
+### 5.2 Mutual TLS / certificate-authenticated TLS
+
+“mTLS” is not a separate TLS protocol version or standalone base RFC. It is the deployment pattern in which TLS authenticates both endpoints, normally using certificate authentication. TLS 1.3 already defines optional client authentication.
+
+Useful reference:
+
+- RFC 9846 — TLS 1.3: https://www.rfc-editor.org/info/rfc9846
+- RFC 8705 — OAuth 2.0 Mutual-TLS Client Authentication and Certificate-Bound Access Tokens: https://www.rfc-editor.org/info/rfc8705
+
+ZK-ARCHE should borrow the **mutual-proof and channel-bound authorization discipline**, not the requirement for a certificate authority.
+
+### 5.3 Raw Public Keys for TLS/DTLS — RFC 7250
+
+Reference: https://www.rfc-editor.org/info/rfc7250
+
+RFC 7250 is especially relevant to the ZK-ARCHE bottom-up doctrine because it demonstrates a standards-track pattern for authenticating with raw public keys while avoiding full certificate-path processing. Its important lesson is that removing certificates does **not** remove the need for a trustworthy binding between the key and the entity.
+
+ZK-ARCHE implication:
+
+- CA-less does not mean trustless;
+- locally provisioned/enrolled key or credential bindings must be explicit;
+- a short key representation is not sufficient without possession proof and trusted binding semantics.
+
+### 5.4 DTLS 1.3 — RFC 9147 + RFC 9853
+
+References:
+
+- https://www.rfc-editor.org/info/rfc9147
+- https://www.rfc-editor.org/info/rfc9853
+
+Adopt as design references for:
+
+- datagram loss and reordering;
+- explicit epochs and sequence numbers;
+- replay windows;
+- retransmission;
+- fragmentation/reassembly constraints;
+- stateless return-routability/source validation;
+- anti-amplification and pre-authentication DoS controls;
+- connection/address mobility without treating address as identity;
+- bounded state before peer validation.
+
+The ZK-ARCHE transport contract should generalize these disciplines beyond UDP rather than importing DTLS itself as a mandatory dependency.
+
+### 5.5 EDHOC — RFC 9528 + RFC 9529
+
+References:
+
+- https://www.rfc-editor.org/info/rfc9528
+- https://www.rfc-editor.org/info/rfc9529
+
+EDHOC is a principal constrained-AKE comparator because it targets highly constrained peers while providing mutual authentication, forward secrecy, identity protection, cipher-suite negotiation, exporters, key update, and compact messages.
+
+ZK-ARCHE should emulate:
+
+- constrained-first protocol budgeting;
+- a small mandatory exchange;
+- explicit initiator/responder state;
+- transcript hashes;
+- exporter/context interfaces;
+- secure suite negotiation;
+- explicit error behavior;
+- test traces with intermediate values;
+- interoperability verified by independent implementations.
+
+RFC 9529 establishes an especially valuable bar: ZK-ARCHE should eventually publish equivalent annotated deterministic traces for each mandatory method/profile and major negative path.
+
+### 5.6 IKEv2 / IPsec — RFC 7296 + RFC 4303
+
+References:
+
+- https://www.rfc-editor.org/info/rfc7296
+- https://www.rfc-editor.org/info/rfc4303
+
+Use IKEv2/IPsec as references for:
+
+- mutual authentication and Security Association lifecycle;
+- explicit rekey/replacement semantics;
+- traffic/authorization selectors;
+- liveness and restart behavior;
+- replay protection;
+- anti-DoS cookies;
+- distinction between control-plane key establishment and protected data-plane state.
+
+ZK-ARCHE should learn from these lifecycle semantics while avoiding the configuration and implementation complexity that conflicts with the constrained Common Contract.
+
+---
+
+## 6. Constrained-IoT and object-security references
+
+### 6.1 CoAP — RFC 7252
+
+Reference: https://www.rfc-editor.org/info/rfc7252
+
+Use as a reference for:
+
+- low header overhead;
+- bounded parser complexity;
+- constrained-device applicability;
+- message IDs/tokens and duplicate handling;
+- asynchronous and lossy-network behavior;
+- explicit transport/security binding boundaries.
+
+ZK-ARCHE should be usable above, below, or beside CoAP depending on profile; CoAP is not mandatory.
+
+### 6.2 OSCORE — RFC 8613
+
+Reference: https://www.rfc-editor.org/info/rfc8613
+
+Use as a reference for:
+
+- application/object-layer end-to-end protection independent of trusted proxies;
+- explicit security-context state;
+- sequence/replay-window handling;
+- derivation of sender/recipient keys and IVs;
+- protected vs unprotected metadata analysis;
+- deterministic test vectors;
+- proxy/intermediary threat boundaries.
+
+This is highly relevant to ZK-ARCHE-DATA and to deployments where intermediate gateways must not terminate the end-to-end trust relationship.
+
+### 6.3 ACE-OAuth — RFC 9200
+
+Reference: https://www.rfc-editor.org/info/rfc9200
+
+Use as a semantic reference for:
+
+- authentication vs authorization separation;
+- resource/audience scope;
+- expiring authorization;
+- proof-of-possession binding;
+- authorization-server/resource-server/client role separation;
+- constrained authorization representation.
+
+ZK-ARCHE must not inherit a mandatory centralized authorization-server dependency. ACE is a semantic comparator for scoped authorization and lineage.
+
+### 6.4 BRSKI — RFC 8995
+
+Reference: https://www.rfc-editor.org/info/rfc8995
+
+Use as a lifecycle comparator for:
+
+- explicit bootstrap state;
+- separation of unconfigured vs configured device behavior;
+- authorization of enrollment;
+- voucher/grant concepts;
+- disconnected or limited-connectivity provisioning cases;
+- explicit trust-anchor installation.
+
+BRSKI's manufacturer/PKI/MASA model is **not** the ZK-ARCHE constrained P2P baseline. The transferable lesson is that enrollment and trust mutation are explicit authorized acts, never side effects of normal AUTH.
+
+---
+
+## 7. Encoding, schema, and cryptographic-object references
+
+### 7.1 CBOR — RFC 8949
+
+Reference: https://www.rfc-editor.org/info/rfc8949
+
+CBOR is relevant because it targets small code size, compact messages, and extensibility. ZK-ARCHE should benchmark CBOR against its current encoding before adopting it as a mandatory profile dependency.
+
+Required lesson regardless of encoding choice:
+
+- one unambiguous wire representation for security-sensitive fields;
+- explicit canonicalization rules where bytes enter transcripts/signatures/MACs;
+- deterministic invalid/unexpected-input behavior.
+
+### 7.2 CDDL — RFC 8610 + RFC 9682
+
+References:
+
+- https://www.rfc-editor.org/info/rfc8610
+- https://www.rfc-editor.org/info/rfc9682
+
+If ZK-ARCHE adopts CBOR for a profile, CDDL should be evaluated as the machine-readable normative schema language. Even if the core keeps another encoding, the protocol should provide an equivalent machine-checkable grammar.
+
+### 7.3 COSE — RFC 9052 + RFC 9053
+
+References:
+
+- https://www.rfc-editor.org/info/rfc9052
+- https://www.rfc-editor.org/info/rfc9053
+
+Use as references for:
+
+- compact cryptographic object structure;
+- protected/unprotected header separation;
+- critical parameter processing;
+- algorithm/key registries;
+- CBOR-native key representation;
+- security-object test examples.
+
+COSE is optional unless a measured ZK-ARCHE profile explicitly adopts it.
+
+---
+
+## 8. Cryptographic construction references
+
+### 8.1 HKDF — RFC 5869
+
+Reference: https://www.rfc-editor.org/info/rfc5869
+
+Use as a reference for extract/expand key schedules and domain-separated derivation. ZK-ARCHE must document exact labels, context, input ordering, output lengths, and key-erasure lifecycle.
+
+### 8.2 X25519 / Curve25519 — RFC 7748
+
+Reference: https://www.rfc-editor.org/info/rfc7748
+
+Use as a candidate portable ECDH reference where it matches the reviewed mandatory-suite requirements and target evidence.
+
+### 8.3 EdDSA — RFC 8032
+
+Reference: https://www.rfc-editor.org/info/rfc8032
+
+Use as a signature reference where a signature-based profile is justified. This does not imply that every constrained profile must use Ed25519.
+
+### 8.4 ChaCha20-Poly1305 — RFC 8439
+
+Reference: https://www.rfc-editor.org/info/rfc8439
+
+Use as a portable software-efficient AEAD comparator, particularly for targets without strong AES acceleration. Hardware-aligned AEAD profiles may coexist when benchmarked and negotiated without weakening the mandatory floor.
+
+### 8.5 HPKE — RFC 9180
+
+Reference: https://www.rfc-editor.org/info/rfc9180
+
+Use as a reference for:
+
+- standard-primitive hybrid encryption composition;
+- KEM/KDF/AEAD suite separation;
+- explicit modes;
+- `info`/AAD context binding;
+- exporter behavior;
+- deterministic test vectors.
+
+The optional encrypted registry lookup-hint work should prefer a bounded HPKE-style standard construction over inventing a new public-key encryption envelope unless evidence demands otherwise.
+
+---
+
+## 9. Transport/component separation references
+
+### 9.1 QUIC — RFC 9000 + RFC 9001
+
+References:
+
+- https://www.rfc-editor.org/info/rfc9000
+- https://www.rfc-editor.org/info/rfc9001
+
+QUIC is important not because ZK-ARCHE should become QUIC, but because it demonstrates a disciplined interface between a cryptographic handshake and a transport that owns different responsibilities.
+
+Use as a reference for:
+
+- authenticated transport parameters;
+- explicit interface between key-establishment and transport state;
+- packet-number spaces / lifecycle separation;
+- key-update limits;
+- anti-amplification behavior;
+- version negotiation;
+- 0-RTT replay caveats;
+- maintaining protocol security while changing the underlying transport machinery.
+
+This maps directly to the ZK-ARCHE Common Contract + transport-adapter architecture.
+
+### 9.2 TLS channel binding — RFC 9266
+
+Reference: https://www.rfc-editor.org/info/rfc9266
+
+Use as a reference for binding upper-layer ZK-ARCHE authentication to an already-established TLS channel. The ZK-ARCHE binding must identify a unique AUTH instance and must not assume that one transport connection implies one authorization context.
+
+TLS/DTLS bindings remain optional. Native P2P must remain functional without PKI/TLS when the selected ZK-ARCHE profile does not require them.
+
+---
+
+## 10. Trustworthiness, group, and future-system references
+
+### 10.1 RATS architecture — RFC 9334
+
+Reference: https://www.rfc-editor.org/info/rfc9334
+
+Use as an optional-attestation reference for:
+
+- distinction between trust and trustworthiness;
+- Evidence / Verifier / Relying Party roles;
+- freshness of evidence;
+- appraisal-policy boundaries;
+- platform-neutral attestation terminology.
+
+Remote attestation must remain an optional extension unless a future profile explicitly requires it. The constrained P2P authentication floor cannot depend on an online verifier.
+
+### 10.2 Messaging Layer Security — RFC 9420
+
+Reference: https://www.rfc-editor.org/info/rfc9420
+
+MLS is not a direct P2P-authentication dependency, but is a useful future reference for:
+
+- epoch-based group state;
+- forward secrecy;
+- post-compromise security;
+- asynchronous membership changes;
+- large group key-state evolution;
+- explicit exporter labels and registries.
+
+Any future ZK-ARCHE swarm/group-trust work may compare against MLS while preserving ZK-ARCHE's own infrastructure-independence requirements. MLS's Authentication Service assumption must not silently become a ZK-ARCHE core dependency.
+
+---
+
+## 11. WireGuard simplicity and lightweight implementation reference
+
+WireGuard is a **non-RFC engineering reference**, not a normative ZK-ARCHE dependency.
+
+Primary references:
+
+- WireGuard organization: https://github.com/WireGuard
+- Go implementation: https://github.com/WireGuard/wireguard-go
+- tools: https://github.com/WireGuard/wireguard-tools
+- protocol/cryptography overview: https://www.wireguard.com/protocol/
+- technical whitepaper: https://www.wireguard.com/papers/wireguard.pdf
+- cross-platform contract: https://www.wireguard.com/xplatform/
+
+ZK-ARCHE should borrow the following WireGuard design disciplines.
+
+### 11.1 Small attack surface
+
+Prefer a small mandatory core that can be audited by an individual or small team rather than a framework where every deployment enables a different collection of large subsystems.
+
+For ZK-ARCHE this means:
+
+- keep `p2p-iot-core` intentionally narrow;
+- minimize mandatory parser surface;
+- minimize mandatory cryptographic choices;
+- avoid hidden framework dependencies;
+- keep state transitions explicit;
+- favor direct, bounded interfaces over deeply abstract plug-in stacks in constrained hot paths.
+
+### 11.2 Simple peer contract
+
+WireGuard's useful conceptual lesson is that a peer can be represented by a small stable cryptographic configuration while endpoint/network location remains operational state.
+
+ZK-ARCHE analogue:
+
+```text
+cryptographic peer/trust identity != transport address
+```
+
+A changing UDP endpoint, BLE address, radio path, interface, NAT mapping, or gateway route must not silently change ZK-ARCHE identity.
+
+### 11.3 Automatic lifecycle where safe
+
+WireGuard automates rekeying and session lifecycle behind a simple interface. ZK-ARCHE should aim for similar operational simplicity while retaining explicit authorization, revocation, and evidence semantics.
+
+The operator/application should not have to manually micromanage routine key rotation, replay-window maintenance, retry handling, or session refresh when the protocol can safely automate them.
+
+### 11.4 Conservative primitive selection
+
+WireGuard intentionally uses a small fixed set of modern primitives to reduce complexity. ZK-ARCHE should borrow the **conservative-floor** principle, but not necessarily WireGuard's exact primitive set.
+
+The mandatory ZK-ARCHE floor should be:
+
+- small;
+- reviewed;
+- portable;
+- efficient in software;
+- measurable on constrained targets;
+- implemented consistently in Rust/C;
+- resistant to downgrade;
+- stable enough for long-lived interoperability.
+
+### 11.5 Cross-platform semantic identity
+
+WireGuard's cross-platform implementations are expected to preserve the same protocol behavior. ZK-ARCHE should impose the same rule across Rust, C, MCU ports, Linux-edge implementations, and future language/platform ports.
+
+Platform adaptation may change APIs, scheduling, storage, acceleration, and transport glue. It must not change wire semantics or the mandatory security contract.
+
+### 11.6 What ZK-ARCHE must **not** copy blindly
+
+WireGuard intentionally avoids broad negotiation/extensibility/cryptographic agility. RFC 8922 notes this tradeoff explicitly. ZK-ARCHE has a different requirement: heterogeneous IoT systems may remain deployed for many years and may require controlled suite/profile evolution.
+
+Therefore ZK-ARCHE should combine:
+
+```text
+WireGuard-like mandatory-core simplicity
+              +
+TLS/EDHOC-like versioned negotiation discipline
+              +
+RFC-style registries and change control
+```
+
+The goal is **bounded agility**, not unlimited plug-ins and not a permanently frozen protocol.
+
+---
+
+## 12. Reticulum common-contract reference
+
+Reticulum remains a non-RFC architectural comparator for heterogeneous interface normalization. The transferable idea is to keep the upper protocol contract stable while different media/platform adapters provide the environment-specific integration.
+
+ZK-ARCHE applies this concept to:
+
+```text
+identity
+authentication
+authorization
+trust
+secure association
+lifecycle state
+```
+
+rather than routing itself.
+
+Reticulum and WireGuard together provide useful implementation-architecture lessons:
+
+- Reticulum: heterogeneous-interface/common-contract thinking;
+- WireGuard: minimal, auditable, cross-platform secure-core thinking;
+- RFC-class protocols: specification, negotiation, lifecycle, interoperability, and change-control discipline.
+
+---
+
+## 13. Standards reference matrix
+
+| Reference | Class | Primary lesson for ZK-ARCHE | Must become dependency? |
+|---|---|---|---|
+| RFC 9846 TLS 1.3 | Standards Track | transcript/key schedule/downgrade/resumption/security model | No |
+| TLS mutual authentication / RFC 8705 example | Standards Track profile | bilateral authentication + credential-bound authorization | No |
+| RFC 7250 Raw Public Keys | Standards Track | CA-less key authentication with explicit trusted key binding | No |
+| RFC 9147 DTLS 1.3 | Standards Track | datagram replay/reorder/retransmit/DoS | No |
+| RFC 9853 DTLS return routability | Standards Track | address-change validation without identity conflation | No |
+| RFC 9528 EDHOC | Standards Track | lightweight constrained AKE | No |
+| RFC 9529 EDHOC traces | Informational | reproducible annotated interop traces | No |
+| RFC 7296 IKEv2 | Internet Standard | SA lifecycle, mutual auth, rekey, DoS | No |
+| RFC 4303 ESP | Standards Track | anti-replay and protected association semantics | No |
+| RFC 7252 CoAP | Standards Track | constrained messaging simplicity | No |
+| RFC 8613 OSCORE | Standards Track | object security + replay context | No |
+| RFC 9200 ACE | Standards Track | authn/authz split and scoped authorization | No |
+| RFC 8995 BRSKI | Standards Track | explicit bootstrapping/trust mutation | No |
+| RFC 8949 CBOR | Internet Standard | compact extensible encoding | Profile decision |
+| RFC 8610/9682 CDDL | Standards Track | machine-readable grammar | Profile decision |
+| RFC 9052/9053 COSE | Internet Standard / Standards Track | compact crypto objects/registries | Profile decision |
+| RFC 5869 HKDF | Informational | extract/expand key derivation | Suite decision |
+| RFC 7748 X25519 | Informational | portable ECDH | Suite decision |
+| RFC 8032 EdDSA | Informational | signature construction | Suite decision |
+| RFC 8439 ChaCha20-Poly1305 | Informational | software-efficient AEAD | Suite decision |
+| RFC 9180 HPKE | CFRG Informational | standard hybrid encryption composition | Optional feature |
+| RFC 9000/9001 QUIC | Standards Track | handshake/transport component boundary | No |
+| RFC 9266 TLS channel binding | Standards Track | exporter-based upper-layer binding | Optional binding |
+| RFC 9334 RATS | Informational | trustworthiness/attestation roles | Optional extension |
+| RFC 9420 MLS | Standards Track | epoch/group lifecycle and PCS | Future comparator |
+| RFC 3552 | BCP | security-considerations rigor | Yes, as documentation discipline |
+| RFC 8126 | BCP | registry/change-control rigor | Yes, as documentation discipline |
+| RFC 2119/8174 | BCP | normative language | Yes, once spec behavior is stable |
+| WireGuard | non-RFC implementation/protocol reference | minimal attack surface, simple peer model, fixed core | No |
+| Reticulum | non-RFC architecture reference | heterogeneous common interface contract | No |
+
+“Must become dependency?” means runtime/protocol dependency. Documentation/process references may still be mandatory engineering discipline.
+
+---
+
+## 14. Native ZK-ARCHE specification package
+
+The RFC-class package should maintain at least:
 
 | Artifact | Path | Required content |
 |---|---|---|
-| Protocol specification | `spec/zk-arche-protocol.md` | normative flows, state transitions, fields, cryptographic computations, errors |
-| Registries | `spec/registries.md` | versions, methods, suites, profiles, extensions, message/error/binding identifiers, compatibility rules |
-| IoT profiles | `spec/iot-profiles.md` | negotiated profile semantics, resource ceilings, evidence requirements |
-| Security considerations | `spec/security-considerations.md` | replay, downgrade, UKS/reflection, DoS, RNG/storage, lifecycle, compromise assumptions |
-| Privacy considerations | `spec/privacy-considerations.md` | anonymity, unlinkability, role privacy, failure/timing/metadata surfaces |
-| Test-vector specification | `spec/test-vectors.md` | canonical positive/negative vectors, versioning/regeneration rules |
-| Implementation requirements | `spec/implementation-requirements.md` | bounded parsing/state, RNG/DRBG, storage, constant-time, error behavior |
-| Interop evidence | `evidence/interop-matrix.md` when curated | feature/vector/profile parity and known gaps |
-| Formal traceability | retained assurance artifact | model state/event ↔ spec section ↔ Rust/C implementation mapping |
-| Target evidence | retained benchmark artifacts | execution-context manifest + wire/RAM/CPU/flash/storage measurements |
+| Core protocol | `spec/zk-arche-protocol.md` | flows, state transitions, computations, errors |
+| Registries | `spec/registries.md` | versions, methods, suites, profiles, extensions, messages, alerts, bindings |
+| Common Contract | `spec/common-contract.md` or integrated core section | mandatory cross-platform semantic floor |
+| IoT profiles | `spec/iot-profiles.md` | resource ceilings, mandatory/optional behavior, target evidence |
+| P2P profile | specification section/artifact | local trust, mutual AUTH, delegation, infrastructure independence |
+| Security considerations | `spec/security-considerations.md` | RFC 3552-style threat inventory and residual risks |
+| Privacy considerations | `spec/privacy-considerations.md` | anonymity, unlinkability, metadata/timing/failure surfaces |
+| Test vectors | `spec/test-vectors.md` + checked-in corpus | canonical positive/negative vectors and regeneration rules |
+| Traces | checked-in trace corpus | EDHOC-style annotated intermediates for mandatory flows |
+| Implementation requirements | `spec/implementation-requirements.md` | parser/state/RNG/storage/constant-time/zeroization rules |
+| Interop evidence | `evidence/interop-matrix.md` when curated | Rust/C/target/profile parity and known gaps |
+| Formal traceability | assurance artifact | model event ↔ spec section ↔ code/test mapping |
+| Target evidence | benchmark artifacts | execution-context + wire/RAM/CPU/flash/storage data |
 
-Every normative security behavior must have at least one of:
+---
 
-```text
-positive vector
-negative vector
-executable test
-formal-model property/result
-reviewed proof argument
-explicit unresolved evidence gap
-```
+## 15. Mandatory normative structure
 
-## 6. Terminology that must become normative
-
-The specification should distinguish at minimum:
-
-### Authentication
-
-Cryptographic evidence that a peer possesses or satisfies the credential/proof requirements associated with existing trusted state.
-
-### Authorization
-
-The decision that an authenticated peer may perform a particular operation under explicit scope, audience/deployment, role/policy, validity, epoch, and revocation state.
-
-### Trust mutation
-
-A state-changing act that creates, replaces, delegates, revokes, or otherwise modifies trusted credentials, roles, authorities, or lineage. Trust mutation requires an explicit authorized lifecycle operation and cannot be a side effect of normal AUTH.
-
-### Profile
-
-A negotiated set of protocol/security semantics and limits. It is not the same as a local runtime resource preset or a bag of capability bits.
-
-### Capability / extension
-
-Optional behavior advertised or carried within profile-defined compatibility rules. Critical and ignorable unknown values must be distinguished.
-
-### Authorization lineage / generation
-
-The versioned relationship by which current authorization replaces or descends from earlier authorization state and can be invalidated consistently across sessions, resumption, derived keys, and DATA release state.
-
-### Revocation view
-
-The durable issuer/authority/epoch-scoped state by which a peer knows which credential/authorization state is no longer valid and how fresh that knowledge is.
-
-## 7. Candidate protocol profiles
-
-### ZK-ARCHE-Core / `iot-core`
-
-Target: STM32-class and ESP32-S3-class constrained devices interoperating with capable MCU or Linux peers.
-
-Requirements:
-
-- fixed/bounded message and state buffers;
-- no mandatory heap-heavy parser in constrained C hot paths;
-- no mandatory anonymous-credential, PQ-hybrid, certificate-chain, large trust-graph, or general-purpose ZK dependency;
-- small-datagram design target unless the profile explicitly selects fragmentation/stream transport;
-- strict sequence/replay/transcript/profile/extension negative tests;
-- deterministic Rust vectors with C semantic reproduction;
-- NO-LEARNING normal AUTH;
-- exact target evidence before field-readiness language.
-
-### `p2p-iot-core`
-
-Adds initiator/responder mutual authentication and local trust evaluation while retaining the same constrained floor. Trust is not implicitly transitive and delegation remains bounded and revocable.
-
-### ZK-ARCHE-Edge / `iot-edge`
-
-Target: Raspberry Pi/Jetson-class peers, gateways, commissioners, and servers.
-
-May support larger registries, encrypted lookup hints, richer policy evaluation, more extensive evidence collection, transport bindings, optional advanced credentials, or PQ experiments when profile-negotiated and measured.
-
-### ZK-ARCHE-Research
-
-Target: alternative proofs/credentials, PQ/hybrid suites, formal exploration, encoding experiments, and external review. Research features must remain isolated from mandatory constrained behavior until explicitly promoted.
-
-## 8. Native specification shape
-
-The main specification should evolve toward the following sections:
+The main protocol specification should eventually contain sections equivalent to:
 
 1. Introduction and applicability
-2. Terminology and trust roles
-3. Threat model and protocol goals
-4. Protocol overview and suite decomposition
-5. Constants, identifiers, and registries
-6. Cryptographic suites and method/suite compatibility
-7. Canonical encoding and transcript construction
-8. HELLO / capability advertisement / profile selection
-9. SETUP / bootstrap / initial trust establishment
-10. AUTH
-11. Authorization-context evaluation
-12. Late enrollment and commissioner grants
-13. Rekey / re-registration / lineage replacement
-14. Revocation convergence and invalidation propagation
-15. Session/key lifecycle and usage limits
-16. Session resumption
-17. Secure-channel and transport bindings
-18. Native datagram behavior
-19. Error handling and observable failure classes
-20. State machines
-21. Test vectors and negative vectors
-22. Security considerations
-23. Privacy considerations
-24. Constrained implementation requirements
-25. Registry and extension policy
-26. Conformance and claim language
+2. Conventions and BCP 14 terminology
+3. Terminology and trust roles
+4. Threat model, security goals, and non-goals
+5. Common Contract architecture
+6. Protocol overview and module decomposition
+7. Constants, versions, identifiers, and registries
+8. Cryptographic suites and mandatory-to-implement floor
+9. Canonical wire encoding and grammar
+10. HELLO / capability advertisement / profile selection
+11. SETUP / bootstrap / initial trust establishment
+12. AUTH
+13. Authorization-context evaluation
+14. Late enrollment and commissioner grants
+15. Rekey / re-registration / lineage replacement
+16. Revocation convergence
+17. Replay, sequence, and key-usage limits
+18. Session resumption
+19. Secure association / key export
+20. Transport adapters and channel bindings
+21. Native unreliable-datagram behavior
+22. Error/alert behavior and observable failure classes
+23. State machines
+24. Positive vectors
+25. Negative vectors and invalid-message corpus
+26. Annotated protocol traces
+27. Security Considerations
+28. Privacy Considerations
+29. Constrained implementation requirements
+30. Registry / extension / deprecation policy
+31. Conformance requirements
+32. Implementation and deployment claim language
+33. Known limitations
+34. IANA-style considerations / future external registry mapping
 
-Normative MUST/SHOULD language should be added only when behavior is explicit enough to implement and test independently.
+Normative MUST/SHOULD language should only be introduced when the behavior is explicit enough for two independent implementations to agree without reading each other's source.
 
-## 9. HELLO, profile selection, registries, and extensibility
+---
 
-The current protocol concepts must be normalized into separate layers:
+## 16. Common Contract conformance model
 
-```text
-local runtime/resource configuration
-≠ negotiated protocol/security profile
-≠ optional capabilities/extensions
-```
+ZK-ARCHE should define **conformance to a contract**, not conformance to a hardware family.
 
-The spec should define:
-
-- stable profile identifiers;
-- which parameters are prescriptive for each profile;
-- how profiles are advertised/selected;
-- whether capabilities can further specialize an already selected profile;
-- critical vs ignorable extension semantics;
-- suite/method/profile compatibility constraints;
-- behavior for known-but-incompatible combinations;
-- fail-closed behavior when a peer violates a prescriptive profile parameter;
-- transcript binding for selected profile and security-relevant negotiation;
-- reserved values usable in deterministic GREASE-style conformance tests.
-
-The conformance suite should continuously exercise unknown extension paths so extensibility does not ossify.
-
-## 10. AUTH and proof semantics
-
-Normal AUTH must remain a prior-trust operation. A proof-valid but unenrolled peer remains unauthorized unless a distinct ENROLL/TRUST flow creates the necessary state.
-
-The specification must clearly separate:
+The minimum matrix must eventually include:
 
 ```text
-credential/proof possession
-role-membership statement
-peer identity/commitment binding
-authorization scope/audience/policy
-session/channel binding
-trust-store mutation
+Rust reference ↔ C reference
+MCU-core ↔ MCU-core
+MCU-core ↔ MCU-plus
+MCU-core ↔ Linux-edge
+MCU-core ↔ accelerated-edge
+reverse initiator/responder directions
+multiple transport adapters
+infrastructure-present and infrastructure-absent cases
 ```
 
-The custom role-membership proof cannot be normatively described only by source code. The RFC-style package must eventually document enough of the statement/witness relation, serialization, challenge construction, role ordering, protocol/instance identifiers, invalid-input handling, and implementation boundaries for independent review and interop testing.
+Conformance requires the same mandatory:
 
-Any review result that changes semantics requires versioned vectors and checkpoint review.
+- wire interpretation;
+- transcript bytes;
+- possession/authentication result;
+- authorization decision inputs;
+- replay/freshness behavior;
+- profile negotiation behavior;
+- fail-closed decisions;
+- key derivation/key confirmation;
+- invalid-input handling where normative.
 
-## 11. Transcript and context binding
+Equal security semantics do not require equal CPU cost, memory size, registry capacity, logging depth, or optional functionality.
 
-AUTH transcript v3 should bind every field that can change security semantics. Candidate mandatory categories include:
+---
+
+## 17. Negotiation and bounded agility
+
+ZK-ARCHE should avoid both extremes:
 
 ```text
-protocol/version
-method + suite + selected profile
-critical capabilities/extensions
-session and sequence identity
-ephemeral keys
-peer/server identity or commitments
-role/policy/authorization context
-deployment/domain/audience
-transport/channel-binding label
-fresh upper-layer AUTH-instance identity where applicable
-canonical payload bytes
+unbounded plug-in negotiation  ← too complex / hard to audit
+permanently frozen protocol    ← hard to maintain over long IoT lifetimes
 ```
 
-The transcript specification must define exact field order, length/canonical encoding, domain separators, and omission rules. A field that affects semantics but is not bound needs an explicit justification and threat analysis.
-
-## 12. Authentication versus authorization
-
-The normative package should introduce an authorization-context object or equivalent semantics distinct from the authentication proof.
-
-At minimum, future authorization state should be capable of binding:
-
-- holder or authenticated-session confirmation;
-- audience/resource/group/deployment scope;
-- requested vs granted role/policy;
-- issuer/authority;
-- validity/expiration;
-- authorization lineage/generation;
-- relevant policy/registry/revocation epoch;
-- allowed operations/profile where required.
-
-A valid authentication proof must not be specified as indefinite authorization.
-
-## 13. Enrollment and trust mutation
-
-### NO-LEARNING baseline
-
-Normal AUTH and P2P AUTH do not create trusted records. Explicit trust mutation is confined to reviewed lifecycle operations.
-
-### Late enrollment
-
-A future one-time grant should be scoped and replay protected. Candidate binding includes suite/profile compatibility, server/domain/audience, intended holder/device commitment where possible, allowed role/policy, issuer/commissioner authority, validity, nonce/replay state, and authorization lineage.
-
-### Commissioner enrollment
-
-Commissioner power must be bounded by role/scope/depth/validity/epoch and auditable. A commissioner cannot transfer or expose an existing peer’s secret merely by delegating enrollment.
-
-## 14. Rekey, key usage, replay continuity, and invalidation
-
-Rekey, replay protection, and authorization lifecycle must be specified together rather than as independent utilities.
-
-The package should eventually define:
-
-- per-suite encryption/authentication usage accounting where applicable;
-- warning and hard-stop thresholds;
-- rekey triggers;
-- replay window/counter persistence;
-- behavior after replay-state loss or rollback;
-- authenticated continuity restoration or mandatory rekey/full AUTH;
-- atomic credential/key lineage replacement;
-- invalidation propagation from credential/policy/authorization change into sessions, resumption, derived keys, and DATA release state.
-
-Loss of durable replay/lineage state must not silently become a cache miss that reopens acceptance.
-
-## 15. Revocation convergence
-
-Revocation semantics must acknowledge disconnected and intermittently connected deployments.
-
-A future profile should define a durable revocation view or equivalent, including:
-
-- issuer/authority and epoch/cursor identity;
-- full snapshot and bounded differential reconciliation where appropriate;
-- duplicate/out-of-order handling;
-- reconnect behavior after missed updates;
-- rollback/stale-view detection;
-- maximum stale-authorization window or explicit freshness objective per profile;
-- behavior when the peer cannot establish sufficiently fresh authorization state;
-- privacy consequences of revocation identifiers or global feeds.
-
-The constrained baseline must not silently require a continuously reachable central authority.
-
-## 16. Session resumption
-
-Resumption must preserve current authorization semantics, not only cryptographic possession of a ticket/PSK.
-
-A future resumption record should bind enough state to evaluate whether privilege remains valid, including as appropriate:
+The preferred model is:
 
 ```text
-holder/peer
-suite/profile
-deployment/domain/audience
-original security context
-authorization lineage/generation
-policy/registry/revocation epoch
-issue + expiry time
-reuse/usage counter or policy
-privacy-relevant identifier state
+small mandatory floor
++ versioned optional suites/profiles
++ explicit compatibility matrix
++ transcript-bound negotiation
++ fail-closed critical extensions
++ deterministic anti-ossification tests
++ controlled registry/change policy
 ```
 
-Required failure cases include:
+A high-end peer may negotiate an advanced suite with another high-end peer. It must retain the mandatory constrained floor if it claims `p2p-iot-core` compatibility.
 
-- revoked credential;
-- stale authorization lineage;
-- changed role/policy/audience/deployment;
-- missing cached authorization state;
-- rollback to older resumption state;
-- excessive reuse;
-- repeated identifier linkability;
-- inability to safely reevaluate context.
+---
 
-When a safe decision cannot be made, the normative behavior should be full AUTH rather than silent privilege carry-forward.
+## 18. Authentication, authorization, and trust mutation
 
-General-purpose state-changing 0-RTT remains outside the constrained baseline.
+The normative package must preserve three different concepts:
 
-## 17. Error handling and privacy observability
+1. **Authentication** — cryptographic evidence that the peer satisfies a credential/possession/role-proof statement relative to existing trusted state.
+2. **Authorization** — a decision that the authenticated peer may perform an operation under explicit audience, scope, policy, validity, lineage, and revocation state.
+3. **Trust mutation** — an explicit authorized state transition that creates, replaces, delegates, or revokes trusted state.
 
-The specification must treat externally observable failure behavior as part of the privacy surface.
+Normal AUTH and P2P AUTH are NO-LEARNING. A cryptographically valid unknown peer does not become trusted merely because its message verifies mathematically.
 
-Privacy analysis should inventory:
+ACE, BRSKI, TLS/mTLS, Raw Public Keys, WireGuard, and RATS should be compared specifically to keep these semantic boundaries explicit.
 
-- response vs no response;
-- alert/error class;
-- packet/response size bucket;
-- retry behavior;
-- response timing/dummy work where applicable;
-- known vs unknown credential/reference behavior;
-- allowed vs denied role/policy behavior;
-- capability/suite/profile ordering and fingerprinting;
-- session/connection identifiers;
-- retry tokens;
-- resumption ticket/PSK identifiers;
-- lower-layer identifiers outside ZK-ARCHE’s control but relevant to claims.
+---
 
-Anonymity and unlinkability must be specified as separate properties under explicit attacker models. Changing PID values is not, by itself, proof of unlinkability.
+## 19. Lifecycle: replay, rekey, revocation, resumption
 
-## 18. `AUTH_RETRY`, pre-auth cost, and denial of service
+ZK-ARCHE should treat lifecycle as one connected state machine rather than separate utilities.
 
-Native datagram deployments may use a stateless or bounded MAC-only retry/source-validation step before expensive registry lookup or proof verification.
+The normative package must eventually define:
 
-Normative work must define:
+- sequence/replay state;
+- replay-state persistence and loss behavior;
+- cryptographic usage limits;
+- rekey trigger and completion;
+- atomic credential lineage replacement;
+- revocation view/epoch convergence;
+- maximum stale-authorization window per profile;
+- session/resumption invalidation after policy/credential change;
+- resumption authorization revalidation;
+- rollback/restart/reclone behavior;
+- offline behavior when freshness cannot be established.
 
-- retry token binding inputs;
-- lifetime/replay rules;
-- address/endpoint assumptions;
-- maximum pre-validation response/amplification;
-- maximum unauthenticated state;
-- interaction with registry lookup hints;
-- privacy impact of different failure classes;
-- malformed/oversized input behavior.
+TLS, DTLS, IKEv2/IPsec, OSCORE, QUIC, WireGuard, and MLS provide complementary lifecycle lessons. No single one should be copied wholesale.
 
-The objective is bounded asymmetry: unauthenticated traffic should not cheaply force O(n) registry work or expensive proof verification.
+---
 
-## 19. Optional encrypted registry lookup hints
+## 20. Error, retry, DoS, and privacy behavior
 
-The first concrete optional design may use a randomized encrypted opaque registry key as a non-authoritative prefilter.
+Externally observable failure is part of protocol behavior.
 
-Normative invariants, if promoted, should include:
-
-- hint success never establishes identity or authorization;
-- full PID/possession/proof/transcript/state verification remains required;
-- hint key/epoch rotation and revocation are defined;
-- wrong/malformed/decryption-failed hints cannot bypass retry or throttling;
-- passive-linkability and length leakage are measured;
-- Rust/C vectors cover correct and incorrect hints;
-- the privacy-preserving O(n) scan remains an allowed fallback where required.
-
-VOPRF/POPRF remains a comparator unless a stronger server-blindness threat model justifies its added interaction/state.
-
-## 20. TLS/mTLS exporter-bound profile
-
-ZK-ARCHE may bind application-layer AUTH to TLS exporter material when TLS is already present.
-
-Candidate construction remains conceptually:
+The specification should inventory:
 
 ```text
-zk_arche_tls_channel_binding =
-    TLS-Exporter("EXPORTER-ZK-ARCHE-v1", auth_instance_context, 32)
+response vs silence
+error/alert code
+packet size bucket
+retry behavior
+source-validation token behavior
+timing/dummy-work policy
+unknown vs known peer behavior
+unauthorized vs authorized role behavior
+capability/profile ordering
+connection/session identifiers
+resumption identifiers
+transport-address changes
 ```
 
-The `auth_instance_context` must be normative and unique to the upper-layer ZK-ARCHE authentication instance. Candidate inputs include:
+DTLS and QUIC provide useful anti-amplification/source-validation references. TLS provides structured alert/state behavior. EDHOC provides constrained error handling. WireGuard provides a useful simplicity target for minimizing exposed state and control surface.
 
-- application/ALPN context;
-- deployment/domain;
-- endpoint identities or protocol-safe commitments;
-- method/suite/profile;
-- a fresh AUTH-instance/session identifier;
-- relevant transcript hash/state.
+---
 
-Required negative fixtures include wrong application, wrong deployment, wrong endpoint, wrong suite/profile, stale/cross-instance AUTH identity, TLS resumption mismatch, and proxy/termination assumptions.
+## 21. Test-vector and trace standard
 
-mTLS certificates must not be described as unlinkable merely because ZK-ARCHE runs over the connection.
+ZK-ARCHE should maintain two complementary evidence layers.
 
-## 21. Native datagram / DTLS-style robustness
+### Deterministic vectors
 
-Native UDP behavior should explicitly specify:
+For each mandatory suite/profile:
 
-- session/epoch identity;
-- source validation/retry;
-- replay window and duplicate suppression;
-- retransmission and response-cache rules;
-- reorder tolerance;
-- wrong-address behavior;
-- maximum pending state;
-- amplification limits;
-- stale/cross-session rejection;
-- privacy-aware alerts/failures.
+- inputs/seeds;
+- encoded messages;
+- transcript hashes;
+- proof values;
+- KDF intermediate/output material where safe for test fixtures;
+- key-confirmation values;
+- expected accept/reject state;
+- Rust/C parity.
 
-Every accepted retransmission behavior must be deterministic enough for Rust/C interoperability tests.
+### Annotated traces
 
-## 22. EDHOC/CoAP/OSCORE-inspired constrained profile work
+Following the EDHOC RFC 9529 model, retain human-readable traces showing the major intermediate states and bytes for complete flows.
 
-ZK-ARCHE may borrow constrained-protocol discipline without copying dependencies or claiming equivalence.
+Negative traces should include:
 
-Measured comparison should cover:
-
-- total handshake bytes and flights;
-- base authenticated key-exchange overhead vs ZK-ARCHE-specific authorization/privacy overhead;
-- exporter/context semantics;
-- parser/encoding cost;
-- retransmission behavior;
-- CPU/RAM/flash on at least one MCU-class target;
-- fragmentation/MTU consequences.
-
-CBOR/CDDL/COSE remain optional specification/encoding research until target evidence and migration cost justify adoption.
-
-## 23. Formal specification and model traceability
-
-The formal-assurance package should not consist of independent hand-maintained models that drift semantically.
-
-Preferred direction:
-
-- one canonical model source or mechanically synchronized representation;
-- pinned reproducible tooling;
-- a property/attacker matrix before proof work;
-- explicit state for registry/credential mappings, replay continuity, authorization lineage, revocation, retry/error behavior, and repeated sessions where relevant;
-- separate anonymity and unlinkability properties;
-- retained counterexamples;
-- mappings from model states/events to normative spec sections and concrete Rust/C functions/tests.
-
-Formal claims must remain scoped to modeled properties and assumptions.
-
-## 24. Constrained implementation requirements
-
-The implementation-requirements specification should eventually mandate or bound:
-
-- parser/message/state sizes;
-- dynamic-allocation policy for constrained C paths;
-- maximum pending sessions and caches;
-- registry/trust scaling assumptions;
-- RNG/entropy/DRBG failure behavior;
-- secure-storage and rollback assumptions;
-- key/seed zeroization requirements where applicable;
-- constant-time boundaries;
-- restart/crash consistency;
-- versioned `crypto_execution_context` evidence for benchmarked targets.
-
-A field-readiness claim must additionally identify deployment context: firmware/update posture, provisioning/revocation authority, secure boot/debug configuration, external controls, and residual assumptions. Protocol conformance alone cannot satisfy this requirement.
-
-## 25. Conformance and interoperability
-
-Conformance should be defined by declared profile and evidence, not by vague “supports ZK-ARCHE” language.
-
-Candidate labels:
-
-```text
-ZK-ARCHE-Core protocol-conformant
-ZK-ARCHE-Core Rust/C interoperable
-ZK-ARCHE-Core measured on <target>
-ZK-ARCHE P2P profile-conformant
-ZK-ARCHE transport-binding profile-conformant
-```
-
-Labels must not imply external review, formal verification, field readiness, or certification unless those independent evidence gates are also satisfied.
-
-The conformance corpus should include:
-
-- positive vectors;
-- malformed/oversized input;
-- wrong type/sequence/session;
-- replay/reorder/reflection;
-- negotiation downgrade;
-- unsupported critical value;
-- ignorable unknown extension;
-- incompatible method/suite/profile combination;
 - transcript mutation;
-- authorization expiry/revocation/lineage mismatch;
-- resumption stale-context/reuse cases;
-- channel-binding mismatch;
-- privacy/failure-class fixtures where deterministic testing is possible.
+- suite/profile downgrade;
+- replay;
+- wrong role/policy;
+- unknown peer;
+- wrong key/reference mapping;
+- invalid proof;
+- stale authorization;
+- revoked lineage;
+- retry-token misuse;
+- resumption misuse;
+- transport/address change;
+- unsupported critical extension.
 
-## 26. Migration sequence
+At least two independent implementations should verify the mandatory trace corpus before a strong interoperability claim.
 
-Recommended sequence:
+---
 
-1. Preserve Rust canonical vector generation and C independent reproduction.
-2. Stabilize clean-checkout CI and evidence generation.
-3. Write exact current wire/header/TLV/AUTH behavior into the spec without changing semantics merely for cleanliness.
-4. Normalize profile/capability/registry terminology and compatibility semantics.
-5. Specify authentication/authorization/trust-mutation boundaries.
-6. Specify transcript v3 and strict AUTH state/error behavior with negative vectors.
-7. Specify lifecycle state: replay continuity, key usage, rekey, revocation convergence, resumption, invalidation propagation.
-8. Expand formal traceability against the same state machine.
-9. Add target evidence manifests and constrained measurements.
-10. Add optional TLS exporter, native datagram, and constrained protocol mappings only after the base semantics are stable.
-11. Add conformance labels only when tests/vectors/evidence support the exact label.
-12. Keep BBS/PQ/alternative proof/encoding work isolated until a future explicit promotion decision.
+## 22. Security-review standard
 
-## 27. Specification completion rule
+Before strong cryptographic-security claims:
 
-An RFC-style section is not complete because prose exists. It is complete when:
+- document the custom proof statement/witness relation;
+- document Fiat-Shamir/domain-separation construction;
+- document serialization and role ordering;
+- publish deterministic positive/negative vectors;
+- define constant-time boundaries;
+- define RNG/entropy/key-storage requirements;
+- expand formal models and model-to-code traceability;
+- retain independent cryptographic review results;
+- disposition review findings with regression evidence.
+
+RFC-class formatting cannot substitute for independent cryptographic analysis.
+
+---
+
+## 23. Simplicity budget
+
+Every proposed mandatory feature should answer:
 
 ```text
-normative behavior is unambiguous
-+ identifiers/encodings are registered or explicitly fixed
-+ state transitions and failure behavior are defined
-+ Rust and C can implement the same semantics independently
-+ positive/negative evidence exists
-+ security/privacy assumptions are stated
-+ unresolved evidence gaps are explicit
+How many wire bytes does this add?
+How much code/parser surface does this add?
+How much RAM/stack/flash does this add?
+How much persistent state does this add?
+Does this add a new cryptographic primitive?
+Does this add a new trust dependency?
+Does this add a new online dependency?
+Can the least-capable conformant peer implement it?
+Can one reviewer understand its security role in isolation?
+Can it remain optional instead?
 ```
 
-Where those conditions are not yet met, keep the section visibly draft and avoid premature normative claims.
+The burden of proof is on complexity.
+
+This is the principal WireGuard-inspired discipline ZK-ARCHE should keep: **a feature is not automatically good merely because it is cryptographically sophisticated or standards-aligned.** The mandatory protocol should contain only what the common security contract requires.
+
+---
+
+## 24. Reference freshness and supersession policy
+
+RFC references must be checked for current status before a roadmap/spec update.
+
+Examples as of 2026-08-25:
+
+- use RFC 9846 as the current TLS 1.3 base reference; RFC 8446 is historical/superseded;
+- use RFC 9147 for DTLS 1.3 and account for RFC 9853 where return-routability/CID behavior is relevant;
+- use RFC 9528 for EDHOC and RFC 9529 for traces;
+- check “Updated by”, “Obsoletes”, errata, and IANA registry state before adopting behavior.
+
+A coding or research agent must not hard-code an obsolete RFC as the primary normative comparator merely because older papers or source comments cite it.
+
+---
+
+## 25. Claim language
+
+Use these states distinctly:
+
+```text
+DESIGNED                architecture/spec intent exists
+SPECIFIED               normative behavior is complete enough for independent implementation
+IMPLEMENTED             code path exists
+TESTED                  deterministic tests pass
+INTEROPERABLE           independent implementations agree
+COMMON-CONFORMANT        mandatory Common Contract corpus passes
+MEASURED                target resource evidence exists
+FORMALLY ANALYZED        scoped model result exists
+EXTERNALLY REVIEWED      independent review exists
+RFC-CLASS DOCUMENTED     complete standards-style package exists
+DEPLOYMENT-QUALIFIED     required platform/field context exists
+STANDARDIZED             only if an actual standards body has adopted it
+```
+
+`RFC-CLASS DOCUMENTED` must never be described as “an RFC”, “IETF standardized”, or “Internet Standard”.
+
+---
+
+## 26. Exit gate for the RFC-evolution program
+
+The RFC-evolution program is successful only when all of the following are true for the claimed mandatory baseline:
+
+```text
+NORMATIVE SPEC COMPLETE
++ MACHINE-CHECKABLE WIRE GRAMMAR
++ VERSIONED REGISTRIES
++ MANDATORY-TO-IMPLEMENT FLOOR DEFINED
++ THREAT / SECURITY / PRIVACY CONSIDERATIONS COMPLETE
++ STATE MACHINES COMPLETE
++ POSITIVE + NEGATIVE VECTORS
++ EDHOC-STYLE ANNOTATED TRACES
++ RUST/C INDEPENDENT INTEROPERABILITY
++ CROSS-CLASS COMMON-CONTRACT INTEROPERABILITY
++ CONSTRAINED TARGET MEASUREMENTS
++ FORMAL TRACEABILITY
++ CUSTOM CRYPTO REVIEW STATUS EXPLICIT
++ CHANGE / DEPRECATION POLICY
++ KNOWN LIMITATIONS
++ CLAIM LANGUAGE MATCHES EVIDENCE
+= RFC-CLASS ENGINEERING PACKAGE
+```
+
+This gate is intentionally stronger than “the code works”.
+
+---
+
+## 27. Agent editing contract
+
+Future automated edits to the RFC-style package must preserve:
+
+- current RFC references rather than obsolete primary references;
+- RFCs as comparators unless explicitly adopted;
+- WireGuard and Reticulum as non-RFC architectural/implementation references;
+- no implication that ZK-ARCHE is an IETF RFC or Internet Standard;
+- BCP 14 normative-language discipline;
+- RFC 3552-style security considerations;
+- RFC 8126-style registry/change-control discipline;
+- deterministic vectors and independent implementation traceability;
+- the Common Contract and bottom-up P2P doctrine;
+- CA/cloud/gateway independence of the mandatory P2P authentication path;
+- same-assurance cross-class interoperability;
+- bounded agility rather than uncontrolled plug-in complexity;
+- WireGuard-inspired simplicity/minimal attack surface without blindly copying its lack of negotiation;
+- explicit separation of authentication, authorization, and trust mutation;
+- NO-LEARNING normal AUTH;
+- checkpoint-style review for cryptographic, wire, transcript, negotiation, replay, resumption, authorization, revocation, parser, RNG, memory-safety, formal-model, and interoperability changes.
