@@ -1,64 +1,140 @@
-(* ZK-ARCHE symbolic authentication model skeleton.
-   This model abstracts elliptic-curve operations and ZK proofs.
-   It is not a computational proof of Schnorr or role-membership ZK security. *)
+(* ZK-ARCHE synchronized symbolic AUTH model.
+   Scope: current full AUTH_1 -> AUTH_2 -> AUTH_3 -> AUTH_ACK semantics.
+   The model abstracts elliptic-curve groups and the custom role proof.
+   It is not a computational proof of Schnorr or role-membership security. *)
 
 free c: channel.
+free auth_ack: bitstring.
 
 type skey.
 type pkey.
 type nonce.
 type sesskey.
 type role.
+type sessionid.
 
 fun pk(skey): pkey.
 fun dh(skey, pkey): sesskey.
+equation forall x:skey, y:skey; dh(x, pk(y)) = dh(y, pk(x)).
+
 fun kdf(sesskey, nonce, nonce, bitstring): sesskey.
 fun hmac(sesskey, bitstring): bitstring.
+
+fun pid(pkey, nonce, pkey, pkey): bitstring.
+fun client_auth_context(bitstring, nonce, pkey): bitstring.
+fun server_auth_context(nonce, pkey): bitstring.
+fun role_context(role, bitstring, nonce, pkey): bitstring.
+fun kc_context(bitstring, bitstring, nonce, pkey, pkey, bitstring, nonce, pkey): bitstring.
+
 fun schnorr_proof(skey, bitstring): bitstring.
 fun role_proof(role, bitstring): bitstring.
 
-reduc verify_schnorr(pk(x), ctx, schnorr_proof(x, ctx)) = true.
-reduc verify_role(r, ctx, role_proof(r, ctx)) = true.
+reduc forall x:skey, ctx:bitstring;
+  verify_schnorr(pk(x), ctx, schnorr_proof(x, ctx)) = true.
+reduc forall r:role, ctx:bitstring;
+  verify_role(r, ctx, role_proof(r, ctx)) = true.
 
-event BeginClient(pkey, pkey, bitstring).
-event EndClient(pkey, pkey, sesskey).
-event BeginServer(pkey, pkey, bitstring).
-event EndServer(pkey, pkey, sesskey).
+(* Pre-existing trust and authorization observations. AUTH never emits a
+   trust-mutation event in this model. *)
+event TrustedRecordPresent(pkey).
+event ClientAuth1Sent(pkey, pkey, sessionid, bitstring).
+event ServerAuth1Accepted(pkey, pkey, sessionid, bitstring).
+event AuthorizationChecked(pkey, role, sessionid, bitstring).
+event ServerAuth2Sent(pkey, pkey, sessionid, bitstring).
+event ClientAuth3Sent(pkey, pkey, sessionid, bitstring).
+event ClientComplete(pkey, pkey, sessionid, bitstring).
+event ServerComplete(pkey, pkey, sessionid, bitstring).
 
-query attacker(new sk: sesskey).
-query cpk:pkey, spk:pkey, sid:bitstring; event(EndClient(cpk,spk,new sk:sesskey)) ==> event(BeginServer(cpk,spk,sid)).
-query cpk:pkey, spk:pkey, sid:bitstring; event(EndServer(cpk,spk,new sk:sesskey)) ==> event(BeginClient(cpk,spk,sid)).
+(* FM-04: injective agreement / replay resistance obligations.
+   These queries are intentionally stronger than non-injective agreement.
+   The current symbolic model does not yet encode the concrete replay cache,
+   so retained tool results are required before any property claim. *)
+query cpk:pkey, spk:pkey, sid:sessionid, a1ctx:bitstring;
+  inj-event(ServerAuth1Accepted(cpk, spk, sid, a1ctx))
+  ==> inj-event(ClientAuth1Sent(cpk, spk, sid, a1ctx)).
 
-let Client(csk:skey, spk:pkey, r:role) =
+query cpk:pkey, spk:pkey, sid:sessionid, kcctx:bitstring;
+  inj-event(ServerComplete(cpk, spk, sid, kcctx))
+  ==> inj-event(ClientAuth3Sent(cpk, spk, sid, kcctx)).
+
+(* FM-05: agreement on the currently implemented AUTH key-confirmation
+   context. This does not yet claim binding for profile/capability/audience
+   fields that are not in the concrete KC transcript. *)
+query cpk:pkey, spk:pkey, sid:sessionid, kcctx:bitstring;
+  event(ClientComplete(cpk, spk, sid, kcctx))
+  ==> event(ServerAuth2Sent(cpk, spk, sid, kcctx)).
+
+query cpk:pkey, spk:pkey, sid:sessionid, kcctx:bitstring;
+  event(ServerComplete(cpk, spk, sid, kcctx))
+  ==> event(ClientAuth3Sent(cpk, spk, sid, kcctx)).
+
+(* FM-09: successful server-side AUTH is relative to pre-existing trusted
+   state and an explicit authorization check. Normal AUTH has no modeled
+   transition that inserts or expands trusted state. *)
+query cpk:pkey, spk:pkey, sid:sessionid, kcctx:bitstring;
+  event(ServerComplete(cpk, spk, sid, kcctx))
+  ==> event(TrustedRecordPresent(cpk)).
+
+let Client(csk:skey, spk:pkey, allowed:role) =
+  new sid:sessionid;
   new nc:nonce;
   new ce:skey;
   let cpk = pk(csk) in
   let ephc = pk(ce) in
-  let ctx1 = (cpk, spk, nc, ephc) in
-  event BeginClient(cpk, spk, ctx1);
-  out(c, (cpk, nc, ephc, schnorr_proof(csk, ctx1), role_proof(r, ctx1)));
-  in(c, (ns:nonce, ephs:pkey, tagS:bitstring));
-  let k = kdf(dh(ce, ephs), nc, ns, ctx1) in
-  if tagS = hmac(k, ("server finished", ctx1, ns, ephs)) then
-    out(c, hmac(k, ("client finished", ctx1, ns, ephs)));
-    event EndClient(cpk, spk, k).
+  let p = pid(cpk, nc, ephc, spk) in
+  let a1ctx = client_auth_context(p, nc, ephc) in
+  let cpf = schnorr_proof(csk, a1ctx) in
+  let rctx = role_context(allowed, p, nc, ephc) in
+  event ClientAuth1Sent(cpk, spk, sid, a1ctx);
+  out(c, (sid, cpk, p, nc, ephc, cpf, role_proof(allowed, rctx)));
 
-let Server(ssk:skey, allowed:role) =
+  in(c, (=sid, ns:nonce, ephs:pkey, server_pf:bitstring, tagS:bitstring));
+  let sctx = server_auth_context(ns, ephs) in
+  if verify_schnorr(spk, sctx, server_pf) = true then
+    let shared = dh(ce, ephs) in
+    let kcctx = kc_context(p, cpf, nc, ephc, spk, server_pf, ns, ephs) in
+    let k = kdf(shared, nc, ns, kcctx) in
+    if tagS = hmac(k, ("server finished", kcctx)) then
+      let tagC = hmac(k, ("client finished", kcctx)) in
+      event ClientAuth3Sent(cpk, spk, sid, kcctx);
+      out(c, (sid, tagC));
+      in(c, (=sid, ack:bitstring));
+      if ack = auth_ack then
+        event ClientComplete(cpk, spk, sid, kcctx).
+
+let Server(ssk:skey, trusted_cpk:pkey, allowed:role) =
   let spk = pk(ssk) in
-  in(c, (cpk:pkey, nc:nonce, ephc:pkey, pf:bitstring, rpf:bitstring));
-  let ctx1 = (cpk, spk, nc, ephc) in
-  if verify_schnorr(cpk, ctx1, pf) = true then
-  if verify_role(allowed, ctx1, rpf) = true then
-    event BeginServer(cpk, spk, ctx1);
-    new ns:nonce;
-    new se:skey;
-    let ephs = pk(se) in
-    let k = kdf(dh(se, ephc), nc, ns, ctx1) in
-    out(c, (ns, ephs, hmac(k, ("server finished", ctx1, ns, ephs))));
-    in(c, tagC:bitstring);
-    if tagC = hmac(k, ("client finished", ctx1, ns, ephs)) then
-      event EndServer(cpk, spk, k).
+  in(c, (sid:sessionid, cpk:pkey, p:bitstring, nc:nonce, ephc:pkey,
+         cpf:bitstring, rpf:bitstring));
+  if cpk = trusted_cpk then
+    let expected_pid = pid(cpk, nc, ephc, spk) in
+    if p = expected_pid then
+      let a1ctx = client_auth_context(p, nc, ephc) in
+      if verify_schnorr(cpk, a1ctx, cpf) = true then
+        let rctx = role_context(allowed, p, nc, ephc) in
+        if verify_role(allowed, rctx, rpf) = true then
+          event ServerAuth1Accepted(cpk, spk, sid, a1ctx);
+          event AuthorizationChecked(cpk, allowed, sid, a1ctx);
+          new ns:nonce;
+          new se:skey;
+          let ephs = pk(se) in
+          let sctx = server_auth_context(ns, ephs) in
+          let server_pf = schnorr_proof(ssk, sctx) in
+          let shared = dh(se, ephc) in
+          let kcctx = kc_context(p, cpf, nc, ephc, spk, server_pf, ns, ephs) in
+          let k = kdf(shared, nc, ns, kcctx) in
+          let tagS = hmac(k, ("server finished", kcctx)) in
+          event ServerAuth2Sent(cpk, spk, sid, kcctx);
+          out(c, (sid, ns, ephs, server_pf, tagS));
+          in(c, (=sid, tagC:bitstring));
+          if tagC = hmac(k, ("client finished", kcctx)) then
+            event ServerComplete(cpk, spk, sid, kcctx);
+            out(c, (sid, auth_ack)).
 
 process
-  new csk:skey; new ssk:skey; new r:role;
-  (!Client(csk, pk(ssk), r)) | (!Server(ssk, r))
+  new csk:skey;
+  new ssk:skey;
+  new allowed:role;
+  let cpk = pk(csk) in
+  event TrustedRecordPresent(cpk);
+  ((!Client(csk, pk(ssk), allowed)) | (!Server(ssk, cpk, allowed)))
