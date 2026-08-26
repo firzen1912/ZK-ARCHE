@@ -19,6 +19,7 @@
 #include "auth/auth_transport.h"
 #include "auth/auth_wire.h"
 #include "auth/replay_guard.h"
+#include "auth/session_table.h"
 
 #include <errno.h>
 #include <pthread.h>
@@ -74,20 +75,6 @@ static int parse_args(int argc, char **argv, args_t *a) {
 
 /* ---- Shared server state ---- */
 
-#ifndef MAX_SESSIONS
-#define MAX_SESSIONS 64
-#endif
-
-/* Session cache entry: either setup OR auth pending, keyed by session_id. */
-typedef struct {
-    int      in_use;
-    int      is_auth;  /* 0 = setup, 1 = auth */
-    union {
-        auth_pending_setup_t s;
-        auth_pending_auth_t  a;
-    } u;
-} session_slot_t;
-
 typedef struct {
     /* Persistent. */
     auth_registry_t registry;
@@ -95,9 +82,11 @@ typedef struct {
     uint8_t             server_pub[32];
     char                registry_path[512];
 
-    /* Active sessions. */
-    session_slot_t  sessions[MAX_SESSIONS];
-    pthread_mutex_t mu;
+    /* Active/reserved sessions. All table operations are serialized by mu.
+     * Reservation occurs before expensive protocol verification, which keeps
+     * concurrent UDP/TCP workers from claiming the same free slot. */
+    auth_session_table_t sessions;
+    pthread_mutex_t      mu;
 
     /* Replay state shared across UDP and TCP.  The replay guard performs a
      * contains -> verify -> insert transaction, so a dedicated mutex keeps
@@ -111,25 +100,6 @@ typedef struct {
     uint64_t    allowed_roles[AUTH_MAX_ROLES];
     size_t      n_allowed;
 } server_state_t;
-
-static int session_find(server_state_t *S, const uint8_t sid[16]) {
-    for (int i = 0; i < MAX_SESSIONS; ++i) {
-        if (S->sessions[i].in_use) {
-            const uint8_t *k = S->sessions[i].is_auth
-                ? S->sessions[i].u.a.session_id
-                : S->sessions[i].u.s.session_id;
-            if (memcmp(k, sid, 16) == 0) return i;
-        }
-    }
-    return -1;
-}
-
-static int session_alloc(server_state_t *S) {
-    for (int i = 0; i < MAX_SESSIONS; ++i) {
-        if (!S->sessions[i].in_use) return i;
-    }
-    return -1;
-}
 
 /* ---- AUTH_1 candidate-scan ----
  *
@@ -147,12 +117,9 @@ static int session_alloc(server_state_t *S) {
  */
 
 typedef struct {
-    server_state_t *S;
-    size_t          next_idx;
-    /* The candidate we report this time. */
-    uint8_t         candidate_pub[32];
-    uint8_t         candidate_rc [32];
-    int             have_candidate;
+    uint8_t candidate_pub[32];
+    uint8_t candidate_rc [32];
+    int     have_candidate;
 } scan_state_t;
 
 static auth_err_t scan_lookup(
@@ -180,11 +147,11 @@ static int try_handle_auth1(
     auth_err_t *err_out)
 {
     pthread_mutex_lock(&S->mu);
-    int slot = session_alloc(S);
+    int slot = auth_session_table_reserve(&S->sessions);
     pthread_mutex_unlock(&S->mu);
     if (slot < 0) { *err_out = AUTH_ERR_TOO_MANY_ACTIVE; return -1; }
 
-    scan_state_t scan = { .S = S, .next_idx = 0, .have_candidate = 0 };
+    scan_state_t scan = {0};
     auth_err_t last = AUTH_ERR_UNKNOWN_DEVICE;
 
     pthread_mutex_lock(&S->mu);
@@ -210,10 +177,16 @@ static int try_handle_auth1(
         pthread_mutex_unlock(&S->replay_mu);
         if (err == AUTH_OK) {
             pthread_mutex_lock(&S->mu);
-            S->sessions[slot].in_use = 1;
-            S->sessions[slot].is_auth = 1;
-            S->sessions[slot].u.a = pending;
+            auth_err_t activate_err = auth_session_table_activate_auth(
+                &S->sessions, slot, &pending);
+            if (activate_err != AUTH_OK) {
+                (void)auth_session_table_release(&S->sessions, slot);
+            }
             pthread_mutex_unlock(&S->mu);
+            if (activate_err != AUTH_OK) {
+                *err_out = activate_err;
+                return -1;
+            }
             return slot;
         }
         last = err;
@@ -223,6 +196,10 @@ static int try_handle_auth1(
             break;
         }
     }
+
+    pthread_mutex_lock(&S->mu);
+    (void)auth_session_table_release(&S->sessions, slot);
+    pthread_mutex_unlock(&S->mu);
     *err_out = last;
     return -1;
 }
@@ -247,7 +224,7 @@ static void dispatch(
     switch (hdr.pkt_type) {
     case AUTH_PKT_SETUP_1: {
         pthread_mutex_lock(&S->mu);
-        int slot = session_alloc(S);
+        int slot = auth_session_table_reserve(&S->sessions);
         pthread_mutex_unlock(&S->mu);
         if (slot < 0) { err = AUTH_ERR_TOO_MANY_ACTIVE; goto error_reply; }
 
@@ -257,24 +234,31 @@ static void dispatch(
             S->server_sk, S->server_pub,
             S->require_pairing_token,
             &pending, out, out_cap, out_len);
-        if (err) goto error_reply;
+        if (err) {
+            pthread_mutex_lock(&S->mu);
+            (void)auth_session_table_release(&S->sessions, slot);
+            pthread_mutex_unlock(&S->mu);
+            goto error_reply;
+        }
 
         pthread_mutex_lock(&S->mu);
-        S->sessions[slot].in_use  = 1;
-        S->sessions[slot].is_auth = 0;
-        S->sessions[slot].u.s = pending;
+        err = auth_session_table_activate_setup(&S->sessions, slot, &pending);
+        if (err != AUTH_OK) {
+            (void)auth_session_table_release(&S->sessions, slot);
+        }
         pthread_mutex_unlock(&S->mu);
+        if (err) goto error_reply;
         return;
     }
 
     case AUTH_PKT_SETUP_3: {
         pthread_mutex_lock(&S->mu);
-        int slot = session_find(S, hdr.session_id);
-        if (slot < 0 || S->sessions[slot].is_auth) {
+        int slot = auth_session_table_find_setup(&S->sessions, hdr.session_id);
+        if (slot < 0) {
             pthread_mutex_unlock(&S->mu);
             err = AUTH_ERR_UNKNOWN_SESSION; goto error_reply;
         }
-        auth_pending_setup_t pending = S->sessions[slot].u.s;
+        auth_pending_setup_t pending = S->sessions.slots[(size_t)slot].pending.setup;
         pthread_mutex_unlock(&S->mu);
 
         err = auth_server_handle_setup3(&pending,
@@ -287,7 +271,7 @@ static void dispatch(
         err = auth_registry_put(&S->registry,
             pending.device_id, pending.device_pub, pending.role_commitment);
         if (!err) err = auth_registry_save(&S->registry);
-        S->sessions[slot].in_use = 0;
+        (void)auth_session_table_release(&S->sessions, slot);
         pthread_mutex_unlock(&S->mu);
         if (err) goto error_reply;
         return;
@@ -303,19 +287,19 @@ static void dispatch(
 
     case AUTH_PKT_AUTH_3: {
         pthread_mutex_lock(&S->mu);
-        int slot = session_find(S, hdr.session_id);
-        if (slot < 0 || !S->sessions[slot].is_auth) {
+        int slot = auth_session_table_find_auth(&S->sessions, hdr.session_id);
+        if (slot < 0) {
             pthread_mutex_unlock(&S->mu);
             err = AUTH_ERR_UNKNOWN_SESSION; goto error_reply;
         }
-        auth_pending_auth_t pending = S->sessions[slot].u.a;
+        auth_pending_auth_t pending = S->sessions.slots[(size_t)slot].pending.auth;
         pthread_mutex_unlock(&S->mu);
 
         err = auth_server_handle_auth3(&pending,
             hdr.session_id, hdr.seq, payload, payload_len,
             out, out_cap, out_len);
         pthread_mutex_lock(&S->mu);
-        S->sessions[slot].in_use = 0;
+        (void)auth_session_table_release(&S->sessions, slot);
         pthread_mutex_unlock(&S->mu);
         if (err) goto error_reply;
         return;
@@ -457,6 +441,7 @@ int main(int argc, char **argv)
     server_state_t S;
     memset(&S, 0, sizeof S);
     pthread_mutex_init(&S.mu, NULL);
+    auth_session_table_init(&S.sessions);
     auth_replay_cache_init(&S.replay_cache);
     pthread_mutex_init(&S.replay_mu, NULL);
     S.require_pairing_token = a.require_pairing_token;
