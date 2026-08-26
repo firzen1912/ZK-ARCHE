@@ -47,6 +47,15 @@ static void test_replay_key_binding(void)
     CHECK(memcmp(k1, k2, sizeof k1) != 0, "ephemeral mutation changes replay key");
 }
 
+static void make_key(uint8_t key[AUTH_REPLAY_KEY_LEN], size_t value)
+{
+    memset(key, 0, AUTH_REPLAY_KEY_LEN);
+    key[0] = (uint8_t)value;
+    key[1] = (uint8_t)(value >> 8);
+    key[2] = (uint8_t)(value >> 16);
+    key[3] = (uint8_t)(value >> 24);
+}
+
 static void test_bounded_cache(void)
 {
     printf("== bounded replay cache ==\n");
@@ -61,12 +70,60 @@ static void test_bounded_cache(void)
     CHECK(!auth_replay_cache_insert(&cache, key), "duplicate insert rejected");
 
     for (size_t i = 1; i <= AUTH_REPLAY_CACHE_CAPACITY; ++i) {
-        memset(key, 0, sizeof key);
-        key[0] = (uint8_t)i;
-        key[1] = (uint8_t)(i >> 8);
+        make_key(key, i);
         CHECK(auth_replay_cache_insert(&cache, key), "distinct insert succeeds");
     }
     CHECK(cache.n == AUTH_REPLAY_CACHE_CAPACITY, "cache remains bounded");
+}
+
+static void test_fifo_eviction_reopens_oldest_key(void)
+{
+    printf("== replay cache eviction boundary ==\n");
+    auth_replay_cache_t cache;
+    uint8_t oldest[AUTH_REPLAY_KEY_LEN];
+    uint8_t key[AUTH_REPLAY_KEY_LEN];
+    auth_replay_cache_init(&cache);
+
+    make_key(oldest, 0x10000u);
+    CHECK(auth_replay_cache_insert(&cache, oldest), "oldest key inserted");
+
+    for (size_t i = 1; i < AUTH_REPLAY_CACHE_CAPACITY; ++i) {
+        make_key(key, i);
+        CHECK(auth_replay_cache_insert(&cache, key), "fill insert succeeds");
+    }
+    CHECK(cache.n == AUTH_REPLAY_CACHE_CAPACITY, "cache reaches exact capacity");
+    CHECK(cache.next_evict == 0u, "FIFO cursor starts at oldest slot");
+    CHECK(auth_replay_cache_contains(&cache, oldest), "oldest retained before pressure");
+
+    make_key(key, AUTH_REPLAY_CACHE_CAPACITY + 1u);
+    CHECK(auth_replay_cache_insert(&cache, key), "pressure insert succeeds");
+    CHECK(cache.next_evict == 1u, "FIFO cursor advances after eviction");
+    CHECK(!auth_replay_cache_contains(&cache, oldest),
+          "oldest key is no longer protected after capacity eviction");
+    CHECK(auth_replay_cache_insert(&cache, oldest),
+          "evicted key is accepted as new cache state");
+    CHECK(auth_replay_cache_contains(&cache, oldest),
+          "reinserted evicted key becomes protected again");
+}
+
+static void test_restart_forgets_replay_state(void)
+{
+    printf("== replay cache restart state loss ==\n");
+    auth_replay_cache_t cache;
+    uint8_t key[AUTH_REPLAY_KEY_LEN];
+    make_key(key, 0x20000u);
+
+    auth_replay_cache_init(&cache);
+    CHECK(auth_replay_cache_insert(&cache, key), "pre-restart insert succeeds");
+    CHECK(auth_replay_cache_contains(&cache, key), "pre-restart key retained");
+
+    auth_replay_cache_init(&cache);
+    CHECK(cache.n == 0u, "restart resets replay entry count");
+    CHECK(cache.next_evict == 0u, "restart resets FIFO cursor");
+    CHECK(!auth_replay_cache_contains(&cache, key),
+          "restart loses previously accepted replay key");
+    CHECK(auth_replay_cache_insert(&cache, key),
+          "post-restart key is accepted as new cache state");
 }
 
 int main(void)
@@ -74,6 +131,8 @@ int main(void)
     if (sodium_init() < 0) return 1;
     test_replay_key_binding();
     test_bounded_cache();
+    test_fifo_eviction_reopens_oldest_key();
+    test_restart_forgets_replay_state();
     printf("\n%s: %d failure(s)\n", failures ? "FAIL" : "PASS", failures);
     return failures ? 1 : 0;
 }
