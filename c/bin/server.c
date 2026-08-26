@@ -18,6 +18,7 @@
 #include "auth/auth_store.h"
 #include "auth/auth_transport.h"
 #include "auth/auth_wire.h"
+#include "auth/replay_guard.h"
 
 #include <errno.h>
 #include <pthread.h>
@@ -98,6 +99,13 @@ typedef struct {
     session_slot_t  sessions[MAX_SESSIONS];
     pthread_mutex_t mu;
 
+    /* Replay state shared across UDP and TCP.  The replay guard performs a
+     * contains -> verify -> insert transaction, so a dedicated mutex keeps
+     * that transaction atomic across transport worker threads without
+     * serializing unrelated registry/session-state operations on mu. */
+    auth_replay_cache_t replay_cache;
+    pthread_mutex_t     replay_mu;
+
     /* Policy. */
     const char *require_pairing_token;
     uint64_t    allowed_roles[AUTH_MAX_ROLES];
@@ -131,8 +139,11 @@ static int session_alloc(server_state_t *S) {
  * verify. We try each in order.
  *
  * We implement this by writing a small "scan + dispatch" loop that
- * feeds each candidate into auth_server_handle_auth1 via a
- * scan-state lookup callback.
+ * feeds each candidate into auth_server_handle_auth1_guarded via a
+ * scan-state lookup callback.  The guard's replay cache is shared by all
+ * transports and protected by replay_mu for the full check/verify/insert
+ * transaction, so concurrent UDP/TCP delivery of the same accepted AUTH_1
+ * cannot both pass the replay decision.
  */
 
 typedef struct {
@@ -188,12 +199,15 @@ static int try_handle_auth1(
         scan.have_candidate = 1;
 
         auth_pending_auth_t pending = {0};
-        auth_err_t err = auth_server_handle_auth1(
+        pthread_mutex_lock(&S->replay_mu);
+        auth_err_t err = auth_server_handle_auth1_guarded(
+            &S->replay_cache,
             sid, seq, payload, payload_len,
             S->server_sk, S->server_pub,
             scan_lookup, &scan,
             S->allowed_roles, S->n_allowed,
             &pending, out, out_cap, out_len);
+        pthread_mutex_unlock(&S->replay_mu);
         if (err == AUTH_OK) {
             pthread_mutex_lock(&S->mu);
             S->sessions[slot].in_use = 1;
@@ -443,6 +457,8 @@ int main(int argc, char **argv)
     server_state_t S;
     memset(&S, 0, sizeof S);
     pthread_mutex_init(&S.mu, NULL);
+    auth_replay_cache_init(&S.replay_cache);
+    pthread_mutex_init(&S.replay_mu, NULL);
     S.require_pairing_token = a.require_pairing_token;
     uint64_t default_roles[2] = {1, 2};
     memcpy(S.allowed_roles, default_roles, sizeof default_roles);
