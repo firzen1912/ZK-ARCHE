@@ -126,6 +126,89 @@ static void test_restart_forgets_replay_state(void)
           "post-restart key is accepted as new cache state");
 }
 
+static FILE *open_shared_fifo_corpus(void)
+{
+    static const char *paths[] = {
+        "../rust/test-vectors/replay-cache/fifo-capacity-64.txt",
+        "rust/test-vectors/replay-cache/fifo-capacity-64.txt"
+    };
+
+    for (size_t i = 0; i < sizeof paths / sizeof paths[0]; ++i) {
+        FILE *f = fopen(paths[i], "r");
+        if (f != NULL) return f;
+    }
+    return NULL;
+}
+
+static void test_shared_fifo_capacity_64_corpus(void)
+{
+    printf("== shared Rust/C FIFO replay corpus ==\n");
+    FILE *f = open_shared_fifo_corpus();
+    CHECK(f != NULL, "open shared replay corpus");
+    if (f == NULL) return;
+
+    auth_replay_cache_t cache;
+    uint8_t key[AUTH_REPLAY_KEY_LEN];
+    char line[160];
+    char op[16];
+    char expected[16];
+    size_t index = 0u;
+    size_t declared_capacity = 0u;
+    int saw_capacity = 0;
+
+    auth_replay_cache_init(&cache);
+
+    while (fgets(line, sizeof line, f) != NULL) {
+        char *p = line;
+        while (*p == ' ' || *p == '\t') ++p;
+        if (*p == '\0' || *p == '\n' || *p == '#') continue;
+
+        size_t capacity = 0u;
+        if (sscanf(p, "capacity=%zu", &capacity) == 1) {
+            declared_capacity = capacity;
+            saw_capacity = 1;
+            CHECK(capacity == AUTH_REPLAY_CACHE_CAPACITY,
+                  "shared corpus capacity matches C replay capacity");
+            continue;
+        }
+
+        if (sscanf(p, "%15s %zu %15s", op, &index, expected) != 3) {
+            CHECK(0, "parse shared replay corpus operation");
+            continue;
+        }
+
+        make_key(key, index);
+
+        if (strcmp(op, "insert") == 0) {
+            int actual = auth_replay_cache_insert(&cache, key);
+            if (strcmp(expected, "new") == 0) {
+                CHECK(actual != 0, "shared corpus insert expected new");
+            } else if (strcmp(expected, "duplicate") == 0) {
+                CHECK(actual == 0, "shared corpus insert expected duplicate");
+            } else {
+                CHECK(0, "unknown shared corpus insert expectation");
+            }
+        } else if (strcmp(op, "contains") == 0) {
+            int actual = auth_replay_cache_contains(&cache, key);
+            if (strcmp(expected, "present") == 0) {
+                CHECK(actual != 0, "shared corpus contains expected present");
+            } else if (strcmp(expected, "absent") == 0) {
+                CHECK(actual == 0, "shared corpus contains expected absent");
+            } else {
+                CHECK(0, "unknown shared corpus contains expectation");
+            }
+        } else {
+            CHECK(0, "unknown shared corpus operation");
+        }
+    }
+
+    fclose(f);
+    CHECK(saw_capacity, "shared corpus declares replay capacity");
+    CHECK(declared_capacity == 64u, "shared corpus uses matched capacity 64");
+    CHECK(cache.n == AUTH_REPLAY_CACHE_CAPACITY,
+          "shared corpus leaves cache at bounded capacity");
+}
+
 int main(void)
 {
     if (sodium_init() < 0) return 1;
@@ -133,6 +216,7 @@ int main(void)
     test_bounded_cache();
     test_fifo_eviction_reopens_oldest_key();
     test_restart_forgets_replay_state();
+    test_shared_fifo_capacity_64_corpus();
     printf("\n%s: %d failure(s)\n", failures ? "FAIL" : "PASS", failures);
     return failures ? 1 : 0;
 }
