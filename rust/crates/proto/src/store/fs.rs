@@ -2,7 +2,7 @@
 //! `ServerKeyStore`, and `ReplayCache`. This is the same on-disk format as
 //! the original implementation so running binaries can be upgraded in place.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::fs;
 use std::io::Write;
 #[cfg(unix)]
@@ -370,6 +370,7 @@ impl ServerKeyStore for FsServerKeyStore {
 
 pub struct MemoryReplayCache {
     set: HashSet<[u8; 32]>,
+    order: VecDeque<[u8; 32]>,
     cap: usize,
 }
 
@@ -377,6 +378,7 @@ impl MemoryReplayCache {
     pub fn new(cap: usize) -> Self {
         Self {
             set: HashSet::with_capacity(cap.min(1024)),
+            order: VecDeque::with_capacity(cap.min(1024)),
             cap,
         }
     }
@@ -384,15 +386,33 @@ impl MemoryReplayCache {
 
 impl ReplayCache for MemoryReplayCache {
     fn insert(&mut self, key: [u8; 32]) -> bool {
+        if self.set.contains(&key) {
+            return false;
+        }
+
+        if self.cap == 0 {
+            // A zero-capacity cache cannot retain replay state. Treat the key
+            // as new without claiming replay protection from this instance.
+            return true;
+        }
+
         if self.set.len() >= self.cap {
-            // Simple eviction: drop an arbitrary entry. For production, use
-            // a generation-based cache (matches the reference implementation).
-            if let Some(&k) = self.set.iter().next() {
-                self.set.remove(&k);
+            // Deterministic FIFO replacement matches the constrained C replay
+            // cache at an equal capacity. Profile-specific capacities remain a
+            // separate policy question; the eviction decision itself is now
+            // reproducible across implementations.
+            if let Some(oldest) = self.order.pop_front() {
+                self.set.remove(&oldest);
             }
         }
-        self.set.insert(key)
+
+        let inserted = self.set.insert(key);
+        if inserted {
+            self.order.push_back(key);
+        }
+        inserted
     }
+
     fn contains(&self, key: &[u8; 32]) -> bool {
         self.set.contains(key)
     }
