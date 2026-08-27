@@ -47,8 +47,8 @@ static char *load_vector_json(void)
         return buf;
     }
 
-    assert(!"AUTH v3 reference vector not found");
-    return NULL;
+    fputs("AUTH v3 reference vector not found\n", stderr);
+    abort();
 }
 
 static const char *json_value_start(const char *json, const char *key)
