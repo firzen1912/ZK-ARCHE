@@ -53,7 +53,7 @@ fn hex_u64(value: &str) -> u64 {
 fn profile_body() -> &'static [u8] {
     let marker = "contract_sha256=";
     let offset = CONTRACT.find(marker).expect("fingerprint marker");
-    CONTRACT[..offset].as_bytes()
+    &CONTRACT.as_bytes()[..offset]
 }
 
 fn digest_hex(bytes: &[u8]) -> String {
