@@ -173,6 +173,7 @@ The historical 2026-08-15 through 2026-08-25 reports remain valid provenance. Fu
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-08-27 | [Daily research](daily/2026-08-27.md) | immutable profile-ID semantics, deterministic unknown fixtures vs live GREASE, AUTH-v3 subcontext canonicalization/criticality boundary | reproduce; explicit review required |
 | 2026-08-26 | [Daily research](daily/2026-08-26.md) | replay-state lifetime/formal-runtime fidelity, Rust/C eviction parity, pre-authentication source validation and DoS contention | reproduce / benchmark; explicit review required |
 | 2026-08-25 | [Daily research](daily/2026-08-25.md) | resumption authorization revalidation and PSK/ticket reuse, crypto execution-context evidence, IoT deployment-context claim boundaries | reproduce / benchmark; explicit review required |
 | 2026-08-24 | [Daily research](daily/2026-08-24.md) | revocation convergence and stale-window bounds, scoped/expiring role authorization, dynamic rights lineage, correlation metadata privacy | reproduce; explicit review required |
