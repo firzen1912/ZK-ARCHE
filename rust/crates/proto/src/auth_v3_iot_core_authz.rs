@@ -170,9 +170,7 @@ mod tests {
             audience_id: decode_32("audience_id"),
             role_policy_id: vector_value("role_policy_id").parse().unwrap(),
             scope_bits: vector_value("scope_bits").parse().unwrap(),
-            authorization_generation: vector_value("authorization_generation")
-                .parse()
-                .unwrap(),
+            authorization_generation: vector_value("authorization_generation").parse().unwrap(),
             policy_epoch: vector_value("policy_epoch").parse().unwrap(),
             revocation_epoch: vector_value("revocation_epoch").parse().unwrap(),
         }
