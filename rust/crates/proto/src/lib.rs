@@ -7,19 +7,20 @@
 //!
 //! ## Module map
 //!
-//! | Module              | Responsibility                                   |
-//! |---------------------|--------------------------------------------------|
-//! | `caps`              | Protocol version, suite IDs, capability bits     |
-//! | `error`             | Structured errors + wire error codes             |
-//! | `transcript`        | Canonical transcript builder + domain separators |
-//! | `crypto`            | Schnorr / rerand / OR-proof / HKDF / HMAC        |
-//! | `auth_v3`           | Non-advertised AUTH-v3 reference primitives      |
-//! | `auth_v3_context`   | Draft canonical AUTH-v3 subcontext encoding      |
-//! | `wire`              | Packet header, framing, TLV codec                |
-//! | `transport`         | Transport abstraction (UDP, TCP, ...)            |
-//! | `store`             | Credential / registry / replay-cache traits      |
-//! | `profile`           | Timing + resource profiles                       |
-//! | `proto`             | Layer-A state machines (setup, auth)             |
+//! | Module                    | Responsibility                                   |
+//! |---------------------------|--------------------------------------------------|
+//! | `caps`                    | Protocol version, suite IDs, capability bits     |
+//! | `error`                   | Structured errors + wire error codes             |
+//! | `transcript`              | Canonical transcript builder + domain separators |
+//! | `crypto`                  | Schnorr / rerand / OR-proof / HKDF / HMAC        |
+//! | `auth_v3`                 | Non-advertised AUTH-v3 reference primitives      |
+//! | `auth_v3_context`         | Draft canonical AUTH-v3 subcontext encoding      |
+//! | `auth_v3_iot_core_authz`  | Draft `iot-core` authorization-context schema    |
+//! | `wire`                    | Packet header, framing, TLV codec                |
+//! | `transport`               | Transport abstraction (UDP, TCP, ...)            |
+//! | `store`                   | Credential / registry / replay-cache traits      |
+//! | `profile`                 | Timing + resource profiles                       |
+//! | `proto`                   | Layer-A state machines (setup, auth)             |
 //!
 //! ## Protocol summary
 //!
@@ -36,6 +37,7 @@
 
 pub mod auth_v3;
 pub mod auth_v3_context;
+pub mod auth_v3_iot_core_authz;
 pub mod caps;
 pub mod crypto;
 pub mod error;
