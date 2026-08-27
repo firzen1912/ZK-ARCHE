@@ -5,6 +5,8 @@
 
 free c: channel.
 free auth_ack: bitstring.
+free server_finished_label: bitstring.
+free client_finished_label: bitstring.
 
 type skey.
 type pkey.
@@ -113,8 +115,8 @@ let Client(csk:skey, spk:pkey, allowed:role) =
     let shared = dh(ce, ephs) in
     let kcctx = kc_context(p, cpf, nc, ephc, spk, server_pf, ns, ephs) in
     let k = kdf(shared, nc, ns, kcctx) in
-    if tagS = hmac(k, ("server finished", kcctx)) then
-      let tagC = hmac(k, ("client finished", kcctx)) in
+    if tagS = hmac(k, (server_finished_label, kcctx)) then
+      let tagC = hmac(k, (client_finished_label, kcctx)) in
       event ClientAuth3Sent(cpk, spk, sid, kcctx);
       out(c, (sid, tagC));
       in(c, (=sid, ack:bitstring));
@@ -148,11 +150,11 @@ let Server(ssk:skey, trusted_cpk:pkey, allowed:role) =
             let shared = dh(se, ephc) in
             let kcctx = kc_context(p, cpf, nc, ephc, spk, server_pf, ns, ephs) in
             let k = kdf(shared, nc, ns, kcctx) in
-            let tagS = hmac(k, ("server finished", kcctx)) in
+            let tagS = hmac(k, (server_finished_label, kcctx)) in
             event ServerAuth2Sent(cpk, spk, sid, kcctx);
             out(c, (sid, ns, ephs, server_pf, tagS));
             in(c, (=sid, tagC:bitstring));
-            if tagC = hmac(k, ("client finished", kcctx)) then
+            if tagC = hmac(k, (client_finished_label, kcctx)) then
               event ServerComplete(cpk, spk, sid, kcctx);
               out(c, (sid, auth_ack)).
 
