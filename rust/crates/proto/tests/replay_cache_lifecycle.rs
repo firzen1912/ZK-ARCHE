@@ -39,7 +39,11 @@ fn replay_capacity(profile: Profile) -> usize {
 fn replay_capacity_contract_matches_current_server_profiles() {
     let cases = profile_cases();
 
-    assert_eq!(replay_capacity(cases[0].1), 32, "minimal replay capacity drift");
+    assert_eq!(
+        replay_capacity(cases[0].1),
+        32,
+        "minimal replay capacity drift"
+    );
     assert_eq!(
         replay_capacity(cases[1].1),
         4096,
@@ -60,7 +64,10 @@ fn duplicate_is_rejected_before_cache_pressure() {
         let key = replay_key_fixture(7);
 
         assert!(cache.insert(key), "{name}: first insert must be accepted");
-        assert!(cache.contains(&key), "{name}: accepted key must be retained");
+        assert!(
+            cache.contains(&key),
+            "{name}: accepted key must be retained"
+        );
         assert!(
             !cache.insert(key),
             "{name}: duplicate insert must be rejected while retained"
@@ -82,7 +89,10 @@ fn fifo_cache_pressure_evicts_oldest_retained_key_per_overflow() {
         }
 
         let overflow = replay_key_fixture(cap);
-        assert!(cache.insert(overflow), "{name}: overflow key must be accepted");
+        assert!(
+            cache.insert(overflow),
+            "{name}: overflow key must be accepted"
+        );
         assert!(
             cache.contains(&overflow),
             "{name}: overflow key must remain in replay memory"

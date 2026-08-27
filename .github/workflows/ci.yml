@@ -100,15 +100,37 @@ jobs:
       - name: Check synchronized formal models
         run: bash ./scripts/sync-formal-models.sh --check
 
-      - name: Run synchronized AUTH model
+      - name: Run synchronized AUTH model and validate evidence
+        shell: bash
         run: |
+          set -euo pipefail
           mkdir -p evidence/formal
           {
             echo "== ZK-ARCHE ProVerif AUTH model =="
             date -u +"timestamp_utc=%Y-%m-%dT%H:%M:%SZ"
-            proverif -version
+            echo "commit=$(git rev-parse HEAD)"
+            echo "== installed proverif package =="
+            opam list --installed proverif
+            echo "== synchronized model hashes =="
+            sha256sum \
+              rust/models/proverif/zk_arche_auth_skeleton.pv \
+              c/models/proverif/zk_arche_auth_skeleton.pv
+            echo "== proverif query results =="
             proverif rust/models/proverif/zk_arche_auth_skeleton.pv
           } 2>&1 | tee evidence/formal/proverif-auth.log
+
+          result_count="$(grep -c '^RESULT ' evidence/formal/proverif-auth.log || true)"
+          if [ "$result_count" -eq 0 ]; then
+            echo "ERROR: ProVerif produced no RESULT lines; refusing a formal-success claim." >&2
+            exit 1
+          fi
+
+          if grep -Eq '^RESULT .* (is false\.|cannot be proved\.)' evidence/formal/proverif-auth.log; then
+            echo "ERROR: one or more ProVerif queries are false or unproved; retain the artifact and fail closed." >&2
+            exit 1
+          fi
+
+          echo "Validated $result_count ProVerif RESULT lines with no false/unproved query result."
 
       - name: Upload formal evidence
         if: always()

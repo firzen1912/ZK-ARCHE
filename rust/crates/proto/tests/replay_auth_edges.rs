@@ -60,12 +60,7 @@ struct SharedAuthState {
 }
 
 impl SharedAuthState {
-    fn accept(
-        &mut self,
-        session_id: [u8; 16],
-        seq: u32,
-        payload: &[u8],
-    ) -> Result<PendingAuth> {
+    fn accept(&mut self, session_id: [u8; 16], seq: u32, payload: &[u8]) -> Result<PendingAuth> {
         let Self {
             key_store,
             registry,
@@ -101,16 +96,9 @@ fn valid_auth_fixture() -> (SharedAuthState, Vec<u8>) {
     let pid = compute_pid(&device_pub, &nonce_c, &eph_c, &server_pub);
 
     let client_proof = prove_auth_client(&client_sk, &pid, &nonce_c, &eph_c);
-    let (c_prime, blind_prime, delta) =
-        rerandomize_commitment(&stored_commitment, &role_blind);
-    let rerand_proof = prove_rerandomization(
-        &stored_commitment,
-        &c_prime,
-        &delta,
-        &pid,
-        &nonce_c,
-        &eph_c,
-    );
+    let (c_prime, blind_prime, delta) = rerandomize_commitment(&stored_commitment, &role_blind);
+    let rerand_proof =
+        prove_rerandomization(&stored_commitment, &c_prime, &delta, &pid, &nonce_c, &eph_c);
     let branches = prove_role_set_membership(
         &RoleSetBinding {
             allowed_roles: DEFAULT_ALLOWED_ROLES,
@@ -206,6 +194,12 @@ fn ft023_concurrent_duplicate_allows_exactly_one_new_acceptance() {
         .filter(|result| matches!(result, Err(Some(ErrorCode::ReplayDetected))))
         .count();
 
-    assert_eq!(accepted, 1, "exactly one duplicate AUTH_1 may create new accepted state");
-    assert_eq!(replayed, 1, "the other concurrent duplicate must be rejected as replay");
+    assert_eq!(
+        accepted, 1,
+        "exactly one duplicate AUTH_1 may create new accepted state"
+    );
+    assert_eq!(
+        replayed, 1,
+        "the other concurrent duplicate must be rejected as replay"
+    );
 }
