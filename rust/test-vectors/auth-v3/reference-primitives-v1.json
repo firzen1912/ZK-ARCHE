@@ -1,0 +1,47 @@
+{
+  "status": "draft-reference-only",
+  "adr": "docs/adr/0001-auth-v3-context-and-completion.md",
+  "name": "auth_v3_reference_primitives",
+  "notes": "Non-advertised candidate vector for review and Rust/C parity. This does not make AUTH v3 normative or selectable.",
+  "encoding": {
+    "transcript_domain": "zk-arche/kc/v3",
+    "field_encoding": "u8 label_len || label || u32_le value_len || value",
+    "point_encoding": "compressed Ristretto255, 32 bytes",
+    "scalar_encoding": "canonical scalar, 32 bytes",
+    "integer_encoding": "little-endian"
+  },
+  "context": {
+    "protocol_version": 3,
+    "suite_id": 1,
+    "profile_id": 1,
+    "selected_capabilities": 5,
+    "session_id": "00112233445566778899aabbccddeeff",
+    "authz_context_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+    "critical_extensions_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+    "channel_binding_hash": "3333333333333333333333333333333333333333333333333333333333333333"
+  },
+  "auth_inputs": {
+    "pid": "1fe089931f5237f1306f8215eb0886fe261f77c7738cb85e6ce11a98e27f36ea",
+    "a_c": "6438b7d6b72e5bf7d473250fe8cb3d24ad472abea8ed5686951816a62735042a",
+    "s_c": "deb9331e101e11702f530e62c6b499b6ec6ba6d0a345ccb2ca8c6147766fa00c",
+    "nonce_c": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+    "eph_c": "682802b3c90112e0f4e7d985e423cd2b16c5bfa63d9c967c52bb6cb7fea7ea7e",
+    "server_pub": "aa52e000df2e16f55fb1032fc33bc42742dad6bd5a8fc0be0167436c5948501f",
+    "a_s": "b69b1027f551d8f6801a0a96daec74b33c69e27f57cc73ca908a730f11859b63",
+    "s_s": "c9ec78fcfb966d979d0268ac487230bd6683c3bdddfab82be95edee0a7a8a10f",
+    "nonce_s": "b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2",
+    "eph_s": "4cf1b9deda93eb9fd515fcc99262aed1368b48f24a27afd2984da8fe7bb2341f",
+    "session_key": "5cea979c840f9cb1302db41f7dcfe91c4f8b22f7019b0586db183219e27ef348"
+  },
+  "expected": {
+    "transcript_length": 726,
+    "transcript_hash": "e2b85befd4f3f58b5e880673ce1b27e81de875bf4443d7af6971d811e10439d2",
+    "k_s2c_v3": "622ae55fab76559100ab38020fe72070b2a29bc95b06ef49686d26be280f3cc9",
+    "k_c2s_v3": "b8f77e03dd68595d4e2ed49f83112373f597955efe32a0ad855d1a1a2ff1cab8",
+    "k_complete_v3": "ce41b5d3ceb6c54d88292b0fd8299a82bc64aff679a79b7886495d44c0e990ad",
+    "tag_s": "453edbad5976c5c08e720e6bffb0e111eb117501f26afb0f55b54cc719e38096",
+    "tag_c": "6c748a2e93e297095be36ba757c66bf886ec11fb9833ffdab7cbdcf5aa75d819",
+    "completion_hash": "0291e9e9e586c2d49e35c849ee8147dc263f6f51c0553c571806dfd38ced91ea",
+    "tag_ack": "5766a1ebf0af40b4da5f8226ec104b78fa47e16c60ad2f46b9a0a95822d39954"
+  }
+}

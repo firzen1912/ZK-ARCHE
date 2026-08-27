@@ -13,6 +13,7 @@
 //! | `error`       | Structured errors + wire error codes             |
 //! | `transcript`  | Canonical transcript builder + domain separators |
 //! | `crypto`      | Schnorr / rerand / OR-proof / HKDF / HMAC        |
+//! | `auth_v3`     | Non-advertised AUTH-v3 reference primitives      |
 //! | `wire`        | Packet header, framing, TLV codec                |
 //! | `transport`   | Transport abstraction (UDP, TCP, ...)            |
 //! | `store`       | Credential / registry / replay-cache traits      |
@@ -32,6 +33,7 @@
 //!
 //! See `spec/iot-auth-wire-spec.docx` for the full specification.
 
+pub mod auth_v3;
 pub mod caps;
 pub mod crypto;
 pub mod error;
