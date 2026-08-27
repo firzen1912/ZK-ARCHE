@@ -94,7 +94,11 @@ fn iot_core_profile_prescriptive_semantics_are_consistent() {
     assert_eq!(allowed, 0x6);
     assert_eq!(required & !allowed, 0, "required must be allowed");
     assert_eq!(allowed & forbidden, 0, "allowed and forbidden overlap");
-    assert_eq!(allowed | forbidden, u64::MAX, "capability masks must be total");
+    assert_eq!(
+        allowed | forbidden,
+        u64::MAX,
+        "capability masks must be total"
+    );
 
     assert_eq!(fields["authorization_schema"], "iot-core-authz-v1");
     assert_eq!(fields["authorization_context_bytes"], "148");
