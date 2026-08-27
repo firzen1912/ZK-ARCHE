@@ -266,7 +266,7 @@ fn load_registry(path: &Path) -> Result<HashMap<[u8; 32], DeviceRecord>> {
         ));
     }
     let mut map = HashMap::new();
-    for chunk in data.chunks_exact(96) {
+    for chunk in data.as_chunks::<96>().0 {
         let mut device_id = [0u8; 32];
         device_id.copy_from_slice(&chunk[0..32]);
         let mut pub_bytes = [0u8; 32];
