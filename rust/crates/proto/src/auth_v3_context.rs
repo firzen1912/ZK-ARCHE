@@ -32,7 +32,10 @@ pub enum ContextEncodingError {
     ValueTooLong,
 }
 
-fn validate_entries(kind: ContextKind, entries: &[ContextEntry<'_>]) -> Result<(), ContextEncodingError> {
+fn validate_entries(
+    kind: ContextKind,
+    entries: &[ContextEntry<'_>],
+) -> Result<(), ContextEncodingError> {
     if entries.len() > u16::MAX as usize {
         return Err(ContextEncodingError::TooManyEntries);
     }
@@ -95,10 +98,18 @@ pub fn hash_canonical_context(
 mod tests {
     use super::*;
 
-    fn assert_case(kind: ContextKind, entries: &[ContextEntry<'_>], expected_hex: &str, expected_hash: &str) {
+    fn assert_case(
+        kind: ContextKind,
+        entries: &[ContextEntry<'_>],
+        expected_hex: &str,
+        expected_hash: &str,
+    ) {
         let encoded = encode_canonical_context(kind, entries).unwrap();
         assert_eq!(hex::encode(&encoded), expected_hex);
-        assert_eq!(hex::encode(hash_canonical_context(kind, entries).unwrap()), expected_hash);
+        assert_eq!(
+            hex::encode(hash_canonical_context(kind, entries).unwrap()),
+            expected_hash
+        );
     }
 
     #[test]
@@ -126,9 +137,21 @@ mod tests {
     #[test]
     fn canonical_positive_vectors_are_stable() {
         let authz = [
-            ContextEntry { id: 1, value: &[0x01] },
-            ContextEntry { id: 2, value: b"edge-a" },
-            ContextEntry { id: 3, value: &[0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77,0x88,0x99,0xaa,0xbb,0xcc,0xdd,0xee,0xff] },
+            ContextEntry {
+                id: 1,
+                value: &[0x01],
+            },
+            ContextEntry {
+                id: 2,
+                value: b"edge-a",
+            },
+            ContextEntry {
+                id: 3,
+                value: &[
+                    0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc,
+                    0xdd, 0xee, 0xff,
+                ],
+            },
         ];
         assert_case(
             ContextKind::Authorization,
@@ -138,8 +161,14 @@ mod tests {
         );
 
         let critical = [
-            ContextEntry { id: 0x8001, value: &[0xaa, 0xbb] },
-            ContextEntry { id: 0x8004, value: &[0x01, 0x02, 0x03] },
+            ContextEntry {
+                id: 0x8001,
+                value: &[0xaa, 0xbb],
+            },
+            ContextEntry {
+                id: 0x8004,
+                value: &[0x01, 0x02, 0x03],
+            },
         ];
         assert_case(
             ContextKind::CriticalExtensions,
@@ -148,7 +177,10 @@ mod tests {
             "3f4424631680740d286af85cd2eb397e89e32a035eca62b8d9498aa970d4e36c",
         );
 
-        let channel = [ContextEntry { id: 1, value: b"tls-exporter-example" }];
+        let channel = [ContextEntry {
+            id: 1,
+            value: b"tls-exporter-example",
+        }];
         assert_case(
             ContextKind::ChannelBinding,
             &channel,
