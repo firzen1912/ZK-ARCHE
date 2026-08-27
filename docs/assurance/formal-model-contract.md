@@ -19,6 +19,8 @@ PROPERTY/ATTACKER CONTRACT DEFINED
 + FM-04/FM-05/FM-09 QUERIES PRESENT
 + INITIAL MODEL→CODE TRACEABILITY PRESENT
 + MATCHED-CAPACITY FIFO REPLAY CORPUS PRESENT
++ FT-022/FT-023 RUST+C EXECUTABLE SCENARIOS PRESENT
+!= RETAINED CROSS-LANGUAGE TEST RUN
 != FORMALLY ANALYZED
 != FORMALLY VERIFIED
 != CRYPTOGRAPHICALLY PROVEN
@@ -26,7 +28,7 @@ PROPERTY/ATTACKER CONTRACT DEFINED
 
 The custom Schnorr/role-membership proof remains subject to TD-001 independent cryptographic review. Symbolic verification cannot establish computational soundness of that proof, constant-time behavior, RNG quality, memory safety, side-channel resistance, secure key storage, or field readiness.
 
-The 2026-08-26 daily research report remains a controlling evidence refinement for replay semantics. The ProVerif `replay_seen` table is persistent/unbounded while both concrete implementations use bounded volatile replay memory. Since that report, Rust replay eviction has been changed to deterministic FIFO and a canonical capacity-64 decision corpus is consumed by both Rust and C tests. This removes the prior **eviction-algorithm** mismatch at matched capacity, but it does not establish production-capacity parity, restart continuity, rollback resistance, or equivalence to the persistent formal abstraction.
+The 2026-08-26 daily research report remains a controlling evidence refinement for replay semantics. The ProVerif `replay_seen` table is persistent/unbounded while both concrete implementations use bounded volatile replay memory. Since that report, Rust replay eviction has been changed to deterministic FIFO, a canonical capacity-64 decision corpus is consumed by both Rust and C tests, and both lanes now contain executable FT-022/FT-023 scenarios for fresh-outer-session replay and concurrent duplicate delivery. These changes improve executable decision parity, but they do not establish retained execution, production-capacity parity, restart continuity, rollback resistance, or equivalence to the persistent formal abstraction.
 
 ## 2. Model ownership rule
 
@@ -63,7 +65,7 @@ Every formal-analysis run must state which rows are actually modeled. An unmodel
 | FM-01 | Session-key secrecy | Network attacker does not learn an accepted session key absent modeled compromise | Full active Dolev-Yao network control | Partial model; retained result still required |
 | FM-02 | Client-to-server agreement | Server completion implies a matching authenticated client run for the bound context | Replay, injection, modification, interleaving | Partial correspondence present |
 | FM-03 | Server-to-client agreement | Client completion implies a matching authenticated server run for the bound context | Replay, injection, modification, interleaving | Partial correspondence present |
-| FM-04 | Injective agreement / replay resistance | One accepted AUTH run cannot be justified by replaying a prior accepted run unless explicit idempotent retransmission semantics permit it | Capture, replay, reordering, concurrent duplicate submission | **Modeled with accepted-message replay state; matched-capacity FIFO corpus present; production-capacity/lifetime mismatch open** |
+| FM-04 | Injective agreement / replay resistance | One accepted AUTH run cannot be justified by replaying a prior accepted run unless explicit idempotent retransmission semantics permit it | Capture, replay, reordering, concurrent duplicate submission | **Modeled with accepted-message replay state; matched-capacity FIFO corpus + FT-022/FT-023 Rust/C scenarios present; retained run and production lifetime policy open** |
 | FM-05 | Transcript/context integrity | Security-relevant version, suite/profile, identities/commitments, nonces, ephemeral keys, role/policy, deployment/audience, and extension choices cannot be changed without failure | Active transcript mutation | Partial: current KC context only; profile/capability/audience binding incomplete |
 | FM-06 | Unknown-key-share resistance | Peers cannot complete while disagreeing about peer identity/commitment or security context | Identity substitution and session splicing | Missing/insufficient |
 | FM-07 | Reflection resistance | Messages from one protocol direction cannot satisfy the opposite direction | Reflection and cross-role replay | Partial; explicit property still needed |
@@ -165,7 +167,7 @@ accepted AUTH_1
   → later identical replay key is rejected
 ```
 
-The current runtime implementations now share deterministic FIFO replacement semantics **when configured at the same capacity**, but production retention/lifetime remains different:
+The current runtime implementations share deterministic FIFO replacement semantics **when configured at the same capacity**, but production retention/lifetime remains different:
 
 | Lane | Runtime replay owner | Retention behavior | Restart behavior |
 |---|---|---|---|
@@ -173,21 +175,32 @@ The current runtime implementations now share deterministic FIFO replacement sem
 | C | `auth_replay_cache_t` in `c/include/auth/replay.h` / `c/src/store/replay.c`, enforced through `auth_server_handle_auth1_guarded` in `c/src/proto/replay_guard.c` and shared server cache in `c/bin/server.c` | bounded fixed-capacity deterministic FIFO replacement; current default capacity 64 | volatile; reset on process restart |
 | ProVerif | `replay_seen` table in synchronized model | persistent/unbounded abstraction | no restart transition modeled |
 
-A canonical cross-language decision corpus now exists at:
+A canonical cross-language decision corpus exists at:
 
 ```text
 rust/test-vectors/replay-cache/fifo-capacity-64.txt
 ```
 
-Both `rust/crates/proto/tests/replay_cache_lifecycle.rs` and `c/tests/test_replay.c` consume that same corpus at capacity 64. The fixture covers initial fill, duplicate rejection, overflow, oldest-key eviction, reinsertion of an evicted key, and subsequent FIFO membership decisions. This establishes a shared **executable conformance definition** for matched-capacity FIFO behavior. It does not, without a retained test run, claim that both implementations passed in a specific environment or commit.
+Both `rust/crates/proto/tests/replay_cache_lifecycle.rs` and `c/tests/test_replay.c` consume that same corpus at capacity 64. The fixture covers initial fill, duplicate rejection, overflow, oldest-key eviction, reinsertion of an evicted key, and subsequent FIFO membership decisions.
+
+The concrete AUTH paths also now encode the two replay edge scenarios that the 2026-08-26 research required:
+
+- **FT-022** fresh outer session/sequence with identical accepted `AUTH_1` material:
+  - Rust: `rust/crates/proto/tests/replay_auth_edges.rs::ft022_rejects_same_auth_payload_under_fresh_outer_session`;
+  - C: `c/tests/test_server_dispatch_replay_edges.c` through real production dispatch.
+- **FT-023** concurrent duplicate `AUTH_1` acceptance:
+  - Rust: `rust/crates/proto/tests/replay_auth_edges.rs::ft023_concurrent_duplicate_allows_exactly_one_new_acceptance` using shared reference-server-style serialized state;
+  - C: `c/tests/test_server_dispatch_replay_edges.c` using real production dispatch, shared replay state, and session reservation.
+
+These files establish executable scenario definitions in both implementation lanes. They do **not**, without retained test output, establish that both implementations passed those scenarios for a particular commit/toolchain/environment.
 
 Therefore:
 
-> **FM-04 may advance only as a scoped accepted-message replay property under an explicit replay-state assumption. Matched-capacity FIFO decision semantics are now specified by a shared Rust/C corpus, but FM-04 is not yet a proof of production-capacity equivalence, restart continuity, rollback resistance, replay-epoch/lifetime correctness, or persistent runtime replay memory.**
+> **FM-04 may advance only as a scoped accepted-message replay property under an explicit replay-state assumption. Matched-capacity FIFO decisions and FT-022/FT-023 cross-language scenario definitions now exist, but FM-04 is not yet a proof of retained runtime parity, production-capacity equivalence, restart continuity, rollback resistance, replay-epoch/lifetime correctness, or persistent runtime replay memory.**
 
 The next formal evidence manifest MUST state whether replay state is assumed persistent/unbounded, bounded, or reset only by an authenticated replay-epoch transition.
 
-The next executable evidence step is to retain Rust and C runs of the shared corpus and the restart scenarios, then add the remaining stateful cross-language scenarios for fresh outer-session replay and concurrent duplicate acceptance.
+The next executable evidence step is to retain Rust and C runs of the shared capacity-64 corpus, restart tests, FT-022, and FT-023 at an exact repository commit and toolchain. After that evidence exists, the remaining replay design work is normative rather than scenario-discovery work.
 
 ## 6. Model-to-spec-to-code traceability map
 
@@ -201,8 +214,8 @@ This table is a mapping obligation, not a proof result.
 | cryptographic primitives / KDF / MAC | protocol spec + security considerations | `rust/crates/proto/src/crypto.rs` | `c/include/auth/crypto.h`, `c/src/crypto/**` | deterministic crypto/protocol vectors | abstracted in model; TD-001 separate |
 | AUTH state machine / FM-02/FM-03 | `spec/zk-arche-protocol.md` | `rust/crates/proto/src/proto/auth.rs`, `rust/crates/server/src/main.rs` | `c/src/proto/**`, `c/bin/client.c`, `c/bin/server.c` | Rust/C AUTH tests/vectors | partial model |
 | trusted records / FM-09 | TRUST/ENROLL normative sections pending | `RegistryStore`, `FsRegistryStore`, `handle_auth_1` lookup path | registry lookup callback/store path used by `auth_server_handle_auth1` | unknown-peer / enrollment separation tests where present | pre-existing trust modeled; exact test mapping still incomplete |
-| replay accepted-message state / FM-04 | LINK/AUTH replay section pending | `ReplayCache`; `MemoryReplayCache::{contains,insert}`; `replay_key`; `handle_auth_1`; `ServerState.replay`; `dispatch_packet` | `auth_replay_key`; `auth_replay_cache_contains`; `auth_replay_cache_insert`; `auth_server_handle_auth1_guarded`; shared replay cache in `c/bin/server.c` | `rust/crates/proto/tests/replay_cache_lifecycle.rs`; `c/tests/test_replay.c`; `c/tests/test_replay_guard.c`; `c/tests/test_server_dispatch_replay.c`; shared `rust/test-vectors/replay-cache/fifo-capacity-64.txt` corpus | modeled ordering + C production-path evidence + matched-capacity FIFO corpus present; production capacity/restart parity unresolved |
-| session reservation / concurrent acceptance support | LINK/AUTH state-machine section pending | shared `ServerState` mutex + auth session map | `auth_session_table_t`, reservation/activation path in `c/bin/server.c` | `c/tests/test_session_table.c`; production dispatch fixture | C bounded state evidenced; cross-lane concurrency parity pending |
+| replay accepted-message state / FM-04 | LINK/AUTH replay section pending | `ReplayCache`; `MemoryReplayCache::{contains,insert}`; `replay_key`; `handle_auth_1`; `ServerState.replay`; `dispatch_packet` | `auth_replay_key`; `auth_replay_cache_contains`; `auth_replay_cache_insert`; `auth_server_handle_auth1_guarded`; shared replay cache in `c/bin/server.c` | Rust: `replay_cache_lifecycle.rs`, `replay_auth_edges.rs`; C: `test_replay.c`, `test_replay_guard.c`, `test_server_dispatch_replay.c`, `test_server_dispatch_replay_edges.c`; shared `fifo-capacity-64.txt` | modeled ordering + matched-capacity FIFO + FT-022/FT-023 scenario definitions present; retained run and lifetime policy unresolved |
+| session reservation / concurrent acceptance support | LINK/AUTH state-machine section pending | shared `ServerState` mutex + auth session map; FT-023 reference-state test | `auth_session_table_t`, reservation/activation path in `c/bin/server.c`; FT-023 production dispatch test | Rust `replay_auth_edges.rs`; C `test_session_table.c`, `test_server_dispatch_replay_edges.c` | executable scenario definitions exist in both lanes; retained cross-language run pending |
 | retry / source validation / pre-auth DoS | AUTH_RETRY / BIND work pending | no promoted common-contract retry path yet | no promoted common-contract retry path yet | benchmark/prototype pending | model missing; owned by zk219/R-014 |
 | authorization scope/policy / FM-10 | TRUST/AUTH normative sections pending | concrete symbol mapping pending deeper audit | concrete symbol mapping pending deeper audit | wrong-scope/audience negatives pending | model incomplete |
 | rekey/revocation/lineage / FM-13 | TRUST/ENROLL normative sections pending | mapping pending | mapping pending | lifecycle negatives pending | missing |
@@ -261,6 +274,9 @@ Concrete mapping:
   - profile-capacity FIFO eviction behavior;
   - volatile restart state loss;
   - shared capacity-64 corpus consumption.
+- `rust/crates/proto/tests/replay_auth_edges.rs`
+  - FT-022: same authenticated AUTH_1 material under a fresh outer session/sequence is rejected as replay;
+  - FT-023: two concurrent duplicates against shared serialized AUTH state produce exactly one acceptance and one replay rejection.
 
 ### C
 
@@ -282,6 +298,9 @@ Concrete mapping:
   - duplicate rejection and malformed-AUTH non-poisoning.
 - `c/tests/test_server_dispatch_replay.c`
   - production-dispatch accepted-once/replayed-rejected lifecycle.
+- `c/tests/test_server_dispatch_replay_edges.c`
+  - FT-022 through real server dispatch;
+  - FT-023 duplicate-race behavior through real shared replay/session state.
 
 ### Shared cross-language replay corpus
 
@@ -295,9 +314,10 @@ Current evidence statement:
 ```text
 FM-04 MODEL STATE: modeled
 FM-04 TOOL RESULT: not retained / not claimed
-FM-04 C EXECUTABLE EVIDENCE: present for accepted-once/replay-reject ordering
+FM-04 RUST EXECUTABLE SCENARIOS: FT-022 + FT-023 defined
+FM-04 C EXECUTABLE SCENARIOS: accepted-once/replay-reject + FT-022 + FT-023 defined
 FM-04 RUST/C MATCHED-CAPACITY FIFO CONFORMANCE FIXTURE: present at capacity 64
-FM-04 RETAINED CROSS-LANGUAGE CORPUS RUN: not retained / not claimed
+FM-04 RETAINED CROSS-LANGUAGE RUN: not retained / not claimed
 FM-04 PRODUCTION CAPACITY PARITY: not established (Rust 32/4096/32768 vs C 64)
 FM-04 RESTART/ROLLBACK CONTINUITY: not established
 FM-04 REPLAY EPOCH/LIFETIME CONTRACT: not normative yet
@@ -340,8 +360,8 @@ Current scenario coverage boundary:
 
 - **FT-020:** shared capacity-64 FIFO state-decision corpus exists in both lanes; production AUTH replay after eviction still needs retained end-to-end evidence.
 - **FT-021:** both lane-specific replay-cache tests explicitly model volatile restart/state loss; no durable replay continuity is implemented or claimed.
-- **FT-022:** not yet covered as a shared Rust/C production scenario.
-- **FT-023:** C production dispatch has serialized replay/session state, but a retained cross-language duplicate-race scenario is still required.
+- **FT-022:** executable Rust and C scenario definitions are present. Rust exercises real `handle_auth_1`; C exercises real production `dispatch()`. Retained cross-language execution is still required.
+- **FT-023:** executable Rust and C scenario definitions are present. Rust validates the current serialized shared-state reference design; C validates production dispatch with shared replay/session state. Retained cross-language execution is still required, and future Rust lock-splitting must preserve the invariant independently.
 
 For FT-020 through FT-023, a result must record profile/cache capacity and replay-state lifetime. A test that passes only because the replay key remains in an unbounded or oversized test cache is not evidence for the constrained runtime profile.
 
@@ -377,7 +397,7 @@ A clean tool exit alone is not sufficient evidence. The result must identify que
 
 ## 10. Validation and promotion gates
 
-TD-003 remains **open**. The synchronized model, matched-capacity replay corpus, and this traceability update do not produce a new ProVerif/Tamarin theorem result or a retained cross-language test run.
+TD-003 remains **open**. The synchronized model, matched-capacity replay corpus, and Rust/C FT-022/FT-023 scenario definitions do not produce a new ProVerif/Tamarin theorem result or a retained cross-language test run.
 
 Progression is reported as:
 
@@ -403,7 +423,7 @@ FM-04 is now materially more implementation-traceable, but **not complete** beca
 
 The highest-priority next work for replay/formal fidelity is:
 
-1. retain actual Rust and C execution evidence for the shared capacity-64 corpus and existing restart tests; add shared/production scenarios for FT-022 and FT-023;
+1. retain actual Rust and C execution evidence for the shared capacity-64 corpus, restart tests, FT-022, and FT-023 at an exact commit/toolchain; record any divergence rather than normalizing it away;
 2. define a normative replay lifetime/epoch contract: decide whether the Common Contract requires one minimum replay-retention budget or profile-specific capacities, and specify eviction, restart/state-loss behavior, rollback handling, and when a fresh authenticated context legally resets replay memory;
 3. revise the symbolic replay abstraction to match the claim being tested, or explicitly scope formal results to persistent replay state;
 4. retain exact ProVerif output with the replay-state assumption manifest above.
