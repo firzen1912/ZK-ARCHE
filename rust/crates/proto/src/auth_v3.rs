@@ -85,11 +85,7 @@ pub fn build_kc_transcript_v3(parts: &KcTranscriptV3Parts<'_>) -> Vec<u8> {
         b"critical_extensions_hash",
         c.critical_extensions_hash,
     );
-    append_field(
-        &mut out,
-        b"channel_binding_hash",
-        c.channel_binding_hash,
-    );
+    append_field(&mut out, b"channel_binding_hash", c.channel_binding_hash);
 
     append_field(&mut out, b"pid", parts.pid);
     append_field(&mut out, b"a_c", parts.a_c.compress().as_bytes());
@@ -184,12 +180,14 @@ mod tests {
         let pid = bytes32("1fe089931f5237f1306f8215eb0886fe261f77c7738cb85e6ce11a98e27f36ea");
         let a_c_bytes = bytes32("6438b7d6b72e5bf7d473250fe8cb3d24ad472abea8ed5686951816a62735042a");
         let s_c_bytes = bytes32("deb9331e101e11702f530e62c6b499b6ec6ba6d0a345ccb2ca8c6147766fa00c");
-        let eph_c_bytes = bytes32("682802b3c90112e0f4e7d985e423cd2b16c5bfa63d9c967c52bb6cb7fea7ea7e");
+        let eph_c_bytes =
+            bytes32("682802b3c90112e0f4e7d985e423cd2b16c5bfa63d9c967c52bb6cb7fea7ea7e");
         let server_pub_bytes =
             bytes32("aa52e000df2e16f55fb1032fc33bc42742dad6bd5a8fc0be0167436c5948501f");
         let a_s_bytes = bytes32("b69b1027f551d8f6801a0a96daec74b33c69e27f57cc73ca908a730f11859b63");
         let s_s_bytes = bytes32("c9ec78fcfb966d979d0268ac487230bd6683c3bdddfab82be95edee0a7a8a10f");
-        let eph_s_bytes = bytes32("4cf1b9deda93eb9fd515fcc99262aed1368b48f24a27afd2984da8fe7bb2341f");
+        let eph_s_bytes =
+            bytes32("4cf1b9deda93eb9fd515fcc99262aed1368b48f24a27afd2984da8fe7bb2341f");
 
         let a_c = decompress_point(&a_c_bytes, "v3_vector_a_c").unwrap();
         let s_c = decode_scalar(&s_c_bytes, "v3_vector_s_c").unwrap();
