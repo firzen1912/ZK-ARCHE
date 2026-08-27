@@ -2,9 +2,9 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-CANONICAL="$ROOT/rust/models/proverif/zk_arche_auth_skeleton.pv"
-MIRRORS=(
-  "$ROOT/c/models/proverif/zk_arche_auth_skeleton.pv"
+PAIRS=(
+  "rust/models/proverif/zk_arche_auth_skeleton.pv:c/models/proverif/zk_arche_auth_skeleton.pv"
+  "rust/models/proverif/zk_arche_auth_v3_draft.pv:c/models/proverif/zk_arche_auth_v3_draft.pv"
 )
 
 mode="${1:---check}"
@@ -13,8 +13,10 @@ case "$mode" in
   --check)
     ;;
   --write)
-    for mirror in "${MIRRORS[@]}"; do
-      cp "$CANONICAL" "$mirror"
+    for pair in "${PAIRS[@]}"; do
+      canonical="${pair%%:*}"
+      mirror="${pair#*:}"
+      cp "$ROOT/$canonical" "$ROOT/$mirror"
     done
     ;;
   *)
@@ -23,13 +25,14 @@ case "$mode" in
     ;;
 esac
 
-for mirror in "${MIRRORS[@]}"; do
-  if ! cmp -s "$CANONICAL" "$mirror"; then
-    echo "formal model mirror drift: ${mirror#$ROOT/}" >&2
-    diff -u "$CANONICAL" "$mirror" || true
+for pair in "${PAIRS[@]}"; do
+  canonical="${pair%%:*}"
+  mirror="${pair#*:}"
+  if ! cmp -s "$ROOT/$canonical" "$ROOT/$mirror"; then
+    echo "formal model mirror drift: $mirror" >&2
+    diff -u "$ROOT/$canonical" "$ROOT/$mirror" || true
     echo "run: scripts/sync-formal-models.sh --write" >&2
     exit 1
   fi
+  echo "formal model mirrors match $canonical"
 done
-
-echo "formal model mirrors match rust/models/proverif/zk_arche_auth_skeleton.pv"

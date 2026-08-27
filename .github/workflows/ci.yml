@@ -80,7 +80,7 @@ jobs:
           if-no-files-found: ignore
 
   formal:
-    name: Formal lane — synchronized ProVerif AUTH model
+    name: Formal lane — legacy v2 regression + draft AUTH v3 gate
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -100,44 +100,72 @@ jobs:
       - name: Check synchronized formal models
         run: bash ./scripts/sync-formal-models.sh --check
 
-      - name: Run synchronized AUTH model and validate evidence
+      - name: Run legacy v2 model as retained expected-negative regression
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p evidence/formal
           {
-            echo "== ZK-ARCHE ProVerif AUTH model =="
+            echo "== ZK-ARCHE ProVerif legacy AUTH v2 regression model =="
             date -u +"timestamp_utc=%Y-%m-%dT%H:%M:%SZ"
             echo "commit=$(git rev-parse HEAD)"
             echo "== installed proverif package =="
             opam list --installed proverif
-            echo "== synchronized model hashes =="
+            echo "== synchronized legacy model hashes =="
             sha256sum \
               rust/models/proverif/zk_arche_auth_skeleton.pv \
               c/models/proverif/zk_arche_auth_skeleton.pv
             echo "== proverif query results =="
             proverif rust/models/proverif/zk_arche_auth_skeleton.pv
-          } 2>&1 | tee evidence/formal/proverif-auth.log
+          } 2>&1 | tee evidence/formal/proverif-auth-v2-legacy.log
 
-          result_count="$(grep -c '^RESULT ' evidence/formal/proverif-auth.log || true)"
+          result_count="$(grep -c '^RESULT ' evidence/formal/proverif-auth-v2-legacy.log || true)"
           if [ "$result_count" -eq 0 ]; then
-            echo "ERROR: ProVerif produced no RESULT lines; refusing a formal-success claim." >&2
+            echo "ERROR: legacy v2 ProVerif model produced no RESULT lines." >&2
             exit 1
           fi
 
-          if grep -Eq '^RESULT .* (is false\.|cannot be proved\.)' evidence/formal/proverif-auth.log; then
-            echo "ERROR: one or more ProVerif queries are false or unproved; retain the artifact and fail closed." >&2
+          echo "Retained $result_count legacy v2 RESULT lines. False results are expected evidence for ADR 0001 and do not gate the draft v3 model."
+
+      - name: Run draft AUTH v3 model and fail closed
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "== ZK-ARCHE ProVerif draft AUTH v3 model =="
+            date -u +"timestamp_utc=%Y-%m-%dT%H:%M:%SZ"
+            echo "commit=$(git rev-parse HEAD)"
+            echo "== installed proverif package =="
+            opam list --installed proverif
+            echo "== synchronized draft v3 model hashes =="
+            sha256sum \
+              rust/models/proverif/zk_arche_auth_v3_draft.pv \
+              c/models/proverif/zk_arche_auth_v3_draft.pv
+            echo "== proverif query results =="
+            proverif rust/models/proverif/zk_arche_auth_v3_draft.pv
+          } 2>&1 | tee evidence/formal/proverif-auth-v3-draft.log
+
+          result_count="$(grep -c '^RESULT ' evidence/formal/proverif-auth-v3-draft.log || true)"
+          if [ "$result_count" -eq 0 ]; then
+            echo "ERROR: draft AUTH v3 ProVerif model produced no RESULT lines; refusing a formal-success claim." >&2
             exit 1
           fi
 
-          echo "Validated $result_count ProVerif RESULT lines with no false/unproved query result."
+          if grep -Eq '^RESULT .* (is false\.|cannot be proved\.)' evidence/formal/proverif-auth-v3-draft.log; then
+            echo "ERROR: one or more draft AUTH v3 ProVerif queries are false or unproved; retain the artifact and fail closed." >&2
+            exit 1
+          fi
+
+          echo "Validated $result_count draft AUTH v3 ProVerif RESULT lines with no false/unproved query result."
 
       - name: Upload formal evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: formal-proverif-evidence
-          path: evidence/formal/proverif-auth.log
+          path: |
+            evidence/formal/proverif-auth-v2-legacy.log
+            evidence/formal/proverif-auth-v3-draft.log
           if-no-files-found: error
 
   release-qualification:
@@ -211,4 +239,4 @@ jobs:
             echo "Release qualification failed: ${{ needs.release-qualification.result }}" >&2
             exit 1
           fi
-          echo "All CI lanes, formal verification, and release qualification passed."
+          echo "All CI lanes, draft v3 formal gate, and release qualification passed."
