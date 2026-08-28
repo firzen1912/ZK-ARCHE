@@ -52,6 +52,10 @@ pub fn parse_canonical_context(input: &[u8]) -> Result<ParsedContext<'_>, Contex
 
     let kind = parse_kind(input[6])?;
     let entry_count = u16::from_le_bytes([input[7], input[8]]) as usize;
+    let structural_entry_limit = (input.len() - 9) / 5;
+    if entry_count > structural_entry_limit {
+        return Err(ContextParseError::Truncated);
+    }
     let mut entries = Vec::with_capacity(entry_count);
     let mut offset = 9usize;
     let mut previous_id = 0u16;
@@ -157,6 +161,7 @@ mod tests {
         assert_error("004b43545801010000", ContextParseError::InvalidMagic);
         assert_error("5a4b43545802010000", ContextParseError::UnsupportedVersion);
         assert_error("5a4b43545801040000", ContextParseError::UnknownKind);
+        assert_error("5a4b4354580101ffff", ContextParseError::Truncated);
         assert_error("5a4b435458010101000000000000", ContextParseError::InvalidId);
         assert_error(
             "5a4b4354580101020001000000000100000000",

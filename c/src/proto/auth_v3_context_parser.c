@@ -35,6 +35,9 @@ static int parse_impl(const uint8_t *input,
     kind = (auth_v3_context_kind_t)input[6];
     entry_count = (uint16_t)((uint16_t)input[7] | ((uint16_t)input[8] << 8));
 
+    if ((size_t)entry_count > (input_len - 9u) / 5u) {
+        return AUTH_V3_CONTEXT_PARSE_TRUNCATED;
+    }
     if (capture_entries != 0 && (size_t)entry_count > entries_capacity) {
         return AUTH_V3_CONTEXT_PARSE_ENTRY_BUFFER_TOO_SMALL;
     }

@@ -56,5 +56,5 @@ fn rust_consumes_shared_raw_negative_parser_corpus() {
         case_count += 1;
     }
 
-    assert_eq!(case_count, 12, "shared parser corpus case-count drift");
+    assert_eq!(case_count, 13, "shared parser corpus case-count drift");
 }

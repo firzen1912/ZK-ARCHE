@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define CORPUS_CASES_EXPECTED 12u
+#define CORPUS_CASES_EXPECTED 13u
 
 static uint8_t hex_nibble(char c) {
     if (c >= '0' && c <= '9') return (uint8_t)(c - '0');
