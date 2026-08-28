@@ -19,6 +19,7 @@ pub enum ContextParseError {
     InvalidCriticalId,
     NonZeroFlags,
     TrailingBytes,
+    EntryLimitExceeded,
 }
 
 pub struct ParsedContext<'a> {
@@ -35,11 +36,10 @@ fn parse_kind(value: u8) -> Result<ContextKind, ContextParseError> {
     }
 }
 
-/// Parse one byte-exact `ZKCTX` v1 value.
-///
-/// Returned entry values borrow directly from `input`; the parser never sorts,
-/// rewrites, deduplicates, or otherwise normalizes attacker-controlled bytes.
-pub fn parse_canonical_context(input: &[u8]) -> Result<ParsedContext<'_>, ContextParseError> {
+fn parse_canonical_context_impl(
+    input: &[u8],
+    max_entries: Option<usize>,
+) -> Result<ParsedContext<'_>, ContextParseError> {
     if input.len() < 9 {
         return Err(ContextParseError::Truncated);
     }
@@ -52,6 +52,9 @@ pub fn parse_canonical_context(input: &[u8]) -> Result<ParsedContext<'_>, Contex
 
     let kind = parse_kind(input[6])?;
     let entry_count = u16::from_le_bytes([input[7], input[8]]) as usize;
+    if max_entries.is_some_and(|limit| entry_count > limit) {
+        return Err(ContextParseError::EntryLimitExceeded);
+    }
     let structural_entry_limit = (input.len() - 9) / 5;
     if entry_count > structural_entry_limit {
         return Err(ContextParseError::Truncated);
@@ -98,6 +101,27 @@ pub fn parse_canonical_context(input: &[u8]) -> Result<ParsedContext<'_>, Contex
     }
 
     Ok(ParsedContext { kind, entries })
+}
+
+/// Parse one byte-exact `ZKCTX` v1 value.
+///
+/// Returned entry values borrow directly from `input`; the parser never sorts,
+/// rewrites, deduplicates, or otherwise normalizes attacker-controlled bytes.
+pub fn parse_canonical_context(input: &[u8]) -> Result<ParsedContext<'_>, ContextParseError> {
+    parse_canonical_context_impl(input, None)
+}
+
+/// Parse one byte-exact `ZKCTX` v1 value while enforcing a caller-selected
+/// entry-count ceiling before allocating the parsed entry vector.
+///
+/// Constrained/profile-specific receive paths SHOULD use this form with their
+/// already-approved profile bound so an attacker-controlled entry count cannot
+/// cause materialization beyond that profile's resource envelope.
+pub fn parse_canonical_context_bounded(
+    input: &[u8],
+    max_entries: usize,
+) -> Result<ParsedContext<'_>, ContextParseError> {
+    parse_canonical_context_impl(input, Some(max_entries))
 }
 
 /// Validate the raw canonical representation before hashing the exact bytes.
@@ -152,6 +176,18 @@ mod tests {
         assert_eq!(
             hex::encode(hash_canonical_context_bytes(&empty).unwrap()),
             "7f724afa7e3e7a6c13e0fe167fc48a034888d10c523abd7864671c68aaea5fa8"
+        );
+    }
+
+    #[test]
+    fn bounded_parse_rejects_profile_excess_before_materialization() {
+        let encoded = decode(
+            "5a4b4354580101080001000000000200000000030000000004000000000500000000060000000007000000000800000000",
+        );
+        assert_eq!(parse_canonical_context(&encoded).unwrap().entries.len(), 8);
+        assert_eq!(
+            parse_canonical_context_bounded(&encoded, 7).err(),
+            Some(ContextParseError::EntryLimitExceeded)
         );
     }
 

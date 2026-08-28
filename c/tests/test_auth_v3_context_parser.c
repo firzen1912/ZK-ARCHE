@@ -82,15 +82,20 @@ static void test_empty_context(void) {
 }
 
 static void test_buffer_limit_is_fail_closed(void) {
-    uint8_t input[32];
+    uint8_t input[64];
     auth_v3_context_kind_t kind = AUTH_V3_CONTEXT_AUTHORIZATION;
+    auth_v3_context_entry_t entries[8];
     size_t entry_count = 0u;
     size_t input_len = decode_hex(
-        "5a4b435458010101000100000000", input, sizeof(input));
+        "5a4b4354580101080001000000000200000000030000000004000000000500000000060000000007000000000800000000",
+        input, sizeof(input));
 
     assert(auth_v3_context_parse_bytes(input, input_len, &kind,
-                                       NULL, 0u, &entry_count) ==
+                                       entries, 7u, &entry_count) ==
            AUTH_V3_CONTEXT_PARSE_ENTRY_BUFFER_TOO_SMALL);
+    assert(auth_v3_context_parse_bytes(input, input_len, &kind,
+                                       entries, 8u, &entry_count) == AUTH_V3_CONTEXT_PARSE_OK);
+    assert(entry_count == 8u);
 }
 
 int main(void) {
