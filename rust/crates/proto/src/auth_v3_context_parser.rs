@@ -5,9 +5,7 @@
 //! normalization and are rejected unless they are already the unique canonical
 //! representation required by `spec/auth-v3-context-encoding.md`.
 
-use crate::auth_v3_context::{
-    ContextEntry, ContextKind, CONTEXT_ENCODING_VERSION, CONTEXT_MAGIC,
-};
+use crate::auth_v3_context::{ContextEntry, ContextKind, CONTEXT_ENCODING_VERSION, CONTEXT_MAGIC};
 use sha2::{Digest, Sha256};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -73,8 +71,7 @@ pub fn parse_canonical_context(input: &[u8]) -> Result<ParsedContext<'_>, Contex
         if index > 0 && id <= previous_id {
             return Err(ContextParseError::NonCanonicalOrder);
         }
-        if kind == ContextKind::CriticalExtensions && ((id & 0x8000) == 0 || (id & 0x7fff) == 0)
-        {
+        if kind == ContextKind::CriticalExtensions && ((id & 0x8000) == 0 || (id & 0x7fff) == 0) {
             return Err(ContextParseError::InvalidCriticalId);
         }
         if flags != 0 {
@@ -120,7 +117,10 @@ mod tests {
     }
 
     fn assert_error(hex_value: &str, expected: ContextParseError) {
-        assert_eq!(parse_canonical_context(&decode(hex_value)).err(), Some(expected));
+        assert_eq!(
+            parse_canonical_context(&decode(hex_value)).err(),
+            Some(expected)
+        );
     }
 
     #[test]
@@ -155,15 +155,9 @@ mod tests {
     fn malformed_raw_contexts_fail_closed() {
         assert_error("5a4b435458010100", ContextParseError::Truncated);
         assert_error("004b43545801010000", ContextParseError::InvalidMagic);
-        assert_error(
-            "5a4b43545802010000",
-            ContextParseError::UnsupportedVersion,
-        );
+        assert_error("5a4b43545802010000", ContextParseError::UnsupportedVersion);
         assert_error("5a4b43545801040000", ContextParseError::UnknownKind);
-        assert_error(
-            "5a4b435458010101000000000000",
-            ContextParseError::InvalidId,
-        );
+        assert_error("5a4b435458010101000000000000", ContextParseError::InvalidId);
         assert_error(
             "5a4b4354580101020001000000000100000000",
             ContextParseError::NonCanonicalOrder,
@@ -180,17 +174,11 @@ mod tests {
             "5a4b435458010101000100010000",
             ContextParseError::NonZeroFlags,
         );
-        assert_error(
-            "5a4b435458010101000100",
-            ContextParseError::Truncated,
-        );
+        assert_error("5a4b435458010101000100", ContextParseError::Truncated);
         assert_error(
             "5a4b435458010101000100000200aa",
             ContextParseError::Truncated,
         );
-        assert_error(
-            "5a4b4354580101000000",
-            ContextParseError::TrailingBytes,
-        );
+        assert_error("5a4b4354580101000000", ContextParseError::TrailingBytes);
     }
 }
