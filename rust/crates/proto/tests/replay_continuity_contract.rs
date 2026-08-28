@@ -30,7 +30,10 @@ fn parse_event(value: &str) -> ReplayContinuityEvent {
 fn shared_replay_continuity_decision_corpus() {
     let mut lines = CORPUS.lines();
     assert_eq!(lines.next(), Some("format=ZKREPLAYCONTINUITY/1"));
-    assert_eq!(lines.next(), Some("id|initial|event|expected|apply_ok|auth_allowed"));
+    assert_eq!(
+        lines.next(),
+        Some("id|initial|event|expected|apply_ok|auth_allowed")
+    );
 
     let mut cases = 0usize;
     for line in lines {
@@ -58,11 +61,7 @@ fn shared_replay_continuity_decision_corpus() {
             apply_ok,
             "apply result mismatch for {id}"
         );
-        assert_eq!(
-            continuity.state(),
-            expected,
-            "state mismatch for {id}"
-        );
+        assert_eq!(continuity.state(), expected, "state mismatch for {id}");
         assert_eq!(
             continuity.auth_admission_allowed(),
             auth_allowed,
