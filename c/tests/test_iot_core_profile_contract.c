@@ -72,6 +72,14 @@ static uint64_t parse_hex_u64(const char *value)
     return (uint64_t)parsed;
 }
 
+static unsigned long parse_decimal(const char *value)
+{
+    char *end = NULL;
+    unsigned long parsed = strtoul(value, &end, 10);
+    CHECK(end != NULL && *end == '\0', "canonical decimal parse");
+    return parsed;
+}
+
 static void expect_field(const char *buf, const char *key, const char *expected)
 {
     char value[128];
@@ -100,13 +108,13 @@ static void test_profile_contract(void)
           "read profile fingerprint");
     CHECK(strcmp(digest_hex, recorded) == 0, "profile fingerprint matches canonical body");
     CHECK(strcmp(digest_hex,
-                 "31b53234616189ce470c8c7f2d3d446432bb20953a2f4e5a191fd356a1f54ad4") == 0,
+                 "aaa3633e74d4ae6ac0a1da2835310095c601b02ef821ca088fe7f2c99388211f") == 0,
           "profile fingerprint remains stable");
 
     expect_field(buf, "format", "ZKPROFILE/1");
     expect_field(buf, "profile_id", "0x0001");
     expect_field(buf, "name", "iot-core");
-    expect_field(buf, "definition_revision", "1");
+    expect_field(buf, "definition_revision", "2");
     expect_field(buf, "status", "draft");
     expect_field(buf, "selectable", "0");
     expect_field(buf, "protocol_version", "0x03");
@@ -136,14 +144,19 @@ static void test_profile_contract(void)
     CHECK((allowed & forbidden) == 0u, "allowed and forbidden masks do not overlap");
     CHECK((allowed | forbidden) == UINT64_MAX, "capability masks cover selected namespace");
 
-    expect_field(buf, "replay_policy", "unresolved");
-    expect_field(buf, "replay_min_entries", "unresolved");
+    expect_field(buf, "replay_policy", "accepted-auth1-fifo-window");
+    expect_field(buf, "replay_min_entries", "64");
     expect_field(buf, "replay_epoch_rule", "unresolved");
     expect_field(buf, "restart_replay_rule", "unresolved");
     expect_field(buf, "resource_evidence", "required-before-stable");
     expect_field(buf, "prescriptive_change_rule", "new-profile-id");
     expect_field(buf, "deprecated_selectable", "0");
     expect_field(buf, "stable_semantics_mutable", "0");
+
+    char replay_min_text[128];
+    CHECK(field_value(buf, "replay_min_entries", replay_min_text, sizeof replay_min_text),
+          "read replay minimum");
+    CHECK(parse_decimal(replay_min_text) >= 64ul, "replay minimum is at least 64");
 }
 
 int main(void)

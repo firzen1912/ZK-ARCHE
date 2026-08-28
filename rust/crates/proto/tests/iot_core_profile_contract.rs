@@ -69,7 +69,7 @@ fn iot_core_profile_fingerprint_and_identity_are_stable() {
     assert_eq!(fields["format"], "ZKPROFILE/1");
     assert_eq!(fields["profile_id"], "0x0001");
     assert_eq!(fields["name"], "iot-core");
-    assert_eq!(fields["definition_revision"], "1");
+    assert_eq!(fields["definition_revision"], "2");
     assert_eq!(fields["status"], "draft");
     assert_eq!(fields["selectable"], "0");
 
@@ -77,7 +77,7 @@ fn iot_core_profile_fingerprint_and_identity_are_stable() {
     assert_eq!(actual, fields["contract_sha256"]);
     assert_eq!(
         actual,
-        "31b53234616189ce470c8c7f2d3d446432bb20953a2f4e5a191fd356a1f54ad4"
+        "aaa3633e74d4ae6ac0a1da2835310095c601b02ef821ca088fe7f2c99388211f"
     );
 }
 
@@ -108,14 +108,19 @@ fn iot_core_profile_prescriptive_semantics_are_consistent() {
 }
 
 #[test]
-fn iot_core_profile_remains_fail_closed_while_replay_is_unresolved() {
+fn iot_core_profile_resolves_replay_window_but_not_continuity() {
     let fields = parse_contract();
-    assert_eq!(fields["replay_policy"], "unresolved");
-    assert_eq!(fields["replay_min_entries"], "unresolved");
+    assert_eq!(fields["replay_policy"], "accepted-auth1-fifo-window");
+    assert_eq!(fields["replay_min_entries"], "64");
     assert_eq!(fields["replay_epoch_rule"], "unresolved");
     assert_eq!(fields["restart_replay_rule"], "unresolved");
     assert_eq!(fields["resource_evidence"], "required-before-stable");
     assert_eq!(fields["selectable"], "0");
+
+    let replay_min_entries: usize = fields["replay_min_entries"]
+        .parse()
+        .expect("canonical replay minimum");
+    assert!(replay_min_entries >= 64);
 
     assert_eq!(fields["prescriptive_change_rule"], "new-profile-id");
     assert_eq!(fields["deprecated_selectable"], "0");

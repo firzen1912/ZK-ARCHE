@@ -1,6 +1,6 @@
 # ZK-ARCHE IoT Profile Specification
 
-Status: **draft normative work**. This document defines how protocol/security profile identifiers map to immutable prescriptive contracts and records the current draft `iot-core` contract. It does not make AUTH v3 selectable, stabilize `profile_id = 0x0001`, or clear replay/resource evidence blockers.
+Status: **draft normative work**. This document defines how protocol/security profile identifiers map to immutable prescriptive contracts and records the current draft `iot-core` contract. It does not make AUTH v3 selectable, stabilize `profile_id = 0x0001`, or clear replay-continuity/resource evidence blockers.
 
 ## 1. Profile identity rule
 
@@ -32,10 +32,11 @@ The canonical machine-readable definition is:
 rust/test-vectors/profiles/iot-core-v1.profile
 ```
 
-Current fingerprint:
+Current definition revision and fingerprint:
 
 ```text
-31b53234616189ce470c8c7f2d3d446432bb20953a2f4e5a191fd356a1f54ad4
+definition_revision=2
+contract_sha256=aaa3633e74d4ae6ac0a1da2835310095c601b02ef821ca088fe7f2c99388211f
 ```
 
 The current prescriptive values are:
@@ -52,8 +53,8 @@ The current prescriptive values are:
 | critical extensions | `none` | no critical extension is selectable in draft v1 |
 | channel binding | `none` | native baseline does not require an external transport/channel binding |
 | maximum datagram | `2048` bytes | current transport-neutral implementation ceiling |
-| replay policy | `unresolved` | blocks promotion/selectability |
-| replay minimum entries | `unresolved` | blocks promotion/selectability |
+| replay policy | `accepted-auth1-fifo-window` | bounded duplicate-suppression window over successfully accepted AUTH_1 replay identifiers |
+| replay minimum entries | `64` | every conformant `iot-core` implementation must retain at least 64 accepted replay identifiers |
 | replay epoch rule | `unresolved` | blocks promotion/selectability |
 | restart replay rule | `unresolved` | blocks promotion/selectability |
 | resource evidence | `required-before-stable` | TD-002 measurements still required |
@@ -61,15 +62,47 @@ The current prescriptive values are:
 
 The capability set intentionally excludes `AUTH_V2`, pairing/TOFU enrollment features, legacy runtime-profile marker bits, vendor/private bits, and `CBOR_FRAMING`. Those values either describe v2/setup behavior, local runtime posture, private behavior, or framing rather than active AUTH-v3 security semantics.
 
-## 4. Prescriptive versus unresolved state
+## 4. Accepted-AUTH1 replay-window contract
 
-A machine-readable contract is not automatically a complete profile. `iot-core` remains non-selectable because replay lifetime/epoch/restart semantics and constrained-target resource qualification are unresolved.
+The replay window is a bounded admission-state contract. It is not a substitute for authenticated AUTH-v3 completion, and it does not by itself establish restart-, rollback-, or epoch-safe replay continuity.
 
-A conformant implementation or test harness MUST fail closed if `selectable=0`. It MUST NOT infer a replay policy from the local cache implementation, infer MCU readiness from host tests, or replace an unresolved field with an implementation default.
+For draft `iot-core` revision 2:
 
-Before promotion to `stable`, every `unresolved` value MUST be replaced by reviewed normative semantics and the manifest/fingerprint regenerated. The resulting definition must then receive Rust/C conformance evidence and the review required by the roadmap.
+1. an implementation MUST retain at least the 64 most recently inserted, distinct replay identifiers for successfully accepted AUTH_1 inputs;
+2. retention order MUST be FIFO: when the configured capacity is full, inserting a new distinct identifier evicts the oldest retained identifier;
+3. a replay identifier already present in the retained window MUST be rejected as replay, including when the same authenticated AUTH_1 material is presented under a different outer `session_id` or sequence value;
+4. a failed or not-yet-accepted AUTH_1 MUST NOT consume a replay entry;
+5. replay state MUST be committed only after the implementation has completed the AUTH_1 checks required for acceptance;
+6. implementations with capacity greater than 64 MAY retain a larger window, but they MUST preserve the same FIFO decision semantics and MUST NOT provide less than the 64-entry floor;
+7. the exact AUTH-v3 replay-identifier derivation remains owned by the AUTH-v3 normative state-machine/transcript specification and MUST be byte/decision compatible across Rust and C before production v3 selection.
 
-## 5. Replacement and deprecation rules
+The shared decision corpus:
+
+```text
+rust/test-vectors/replay-cache/fifo-capacity-64.txt
+```
+
+is the canonical minimum-capacity fixture. Rust and C tests consume the same corpus. FT-022 additionally exercises same accepted AUTH material under a fresh outer session/sequence, and FT-023 exercises concurrent duplicate submission.
+
+This packet deliberately resolves only the evidence-backed bounded-window semantics. The current ProVerif replay table remains persistent and unbounded, so its accepted-message replay result is stronger than this runtime retention contract after eviction or restart. Formal claims MUST retain that assumption boundary.
+
+## 5. Unresolved replay continuity and fail-closed profile status
+
+`replay_epoch_rule` and `restart_replay_rule` remain `unresolved`.
+
+The profile therefore makes **no** normative claim yet that:
+
+- an AUTH_1 replay evicted from the bounded window is rejected indefinitely;
+- volatile replay state survives process/device restart;
+- replay state is rollback-resistant;
+- loss of replay state is safely recoverable without an authenticated fresh-context transition;
+- the persistent/unbounded formal replay abstraction is runtime-equivalent.
+
+A conformant implementation or test harness MUST fail closed if `selectable=0`. It MUST NOT infer replay epoch/restart semantics from the local cache implementation, infer MCU readiness from host tests, or replace an unresolved field with an implementation default.
+
+Before promotion to `stable`, every remaining `unresolved` value MUST be replaced by reviewed normative semantics and the manifest/fingerprint regenerated. The resulting definition must then receive Rust/C conformance evidence and the review required by the roadmap.
+
+## 6. Replacement and deprecation rules
 
 The manifest records:
 
@@ -86,31 +119,34 @@ Therefore:
 - a stable profile's prescriptive semantics MUST NOT be mutated in place;
 - a replacement profile MUST identify its predecessor/successor relationship in the registry and carry its own vectors/evidence.
 
-## 6. Rust/C semantic-parity corpus
+## 7. Rust/C semantic-parity corpus
 
-The shared `iot-core-v1.profile` manifest is the initial cross-language profile-definition fixture.
+The shared `iot-core-v1.profile` manifest is the cross-language profile-definition fixture.
 
 Rust and C conformance tests MUST independently verify at minimum:
 
-1. the SHA-256 fingerprint;
+1. the SHA-256 fingerprint and draft definition revision;
 2. profile ID, version, suite, and exact capability masks;
 3. that required capabilities are a subset of allowed capabilities;
 4. that allowed and forbidden capability masks do not overlap and cover the full 64-bit selected-capability namespace;
 5. authorization schema identity and 148-byte context size;
 6. `none` critical-extension and channel-binding policies;
 7. the 2048-byte datagram ceiling;
-8. the unresolved replay fields;
-9. `selectable=0` while unresolved blockers remain;
-10. immutable replacement/deprecation policy fields.
+8. `accepted-auth1-fifo-window` and the 64-entry minimum;
+9. unresolved replay epoch/restart continuity;
+10. `selectable=0` while unresolved blockers remain;
+11. immutable replacement/deprecation policy fields.
+
+The replay-window semantic fixture additionally requires the shared `fifo-capacity-64.txt` decisions to remain equal across Rust and C.
 
 These fixtures establish **same-ID semantic parity**, not production interoperability. They do not enable HELLO advertisement or AUTH-v3 dispatch.
 
-## 7. Promotion gate
+## 8. Promotion gate
 
 `profile_id = 0x0001` MUST remain `draft` and non-selectable until at least:
 
-- replay lifetime/epoch, capacity floor, eviction, restart, and rollback semantics are normative;
-- TD-002 constrained target measurements satisfy the declared profile resource/evidence contract;
+- replay epoch, restart/state-loss, rollback, and continuity-break semantics are normative;
+- TD-002 constrained target measurements satisfy the declared profile resource/evidence contract, including the cost of the required replay floor;
 - Rust and C production AUTH-v3 state machines validate the same profile semantics;
 - unknown/incompatible profile and capability negative tests pass;
 - security/privacy considerations are updated for the final profile;
