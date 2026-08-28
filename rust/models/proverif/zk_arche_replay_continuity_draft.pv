@@ -1,0 +1,140 @@
+(* ZK-ARCHE replay-continuity symbolic state model.
+   Scope: the fail-closed restart/state-loss contract in spec/replay-continuity.md.
+   This model is non-normative and does not define an authenticated fresh replay
+   epoch. It models only the currently approved TRUSTED -> RESTORING ->
+   {TRUSTED, CONTINUITY_BROKEN} transitions and fail-closed AUTH admission.
+
+   The model deliberately abstracts replay-window contents, storage integrity,
+   persistence mechanisms, rollback-detection mechanisms, cryptography, wire
+   encoding, and transport behavior. A successful correspondence result therefore
+   does not establish durable storage correctness, bounded-cache equivalence,
+   rollback resistance, or a safe fresh-epoch construction. *)
+
+free c: channel.
+free cmd_auth: bitstring.
+free cmd_restart: bitstring.
+free cmd_restore_trusted: bitstring.
+free cmd_restore_missing: bitstring.
+free cmd_restore_corrupt: bitstring.
+free cmd_restore_stale: bitstring.
+free cmd_rollback_suspected: bitstring.
+free cmd_empty_cache_reset: bitstring.
+free cmd_fresh_outer_session: bitstring.
+free cmd_failed_auth: bitstring.
+
+free trusted_state: channel [private].
+free restoring_state: channel [private].
+free broken_state: channel [private].
+
+type domain.
+
+event TrustedStateEstablished(domain).
+event RestartEntered(domain).
+event RestoringEntered(domain).
+event RestoredTrustedWindow(domain).
+event ContinuityBroken(domain).
+event AuthAdmitted(domain).
+event AuthBlockedRestoring(domain).
+event AuthBlockedBroken(domain).
+event FailedAuthPreservedTrusted(domain).
+event FailedAuthPreservedRestoring(domain).
+event FailedAuthPreservedBroken(domain).
+event EmptyCacheResetStayedBroken(domain).
+event FreshOuterSessionStayedBroken(domain).
+
+query d:domain;
+  event(AuthAdmitted(d)) ==> event(TrustedStateEstablished(d)).
+
+query d:domain;
+  event(RestoredTrustedWindow(d)) ==> event(RestoringEntered(d)).
+
+query d:domain;
+  event(ContinuityBroken(d)) ==> event(RestoringEntered(d)).
+
+query d:domain;
+  event(AuthBlockedRestoring(d)) ==> event(RestoringEntered(d)).
+
+query d:domain;
+  event(AuthBlockedBroken(d)) ==> event(ContinuityBroken(d)).
+
+query d:domain;
+  event(EmptyCacheResetStayedBroken(d)) ==> event(ContinuityBroken(d)).
+
+query d:domain;
+  event(FreshOuterSessionStayedBroken(d)) ==> event(ContinuityBroken(d)).
+
+query d:domain;
+  event(FailedAuthPreservedRestoring(d)) ==> event(RestoringEntered(d)).
+
+query d:domain;
+  event(FailedAuthPreservedBroken(d)) ==> event(ContinuityBroken(d)).
+
+let TrustedDispatcher(d:domain) =
+  in(trusted_state, =d);
+  in(c, command:bitstring);
+  if command = cmd_auth then
+    event AuthAdmitted(d);
+    out(trusted_state, d)
+  else if command = cmd_restart then
+    event RestartEntered(d);
+    event RestoringEntered(d);
+    out(restoring_state, d)
+  else if command = cmd_failed_auth then
+    event FailedAuthPreservedTrusted(d);
+    out(trusted_state, d)
+  else
+    out(trusted_state, d).
+
+let RestoringDispatcher(d:domain) =
+  in(restoring_state, =d);
+  in(c, command:bitstring);
+  if command = cmd_restore_trusted then
+    event RestoredTrustedWindow(d);
+    event TrustedStateEstablished(d);
+    out(trusted_state, d)
+  else if command = cmd_restore_missing then
+    event ContinuityBroken(d);
+    out(broken_state, d)
+  else if command = cmd_restore_corrupt then
+    event ContinuityBroken(d);
+    out(broken_state, d)
+  else if command = cmd_restore_stale then
+    event ContinuityBroken(d);
+    out(broken_state, d)
+  else if command = cmd_rollback_suspected then
+    event ContinuityBroken(d);
+    out(broken_state, d)
+  else if command = cmd_auth then
+    event AuthBlockedRestoring(d);
+    out(restoring_state, d)
+  else if command = cmd_failed_auth then
+    event FailedAuthPreservedRestoring(d);
+    out(restoring_state, d)
+  else
+    out(restoring_state, d).
+
+let BrokenDispatcher(d:domain) =
+  in(broken_state, =d);
+  in(c, command:bitstring);
+  if command = cmd_auth then
+    event AuthBlockedBroken(d);
+    out(broken_state, d)
+  else if command = cmd_empty_cache_reset then
+    event EmptyCacheResetStayedBroken(d);
+    out(broken_state, d)
+  else if command = cmd_fresh_outer_session then
+    event FreshOuterSessionStayedBroken(d);
+    out(broken_state, d)
+  else if command = cmd_failed_auth then
+    event FailedAuthPreservedBroken(d);
+    out(broken_state, d)
+  else
+    out(broken_state, d).
+
+process
+  new d:domain;
+  event TrustedStateEstablished(d);
+  out(trusted_state, d);
+  ((!TrustedDispatcher(d)) |
+   (!RestoringDispatcher(d)) |
+   (!BrokenDispatcher(d)))
