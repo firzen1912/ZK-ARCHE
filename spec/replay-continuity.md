@@ -167,7 +167,7 @@ fresh epoch rule    = unresolved
 selectable          = 0
 ```
 
-The machine-readable profile manifest is not changed by this packet. Its `restart_replay_rule=unresolved` and `replay_epoch_rule=unresolved` values remain the authoritative conformance markers until Rust/C fixtures are updated in a later checkpoint packet.
+The machine-readable `iot-core` profile contract now binds `restart_replay_rule=restore-trusted-state-or-continuity-broken` and retains `replay_epoch_rule=unresolved` with `selectable=0`. Rust and C profile-contract fixtures independently enforce those same markers. Therefore the restart rule is no longer an unresolved profile-contract field; only the authenticated fresh replay-epoch rule remains unresolved at this layer.
 
 Therefore this document advances TD-004 specification precision but does not close R-009, TD-003, TD-002, TD-004, or any deployment-readiness claim.
 
