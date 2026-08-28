@@ -15,6 +15,7 @@
 //! | `crypto`                  | Schnorr / rerand / OR-proof / HKDF / HMAC        |
 //! | `auth_v3`                 | Non-advertised AUTH-v3 reference primitives      |
 //! | `auth_v3_context`         | Draft canonical AUTH-v3 subcontext encoding      |
+//! | `auth_v3_context_parser`  | Strict raw AUTH-v3 subcontext parser             |
 //! | `auth_v3_iot_core_authz`  | Draft `iot-core` authorization-context schema    |
 //! | `replay_continuity`       | Draft fail-closed replay restart state           |
 //! | `wire`                    | Packet header, framing, TLV codec                |
@@ -38,6 +39,7 @@
 
 pub mod auth_v3;
 pub mod auth_v3_context;
+pub mod auth_v3_context_parser;
 pub mod auth_v3_iot_core_authz;
 pub mod caps;
 pub mod crypto;
