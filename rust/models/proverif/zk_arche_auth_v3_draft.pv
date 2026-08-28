@@ -2,7 +2,10 @@
    Scope: ADR 0001 candidate AUTH_1 -> AUTH_2 -> AUTH_3 -> authenticated AUTH_ACK.
    This model is non-normative and non-advertised. It abstracts elliptic-curve
    groups, the custom role proof, canonical hashing, and concrete byte encoding.
-   It is not a computational proof of Schnorr or role-membership security. *)
+   AuthorizationContextAdmittedV3 is an explicit abstraction boundary: concrete
+   Rust/C parsing, profile validation, and exact-byte hashing occur outside this
+   model before an authorization context is admitted symbolically. It is not a
+   computational proof of Schnorr or role-membership security. *)
 
 free c: channel.
 free protocol_v3: bitstring.
@@ -57,6 +60,7 @@ table replay_seen_v3(bitstring).
 
 event TrustedRecordPresent(pkey).
 event ClientAuth1SentV3(pkey, pkey, sessionid, bitstring, bitstring).
+event AuthorizationContextAdmittedV3(pkey, pkey, sessionid, bitstring).
 event ReplayRejectedV3(pkey, pkey, sessionid, bitstring).
 event ReplayRecordedV3(pkey, pkey, sessionid, bitstring).
 event ServerAuth1AcceptedV3(pkey, pkey, sessionid, bitstring, bitstring).
@@ -89,6 +93,10 @@ query cpk:pkey, spk:pkey, sid:sessionid, secctx:bitstring, kcctx:bitstring;
 query cpk:pkey, spk:pkey, sid:sessionid, secctx:bitstring, kcctx:bitstring;
   event(ServerCompleteV3(cpk, spk, sid, secctx, kcctx))
   ==> event(TrustedRecordPresent(cpk)).
+
+query cpk:pkey, spk:pkey, sid:sessionid, secctx:bitstring, kcctx:bitstring;
+  event(ServerCompleteV3(cpk, spk, sid, secctx, kcctx))
+  ==> event(AuthorizationContextAdmittedV3(cpk, spk, sid, secctx)).
 
 let ClientV3(csk:skey, spk:pkey, allowed:role) =
   new sid:sessionid;
@@ -138,6 +146,9 @@ let ServerV3(ssk:skey, trusted_cpk:pkey, allowed:role) =
   let secctx = security_context_v3(
     version_in, suite_in, profile_in, capabilities_in, sid,
     authz_in, critical_extensions_in, channel_binding_in) in
+  (* Symbolic admission assumes concrete Rust/C parsing, profile validation,
+     semantic checks, and exact-byte hashing have already succeeded. *)
+  event AuthorizationContextAdmittedV3(cpk, spk, sid, secctx);
   let rk = replay_key(p, nc, ephc) in
   get replay_seen_v3(=rk) in
     event ReplayRejectedV3(cpk, spk, sid, rk)
