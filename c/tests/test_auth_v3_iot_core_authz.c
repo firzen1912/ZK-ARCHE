@@ -103,6 +103,70 @@ static void test_shared_vector(void) {
     assert(memcmp(hash, expected_hash, sizeof(hash)) == 0);
 }
 
+static void test_receive_profile_bounds(void) {
+    auth_v3_iot_core_authorization_context_v1_t expected = fixture();
+    auth_v3_iot_core_authorization_context_v1_t decoded;
+    uint8_t encoded[AUTH_V3_IOT_CORE_AUTHZ_CANONICAL_LEN + 1u];
+    uint8_t hash[32];
+    uint8_t expected_hash[32];
+    char value[512];
+
+    assert(read_vector_value("encoded", value, sizeof(value)) == 0);
+    decode_hex_exact(value, encoded, AUTH_V3_IOT_CORE_AUTHZ_CANONICAL_LEN);
+    assert(auth_v3_iot_core_authz_decode_bytes(
+               encoded, AUTH_V3_IOT_CORE_AUTHZ_CANONICAL_LEN, &decoded) ==
+           AUTH_V3_IOT_CORE_AUTHZ_OK);
+    assert(memcmp(decoded.holder_binding, expected.holder_binding,
+                  sizeof(decoded.holder_binding)) == 0);
+    assert(memcmp(decoded.audience_id, expected.audience_id,
+                  sizeof(decoded.audience_id)) == 0);
+    assert(decoded.role_policy_id == expected.role_policy_id);
+    assert(decoded.scope_bits == expected.scope_bits);
+    assert(decoded.authorization_generation == expected.authorization_generation);
+    assert(decoded.policy_epoch == expected.policy_epoch);
+    assert(decoded.revocation_epoch == expected.revocation_epoch);
+
+    assert(auth_v3_iot_core_authz_hash_bytes(
+               encoded, AUTH_V3_IOT_CORE_AUTHZ_CANONICAL_LEN, hash) ==
+           AUTH_V3_IOT_CORE_AUTHZ_OK);
+    assert(read_vector_value("sha256", value, sizeof(value)) == 0);
+    decode_hex_exact(value, expected_hash, sizeof(expected_hash));
+    assert(memcmp(hash, expected_hash, sizeof(hash)) == 0);
+
+    assert(auth_v3_iot_core_authz_decode_bytes(
+               encoded, AUTH_V3_IOT_CORE_AUTHZ_CANONICAL_LEN - 1u, &decoded) ==
+           AUTH_V3_IOT_CORE_AUTHZ_INVALID_ENCODING_LENGTH);
+
+    encoded[AUTH_V3_IOT_CORE_AUTHZ_CANONICAL_LEN] = 0u;
+    assert(auth_v3_iot_core_authz_decode_bytes(
+               encoded, AUTH_V3_IOT_CORE_AUTHZ_CANONICAL_LEN + 1u, &decoded) ==
+           AUTH_V3_IOT_CORE_AUTHZ_INVALID_ENCODING_LENGTH);
+
+    decode_hex_exact(value, expected_hash, sizeof(expected_hash));
+    assert(read_vector_value("encoded", value, sizeof(value)) == 0);
+    decode_hex_exact(value, encoded, AUTH_V3_IOT_CORE_AUTHZ_CANONICAL_LEN);
+    encoded[7] = 8u;
+    encoded[8] = 0u;
+    assert(auth_v3_iot_core_authz_decode_bytes(
+               encoded, AUTH_V3_IOT_CORE_AUTHZ_CANONICAL_LEN, &decoded) ==
+           AUTH_V3_IOT_CORE_AUTHZ_ENTRY_LIMIT_EXCEEDED);
+
+    assert(read_vector_value("encoded", value, sizeof(value)) == 0);
+    decode_hex_exact(value, encoded, AUTH_V3_IOT_CORE_AUTHZ_CANONICAL_LEN);
+    encoded[6] = 3u;
+    assert(auth_v3_iot_core_authz_decode_bytes(
+               encoded, AUTH_V3_IOT_CORE_AUTHZ_CANONICAL_LEN, &decoded) ==
+           AUTH_V3_IOT_CORE_AUTHZ_INVALID_CONTEXT_KIND);
+
+    assert(read_vector_value("encoded", value, sizeof(value)) == 0);
+    decode_hex_exact(value, encoded, AUTH_V3_IOT_CORE_AUTHZ_CANONICAL_LEN);
+    encoded[135] = 8u;
+    encoded[136] = 0u;
+    assert(auth_v3_iot_core_authz_decode_bytes(
+               encoded, AUTH_V3_IOT_CORE_AUTHZ_CANONICAL_LEN, &decoded) ==
+           AUTH_V3_IOT_CORE_AUTHZ_INVALID_ENTRY_SCHEMA);
+}
+
 static void test_semantic_rejections(void) {
     auth_v3_iot_core_authorization_context_v1_t base = fixture();
     auth_v3_iot_core_authorization_context_v1_t case_context;
@@ -140,6 +204,7 @@ static void test_semantic_rejections(void) {
 
 int main(void) {
     test_shared_vector();
+    test_receive_profile_bounds();
     test_semantic_rejections();
     puts("AUTH v3 iot-core authorization context: ok");
     return 0;

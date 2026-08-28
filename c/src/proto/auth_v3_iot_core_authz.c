@@ -1,7 +1,9 @@
 #include "auth/auth_v3_iot_core_authz.h"
 
 #include "auth/auth_v3_context.h"
+#include "auth/auth_v3_context_parser.h"
 
+#include <sodium.h>
 #include <string.h>
 
 static int all_zero(const uint8_t *value, size_t len) {
@@ -18,6 +20,15 @@ static void store_u64_le(uint8_t out[8], uint64_t value) {
     for (i = 0u; i < 8u; ++i) {
         out[i] = (uint8_t)((value >> (8u * i)) & 0xffu);
     }
+}
+
+static uint64_t load_u64_le(const uint8_t in[8]) {
+    size_t i;
+    uint64_t value = 0u;
+    for (i = 0u; i < 8u; ++i) {
+        value |= ((uint64_t)in[i]) << (8u * i);
+    }
+    return value;
 }
 
 int auth_v3_iot_core_authz_validate(
@@ -149,4 +160,89 @@ int auth_v3_iot_core_authz_hash(
     }
 
     return auth_v3_context_hash(AUTH_V3_CONTEXT_AUTHORIZATION, entries, 7u, out_hash);
+}
+
+int auth_v3_iot_core_authz_decode_bytes(
+    const uint8_t *input,
+    size_t input_len,
+    auth_v3_iot_core_authorization_context_v1_t *context_out) {
+    static const uint16_t expected_ids[AUTH_V3_IOT_CORE_AUTHZ_ENTRY_COUNT] = {
+        AUTH_V3_IOT_CORE_AUTHZ_HOLDER_BINDING_ID,
+        AUTH_V3_IOT_CORE_AUTHZ_AUDIENCE_ID,
+        AUTH_V3_IOT_CORE_AUTHZ_ROLE_POLICY_ID,
+        AUTH_V3_IOT_CORE_AUTHZ_SCOPE_BITS_ID,
+        AUTH_V3_IOT_CORE_AUTHZ_GENERATION_ID,
+        AUTH_V3_IOT_CORE_AUTHZ_POLICY_EPOCH_ID,
+        AUTH_V3_IOT_CORE_AUTHZ_REVOCATION_EPOCH_ID
+    };
+    static const size_t expected_lengths[AUTH_V3_IOT_CORE_AUTHZ_ENTRY_COUNT] = {
+        32u, 32u, 8u, 8u, 8u, 8u, 8u
+    };
+    auth_v3_context_entry_t entries[AUTH_V3_IOT_CORE_AUTHZ_ENTRY_COUNT];
+    auth_v3_context_kind_t kind;
+    size_t entry_count = 0u;
+    size_t i;
+    int rc;
+
+    if (input == NULL || context_out == NULL) {
+        return AUTH_V3_IOT_CORE_AUTHZ_INVALID_ARGUMENT;
+    }
+    if (input_len != AUTH_V3_IOT_CORE_AUTHZ_CANONICAL_LEN) {
+        return AUTH_V3_IOT_CORE_AUTHZ_INVALID_ENCODING_LENGTH;
+    }
+
+    rc = auth_v3_context_parse_bytes(input, input_len, &kind, entries,
+                                     AUTH_V3_IOT_CORE_AUTHZ_ENTRY_COUNT,
+                                     &entry_count);
+    if (rc == AUTH_V3_CONTEXT_PARSE_ENTRY_BUFFER_TOO_SMALL) {
+        return AUTH_V3_IOT_CORE_AUTHZ_ENTRY_LIMIT_EXCEEDED;
+    }
+    if (rc != AUTH_V3_CONTEXT_PARSE_OK) {
+        return AUTH_V3_IOT_CORE_AUTHZ_INVALID_ENCODING;
+    }
+    if (kind != AUTH_V3_CONTEXT_AUTHORIZATION) {
+        return AUTH_V3_IOT_CORE_AUTHZ_INVALID_CONTEXT_KIND;
+    }
+    if (entry_count != AUTH_V3_IOT_CORE_AUTHZ_ENTRY_COUNT) {
+        return AUTH_V3_IOT_CORE_AUTHZ_INVALID_ENTRY_SCHEMA;
+    }
+    for (i = 0u; i < AUTH_V3_IOT_CORE_AUTHZ_ENTRY_COUNT; ++i) {
+        if (entries[i].id != expected_ids[i] ||
+            entries[i].value_len != expected_lengths[i]) {
+            return AUTH_V3_IOT_CORE_AUTHZ_INVALID_ENTRY_SCHEMA;
+        }
+    }
+
+    memset(context_out, 0, sizeof(*context_out));
+    memcpy(context_out->holder_binding, entries[0].value,
+           sizeof(context_out->holder_binding));
+    memcpy(context_out->audience_id, entries[1].value,
+           sizeof(context_out->audience_id));
+    context_out->role_policy_id = load_u64_le(entries[2].value);
+    context_out->scope_bits = load_u64_le(entries[3].value);
+    context_out->authorization_generation = load_u64_le(entries[4].value);
+    context_out->policy_epoch = load_u64_le(entries[5].value);
+    context_out->revocation_epoch = load_u64_le(entries[6].value);
+
+    return auth_v3_iot_core_authz_validate(context_out);
+}
+
+int auth_v3_iot_core_authz_hash_bytes(
+    const uint8_t *input,
+    size_t input_len,
+    uint8_t out_hash[32]) {
+    auth_v3_iot_core_authorization_context_v1_t context;
+    int rc;
+
+    if (out_hash == NULL) {
+        return AUTH_V3_IOT_CORE_AUTHZ_INVALID_ARGUMENT;
+    }
+    rc = auth_v3_iot_core_authz_decode_bytes(input, input_len, &context);
+    if (rc != AUTH_V3_IOT_CORE_AUTHZ_OK) {
+        return rc;
+    }
+    if (crypto_hash_sha256(out_hash, input, (unsigned long long)input_len) != 0) {
+        return AUTH_V3_IOT_CORE_AUTHZ_INVALID_ARGUMENT;
+    }
+    return AUTH_V3_IOT_CORE_AUTHZ_OK;
 }

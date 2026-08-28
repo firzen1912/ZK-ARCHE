@@ -8,6 +8,8 @@ use crate::auth_v3_context::{
     encode_canonical_context, hash_canonical_context, ContextEncodingError, ContextEntry,
     ContextKind,
 };
+use crate::auth_v3_context_parser::{parse_canonical_context_bounded, ContextParseError};
+use sha2::{Digest, Sha256};
 
 pub const IOT_CORE_AUTHZ_HOLDER_BINDING_ID: u16 = 0x0001;
 pub const IOT_CORE_AUTHZ_AUDIENCE_ID: u16 = 0x0002;
@@ -18,6 +20,7 @@ pub const IOT_CORE_AUTHZ_POLICY_EPOCH_ID: u16 = 0x0006;
 pub const IOT_CORE_AUTHZ_REVOCATION_EPOCH_ID: u16 = 0x0007;
 
 pub const IOT_CORE_SCOPE_SECURE_ASSOCIATION: u64 = 1;
+pub const IOT_CORE_AUTHZ_ENTRY_COUNT: usize = 7;
 pub const IOT_CORE_AUTHZ_CANONICAL_LEN: usize = 148;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -40,7 +43,11 @@ pub enum IotCoreAuthorizationError {
     InvalidAuthorizationGeneration,
     InvalidPolicyEpoch,
     InvalidRevocationEpoch,
+    InvalidEncodingLength,
+    InvalidContextKind,
+    InvalidEntrySchema,
     Encoding(ContextEncodingError),
+    Parsing(ContextParseError),
 }
 
 impl From<ContextEncodingError> for IotCoreAuthorizationError {
@@ -49,8 +56,18 @@ impl From<ContextEncodingError> for IotCoreAuthorizationError {
     }
 }
 
+impl From<ContextParseError> for IotCoreAuthorizationError {
+    fn from(value: ContextParseError) -> Self {
+        Self::Parsing(value)
+    }
+}
+
 fn is_all_zero(value: &[u8]) -> bool {
     value.iter().all(|byte| *byte == 0)
+}
+
+fn load_u64_le(value: &[u8]) -> u64 {
+    u64::from_le_bytes(value.try_into().expect("validated 8-byte field"))
 }
 
 pub fn validate_iot_core_authorization_context(
@@ -145,6 +162,70 @@ pub fn hash_iot_core_authorization_context(
     .map_err(Into::into)
 }
 
+/// Decode and validate one byte-exact `iot-core` authorization context.
+///
+/// The fixed 148-byte profile bound is enforced before generic parsing, and
+/// the parser receives the profile's seven-entry ceiling before allocating its
+/// entry vector. No normalization or re-encoding is performed on receive.
+pub fn decode_iot_core_authorization_context_bytes(
+    input: &[u8],
+) -> Result<IotCoreAuthorizationContextV1, IotCoreAuthorizationError> {
+    if input.len() != IOT_CORE_AUTHZ_CANONICAL_LEN {
+        return Err(IotCoreAuthorizationError::InvalidEncodingLength);
+    }
+
+    let parsed = parse_canonical_context_bounded(input, IOT_CORE_AUTHZ_ENTRY_COUNT)?;
+    if parsed.kind != ContextKind::Authorization {
+        return Err(IotCoreAuthorizationError::InvalidContextKind);
+    }
+    if parsed.entries.len() != IOT_CORE_AUTHZ_ENTRY_COUNT {
+        return Err(IotCoreAuthorizationError::InvalidEntrySchema);
+    }
+
+    let expected = [
+        (IOT_CORE_AUTHZ_HOLDER_BINDING_ID, 32usize),
+        (IOT_CORE_AUTHZ_AUDIENCE_ID, 32usize),
+        (IOT_CORE_AUTHZ_ROLE_POLICY_ID, 8usize),
+        (IOT_CORE_AUTHZ_SCOPE_BITS_ID, 8usize),
+        (IOT_CORE_AUTHZ_GENERATION_ID, 8usize),
+        (IOT_CORE_AUTHZ_POLICY_EPOCH_ID, 8usize),
+        (IOT_CORE_AUTHZ_REVOCATION_EPOCH_ID, 8usize),
+    ];
+    for (entry, (expected_id, expected_len)) in parsed.entries.iter().zip(expected) {
+        if entry.id != expected_id || entry.value.len() != expected_len {
+            return Err(IotCoreAuthorizationError::InvalidEntrySchema);
+        }
+    }
+
+    let context = IotCoreAuthorizationContextV1 {
+        holder_binding: parsed.entries[0]
+            .value
+            .try_into()
+            .map_err(|_| IotCoreAuthorizationError::InvalidEntrySchema)?,
+        audience_id: parsed.entries[1]
+            .value
+            .try_into()
+            .map_err(|_| IotCoreAuthorizationError::InvalidEntrySchema)?,
+        role_policy_id: load_u64_le(parsed.entries[2].value),
+        scope_bits: load_u64_le(parsed.entries[3].value),
+        authorization_generation: load_u64_le(parsed.entries[4].value),
+        policy_epoch: load_u64_le(parsed.entries[5].value),
+        revocation_epoch: load_u64_le(parsed.entries[6].value),
+    };
+    validate_iot_core_authorization_context(&context)?;
+    Ok(context)
+}
+
+/// Validate the profile-specific receive contract, then hash the exact bytes.
+pub fn hash_iot_core_authorization_context_bytes(
+    input: &[u8],
+) -> Result<[u8; 32], IotCoreAuthorizationError> {
+    decode_iot_core_authorization_context_bytes(input)?;
+    let mut out = [0u8; 32];
+    out.copy_from_slice(&Sha256::digest(input));
+    Ok(out)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -185,6 +266,59 @@ mod tests {
         assert_eq!(encoded.len(), IOT_CORE_AUTHZ_CANONICAL_LEN);
         assert_eq!(hex::encode(encoded), vector_value("encoded"));
         assert_eq!(hex::encode(hash), vector_value("sha256"));
+    }
+
+    #[test]
+    fn shared_vector_decodes_under_profile_bounds() {
+        let context = fixture();
+        let encoded = hex::decode(vector_value("encoded")).unwrap();
+        let decoded = decode_iot_core_authorization_context_bytes(&encoded).unwrap();
+        let hash = hash_iot_core_authorization_context_bytes(&encoded).unwrap();
+
+        assert_eq!(decoded, context);
+        assert_eq!(hex::encode(hash), vector_value("sha256"));
+    }
+
+    #[test]
+    fn receive_profile_bounds_fail_closed_before_semantic_use() {
+        let encoded = hex::decode(vector_value("encoded")).unwrap();
+
+        assert_eq!(
+            decode_iot_core_authorization_context_bytes(&encoded[..encoded.len() - 1]),
+            Err(IotCoreAuthorizationError::InvalidEncodingLength)
+        );
+
+        let mut oversized = encoded.clone();
+        oversized.push(0);
+        assert_eq!(
+            decode_iot_core_authorization_context_bytes(&oversized),
+            Err(IotCoreAuthorizationError::InvalidEncodingLength)
+        );
+
+        let mut too_many_entries = encoded.clone();
+        too_many_entries[7] = 8;
+        too_many_entries[8] = 0;
+        assert_eq!(
+            decode_iot_core_authorization_context_bytes(&too_many_entries),
+            Err(IotCoreAuthorizationError::Parsing(
+                ContextParseError::EntryLimitExceeded
+            ))
+        );
+
+        let mut wrong_kind = encoded.clone();
+        wrong_kind[6] = ContextKind::ChannelBinding as u8;
+        assert_eq!(
+            decode_iot_core_authorization_context_bytes(&wrong_kind),
+            Err(IotCoreAuthorizationError::InvalidContextKind)
+        );
+
+        let mut wrong_schema = encoded;
+        wrong_schema[135] = 8;
+        wrong_schema[136] = 0;
+        assert_eq!(
+            decode_iot_core_authorization_context_bytes(&wrong_schema),
+            Err(IotCoreAuthorizationError::InvalidEntrySchema)
+        );
     }
 
     #[test]
