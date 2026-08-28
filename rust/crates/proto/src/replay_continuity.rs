@@ -47,10 +47,7 @@ impl ReplayContinuity {
         matches!(self.state, ReplayContinuityState::Trusted)
     }
 
-    pub fn apply(
-        &mut self,
-        event: ReplayContinuityEvent,
-    ) -> Result<(), ReplayContinuityError> {
+    pub fn apply(&mut self, event: ReplayContinuityEvent) -> Result<(), ReplayContinuityError> {
         use ReplayContinuityEvent as Event;
         use ReplayContinuityState as State;
 

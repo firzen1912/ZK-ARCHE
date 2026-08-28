@@ -53,8 +53,16 @@ fn shared_replay_continuity_decision_corpus() {
         assert!(fields.next().is_none(), "extra corpus field for {id}");
 
         let mut continuity = ReplayContinuity::new(initial);
-        assert_eq!(continuity.apply(event).is_ok(), apply_ok, "apply result mismatch for {id}");
-        assert_eq!(continuity.state(), expected, "state mismatch for {id}");
+        assert_eq!(
+            continuity.apply(event).is_ok(),
+            apply_ok,
+            "apply result mismatch for {id}"
+        );
+        assert_eq!(
+            continuity.state(),
+            expected,
+            "state mismatch for {id}"
+        );
         assert_eq!(
             continuity.auth_admission_allowed(),
             auth_allowed,
