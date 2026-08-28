@@ -2,8 +2,7 @@ use proto::auth_v3_context_parser::{
     hash_canonical_context_bytes, parse_canonical_context, ContextParseError,
 };
 
-const CORPUS: &str =
-    include_str!("../../../test-vectors/auth-v3/context-parser-negative-v1.txt");
+const CORPUS: &str = include_str!("../../../test-vectors/auth-v3/context-parser-negative-v1.txt");
 
 fn expected_error(token: &str) -> ContextParseError {
     match token {
