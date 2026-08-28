@@ -80,7 +80,7 @@ jobs:
           if-no-files-found: ignore
 
   formal:
-    name: Formal lane — legacy v2 regression + draft AUTH v3 gate
+    name: Formal lane — legacy v2 + AUTH v3 + replay continuity gates
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -158,6 +158,37 @@ jobs:
 
           echo "Validated $result_count draft AUTH v3 ProVerif RESULT lines with no false/unproved query result."
 
+      - name: Run replay continuity model and fail closed
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "== ZK-ARCHE ProVerif replay continuity model =="
+            date -u +"timestamp_utc=%Y-%m-%dT%H:%M:%SZ"
+            echo "commit=$(git rev-parse HEAD)"
+            echo "== installed proverif package =="
+            opam list --installed proverif
+            echo "== synchronized replay continuity model hashes =="
+            sha256sum \
+              rust/models/proverif/zk_arche_replay_continuity_draft.pv \
+              c/models/proverif/zk_arche_replay_continuity_draft.pv
+            echo "== proverif query results =="
+            proverif rust/models/proverif/zk_arche_replay_continuity_draft.pv
+          } 2>&1 | tee evidence/formal/proverif-replay-continuity-draft.log
+
+          result_count="$(grep -c '^RESULT ' evidence/formal/proverif-replay-continuity-draft.log || true)"
+          if [ "$result_count" -eq 0 ]; then
+            echo "ERROR: replay continuity ProVerif model produced no RESULT lines; refusing a formal-success claim." >&2
+            exit 1
+          fi
+
+          if grep -Eq '^RESULT .* (is false\.|cannot be proved\.)' evidence/formal/proverif-replay-continuity-draft.log; then
+            echo "ERROR: one or more replay continuity ProVerif queries are false or unproved; retain the artifact and fail closed." >&2
+            exit 1
+          fi
+
+          echo "Validated $result_count replay continuity ProVerif RESULT lines with no false/unproved query result."
+
       - name: Upload formal evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -166,6 +197,7 @@ jobs:
           path: |
             evidence/formal/proverif-auth-v2-legacy.log
             evidence/formal/proverif-auth-v3-draft.log
+            evidence/formal/proverif-replay-continuity-draft.log
           if-no-files-found: error
 
   release-qualification:
@@ -239,4 +271,4 @@ jobs:
             echo "Release qualification failed: ${{ needs.release-qualification.result }}" >&2
             exit 1
           fi
-          echo "All CI lanes, draft v3 formal gate, and release qualification passed."
+          echo "All CI lanes, formal gates, and release qualification passed."
