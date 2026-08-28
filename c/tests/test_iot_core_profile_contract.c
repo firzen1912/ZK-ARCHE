@@ -108,13 +108,13 @@ static void test_profile_contract(void)
           "read profile fingerprint");
     CHECK(strcmp(digest_hex, recorded) == 0, "profile fingerprint matches canonical body");
     CHECK(strcmp(digest_hex,
-                 "aaa3633e74d4ae6ac0a1da2835310095c601b02ef821ca088fe7f2c99388211f") == 0,
+                 "d5ed5c886bf7f7b480975bebecbc995a2370c846373821817ac50c7cd0b41d62") == 0,
           "profile fingerprint remains stable");
 
     expect_field(buf, "format", "ZKPROFILE/1");
     expect_field(buf, "profile_id", "0x0001");
     expect_field(buf, "name", "iot-core");
-    expect_field(buf, "definition_revision", "2");
+    expect_field(buf, "definition_revision", "3");
     expect_field(buf, "status", "draft");
     expect_field(buf, "selectable", "0");
     expect_field(buf, "protocol_version", "0x03");
@@ -147,7 +147,7 @@ static void test_profile_contract(void)
     expect_field(buf, "replay_policy", "accepted-auth1-fifo-window");
     expect_field(buf, "replay_min_entries", "64");
     expect_field(buf, "replay_epoch_rule", "unresolved");
-    expect_field(buf, "restart_replay_rule", "unresolved");
+    expect_field(buf, "restart_replay_rule", "restore-trusted-state-or-continuity-broken");
     expect_field(buf, "resource_evidence", "required-before-stable");
     expect_field(buf, "prescriptive_change_rule", "new-profile-id");
     expect_field(buf, "deprecated_selectable", "0");

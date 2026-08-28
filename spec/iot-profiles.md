@@ -1,6 +1,6 @@
 # ZK-ARCHE IoT Profile Specification
 
-Status: **draft normative work**. This document defines how protocol/security profile identifiers map to immutable prescriptive contracts and records the current draft `iot-core` contract. It does not make AUTH v3 selectable, stabilize `profile_id = 0x0001`, or clear replay-continuity/resource evidence blockers.
+Status: **draft normative work**. This document defines how protocol/security profile identifiers map to immutable prescriptive contracts and records the current draft `iot-core` contract. It does not make AUTH v3 selectable, stabilize `profile_id = 0x0001`, or clear replay-epoch/resource evidence blockers.
 
 ## 1. Profile identity rule
 
@@ -35,8 +35,8 @@ rust/test-vectors/profiles/iot-core-v1.profile
 Current definition revision and fingerprint:
 
 ```text
-definition_revision=2
-contract_sha256=aaa3633e74d4ae6ac0a1da2835310095c601b02ef821ca088fe7f2c99388211f
+definition_revision=3
+contract_sha256=d5ed5c886bf7f7b480975bebecbc995a2370c846373821817ac50c7cd0b41d62
 ```
 
 The current prescriptive values are:
@@ -55,8 +55,8 @@ The current prescriptive values are:
 | maximum datagram | `2048` bytes | current transport-neutral implementation ceiling |
 | replay policy | `accepted-auth1-fifo-window` | bounded duplicate-suppression window over successfully accepted AUTH_1 replay identifiers |
 | replay minimum entries | `64` | every conformant `iot-core` implementation must retain at least 64 accepted replay identifiers |
-| replay epoch rule | `unresolved` | blocks promotion/selectability |
-| restart replay rule | `unresolved` | blocks promotion/selectability |
+| replay epoch rule | `unresolved` | authenticated fresh-epoch recovery still blocks promotion/selectability |
+| restart replay rule | `restore-trusted-state-or-continuity-broken` | after restart, restore sufficiently recent trusted replay state or fail closed in `CONTINUITY_BROKEN` |
 | resource evidence | `required-before-stable` | TD-002 measurements still required |
 | selectable | `0` | implementations MUST NOT advertise/select this profile yet |
 
@@ -64,9 +64,9 @@ The capability set intentionally excludes `AUTH_V2`, pairing/TOFU enrollment fea
 
 ## 4. Accepted-AUTH1 replay-window contract
 
-The replay window is a bounded admission-state contract. It is not a substitute for authenticated AUTH-v3 completion, and it does not by itself establish restart-, rollback-, or epoch-safe replay continuity.
+The replay window is a bounded admission-state contract. It is not a substitute for authenticated AUTH-v3 completion, and it does not by itself establish rollback- or epoch-safe replay continuity.
 
-For draft `iot-core` revision 2:
+For draft `iot-core` revision 3:
 
 1. an implementation MUST retain at least the 64 most recently inserted, distinct replay identifiers for successfully accepted AUTH_1 inputs;
 2. retention order MUST be FIFO: when the configured capacity is full, inserting a new distinct identifier evicts the oldest retained identifier;
@@ -84,21 +84,22 @@ rust/test-vectors/replay-cache/fifo-capacity-64.txt
 
 is the canonical minimum-capacity fixture. Rust and C tests consume the same corpus. FT-022 additionally exercises same accepted AUTH material under a fresh outer session/sequence, and FT-023 exercises concurrent duplicate submission.
 
-This packet deliberately resolves only the evidence-backed bounded-window semantics. The current ProVerif replay table remains persistent and unbounded, so its accepted-message replay result is stronger than this runtime retention contract after eviction or restart. Formal claims MUST retain that assumption boundary.
+The current ProVerif replay table remains persistent and unbounded, so its accepted-message replay result is stronger than this runtime retention contract after eviction or restart. Formal claims MUST retain that assumption boundary.
 
-## 5. Unresolved replay continuity and fail-closed profile status
+## 5. Replay continuity and fail-closed profile status
 
-`replay_epoch_rule` and `restart_replay_rule` remain `unresolved`.
+`restart_replay_rule` is resolved for draft revision 3 as `restore-trusted-state-or-continuity-broken`, matching `spec/replay-continuity.md` and the shared Rust/C replay-continuity decision corpus. Before the first post-restart AUTH acceptance in an existing replay domain, an implementation MUST either establish a trusted restored replay window satisfying the profile floor or enter `CONTINUITY_BROKEN`. It MUST NOT initialize an empty replay cache, accept a fresh outer session as recovery, or infer continuity from transport reconnection.
 
-The profile therefore makes **no** normative claim yet that:
+`replay_epoch_rule` remains `unresolved` because the authenticated fresh-epoch transition, predecessor-epoch handling, interrupted-transition behavior, and target rollback evidence are not yet defined and retained.
+
+The profile therefore still makes **no** normative claim that:
 
 - an AUTH_1 replay evicted from the bounded window is rejected indefinitely;
-- volatile replay state survives process/device restart;
-- replay state is rollback-resistant;
-- loss of replay state is safely recoverable without an authenticated fresh-context transition;
+- replay state is rollback-resistant on a concrete target;
+- loss of trusted replay state is recoverable without an authenticated fresh-epoch transition;
 - the persistent/unbounded formal replay abstraction is runtime-equivalent.
 
-A conformant implementation or test harness MUST fail closed if `selectable=0`. It MUST NOT infer replay epoch/restart semantics from the local cache implementation, infer MCU readiness from host tests, or replace an unresolved field with an implementation default.
+A conformant implementation or test harness MUST fail closed if `selectable=0`. It MUST NOT infer unresolved replay-epoch semantics from the local cache implementation, infer MCU readiness from host tests, or replace an unresolved field with an implementation default.
 
 Before promotion to `stable`, every remaining `unresolved` value MUST be replaced by reviewed normative semantics and the manifest/fingerprint regenerated. The resulting definition must then receive Rust/C conformance evidence and the review required by the roadmap.
 
@@ -133,11 +134,11 @@ Rust and C conformance tests MUST independently verify at minimum:
 6. `none` critical-extension and channel-binding policies;
 7. the 2048-byte datagram ceiling;
 8. `accepted-auth1-fifo-window` and the 64-entry minimum;
-9. unresolved replay epoch/restart continuity;
-10. `selectable=0` while unresolved blockers remain;
+9. `restart_replay_rule=restore-trusted-state-or-continuity-broken`;
+10. unresolved `replay_epoch_rule` and `selectable=0` while remaining blockers exist;
 11. immutable replacement/deprecation policy fields.
 
-The replay-window semantic fixture additionally requires the shared `fifo-capacity-64.txt` decisions to remain equal across Rust and C.
+The replay-window semantic fixture additionally requires the shared `fifo-capacity-64.txt` decisions to remain equal across Rust and C. The replay-continuity corpus independently exercises the fail-closed restart/state-loss decisions represented by the manifest restart rule.
 
 These fixtures establish **same-ID semantic parity**, not production interoperability. They do not enable HELLO advertisement or AUTH-v3 dispatch.
 
@@ -145,8 +146,8 @@ These fixtures establish **same-ID semantic parity**, not production interoperab
 
 `profile_id = 0x0001` MUST remain `draft` and non-selectable until at least:
 
-- replay epoch, restart/state-loss, rollback, and continuity-break semantics are normative;
-- TD-002 constrained target measurements satisfy the declared profile resource/evidence contract, including the cost of the required replay floor;
+- authenticated replay-epoch recovery, rollback, and interrupted-transition semantics are normative and tested;
+- TD-002 constrained target measurements satisfy the declared profile resource/evidence contract, including the cost of the required replay floor and persistence assumptions;
 - Rust and C production AUTH-v3 state machines validate the same profile semantics;
 - unknown/incompatible profile and capability negative tests pass;
 - security/privacy considerations are updated for the final profile;
