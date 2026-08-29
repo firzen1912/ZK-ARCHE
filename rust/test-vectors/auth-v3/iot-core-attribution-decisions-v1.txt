@@ -1,0 +1,12 @@
+# Canonical Rust/C decision corpus for the local iot-core attribution resolver.
+# Format: case=<name>|<mutation>|<expected>
+version=1
+case=exact_local|none|OK
+case=missing_reference|empty_records|MISSING_REFERENCE
+case=ambiguous_reference|duplicate_reference_peer_b2|AMBIGUOUS_REFERENCE
+case=wrong_peer|expected_peer_b2|IDENTITY_MISMATCH
+case=stale_generation|record_generation_minus_1|AUTHORIZATION_MISMATCH
+case=wrong_role|record_role_plus_1|AUTHORIZATION_MISMATCH
+case=wrong_audience|record_audience_flip_0|AUTHORIZATION_MISMATCH
+case=same_holder_wrong_identity|second_ref_peer_b2_query_first_ref_peer_b2|IDENTITY_MISMATCH
+case=same_holder_exact_second|second_ref_peer_b2_query_second|OK

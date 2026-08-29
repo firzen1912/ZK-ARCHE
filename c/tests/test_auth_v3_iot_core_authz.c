@@ -6,6 +6,7 @@
 #include <string.h>
 
 #define VECTOR_PATH "../rust/test-vectors/auth-v3/iot-core-authorization-v1.txt"
+#define ATTRIBUTION_VECTOR_PATH "../rust/test-vectors/auth-v3/iot-core-attribution-decisions-v1.txt"
 
 static int read_vector_value(const char *key, char *out, size_t out_capacity) {
     FILE *fp = fopen(VECTOR_PATH, "r");
@@ -167,11 +168,101 @@ static void test_attribution_resolver(void) {
     assert(resolved == &records[1]);
 }
 
+static int expected_decision(const char *name) {
+    if (strcmp(name, "OK") == 0) return AUTH_V3_IOT_CORE_AUTHZ_OK;
+    if (strcmp(name, "MISSING_REFERENCE") == 0) return AUTH_V3_IOT_CORE_ATTRIBUTION_MISSING_REFERENCE;
+    if (strcmp(name, "AMBIGUOUS_REFERENCE") == 0) return AUTH_V3_IOT_CORE_ATTRIBUTION_AMBIGUOUS_REFERENCE;
+    if (strcmp(name, "IDENTITY_MISMATCH") == 0) return AUTH_V3_IOT_CORE_ATTRIBUTION_IDENTITY_MISMATCH;
+    if (strcmp(name, "AUTHORIZATION_MISMATCH") == 0) return AUTH_V3_IOT_CORE_ATTRIBUTION_AUTHORIZATION_MISMATCH;
+    assert(!"unknown expected decision");
+    return -1;
+}
+
+static void run_attribution_corpus_case(const char *name, const char *mutation, const char *expected) {
+    auth_v3_iot_core_authorization_context_v1_t context = fixture();
+    auth_v3_iot_core_attribution_record_v1_t records[2];
+    const auth_v3_iot_core_attribution_record_v1_t *resolved = NULL;
+    uint8_t credential_reference[32], expected_peer_identity[32];
+    size_t record_count = 1u;
+    int actual;
+
+    records[0] = attribution_fixture();
+    memcpy(credential_reference, records[0].credential_reference, sizeof(credential_reference));
+    memcpy(expected_peer_identity, records[0].peer_identity, sizeof(expected_peer_identity));
+
+    if (strcmp(mutation, "none") == 0) {
+        /* no mutation */
+    } else if (strcmp(mutation, "empty_records") == 0) {
+        record_count = 0u;
+    } else if (strcmp(mutation, "duplicate_reference_peer_b2") == 0) {
+        records[1] = records[0];
+        memset(records[1].peer_identity, 0xb2, sizeof(records[1].peer_identity));
+        record_count = 2u;
+    } else if (strcmp(mutation, "expected_peer_b2") == 0) {
+        memset(expected_peer_identity, 0xb2, sizeof(expected_peer_identity));
+    } else if (strcmp(mutation, "record_generation_minus_1") == 0) {
+        records[0].authorization_generation -= 1u;
+    } else if (strcmp(mutation, "record_role_plus_1") == 0) {
+        records[0].role_policy_id += 1u;
+    } else if (strcmp(mutation, "record_audience_flip_0") == 0) {
+        records[0].audience_id[0] ^= 1u;
+    } else if (strcmp(mutation, "second_ref_peer_b2_query_first_ref_peer_b2") == 0) {
+        records[1] = records[0];
+        memset(records[1].credential_reference, 0xa2, sizeof(records[1].credential_reference));
+        memset(records[1].peer_identity, 0xb2, sizeof(records[1].peer_identity));
+        memset(expected_peer_identity, 0xb2, sizeof(expected_peer_identity));
+        record_count = 2u;
+    } else if (strcmp(mutation, "second_ref_peer_b2_query_second") == 0) {
+        records[1] = records[0];
+        memset(records[1].credential_reference, 0xa2, sizeof(records[1].credential_reference));
+        memset(records[1].peer_identity, 0xb2, sizeof(records[1].peer_identity));
+        memset(credential_reference, 0xa2, sizeof(credential_reference));
+        memset(expected_peer_identity, 0xb2, sizeof(expected_peer_identity));
+        record_count = 2u;
+    } else {
+        fprintf(stderr, "unknown attribution corpus mutation for %s: %s\n", name, mutation);
+        assert(0);
+    }
+
+    actual = auth_v3_iot_core_attribution_resolve(records, record_count, credential_reference,
+                                                   expected_peer_identity, &context, &resolved);
+    assert(actual == expected_decision(expected));
+}
+
+static void test_shared_attribution_decision_corpus(void) {
+    FILE *fp = fopen(ATTRIBUTION_VECTOR_PATH, "r");
+    char line[512];
+    unsigned case_count = 0u;
+    int saw_version = 0;
+    assert(fp != NULL);
+
+    while (fgets(line, sizeof(line), fp) != NULL) {
+        char *name, *mutation, *expected, *extra;
+        line[strcspn(line, "\r\n")] = '\0';
+        if (strcmp(line, "version=1") == 0) {
+            saw_version = 1;
+            continue;
+        }
+        if (strncmp(line, "case=", 5u) != 0) continue;
+        name = strtok(line + 5u, "|");
+        mutation = strtok(NULL, "|");
+        expected = strtok(NULL, "|");
+        extra = strtok(NULL, "|");
+        assert(name != NULL && mutation != NULL && expected != NULL && extra == NULL);
+        run_attribution_corpus_case(name, mutation, expected);
+        case_count += 1u;
+    }
+    fclose(fp);
+    assert(saw_version == 1);
+    assert(case_count > 0u);
+}
+
 int main(void) {
     test_shared_vector();
     test_receive_profile_bounds();
     test_semantic_rejections();
     test_attribution_resolver();
+    test_shared_attribution_decision_corpus();
     puts("AUTH v3 iot-core authorization context: ok");
     return 0;
 }
