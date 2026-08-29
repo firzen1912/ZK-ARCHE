@@ -174,7 +174,7 @@ static int expected_decision(const char *name) {
     if (strcmp(name, "AMBIGUOUS_REFERENCE") == 0) return AUTH_V3_IOT_CORE_ATTRIBUTION_AMBIGUOUS_REFERENCE;
     if (strcmp(name, "IDENTITY_MISMATCH") == 0) return AUTH_V3_IOT_CORE_ATTRIBUTION_IDENTITY_MISMATCH;
     if (strcmp(name, "AUTHORIZATION_MISMATCH") == 0) return AUTH_V3_IOT_CORE_ATTRIBUTION_AUTHORIZATION_MISMATCH;
-    assert(!"unknown expected decision");
+    assert(0 && "unknown expected decision");
     return -1;
 }
 
