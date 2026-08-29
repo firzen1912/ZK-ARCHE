@@ -30,6 +30,13 @@ fun pk(skey): pkey.
 fun dh(skey, pkey): sesskey.
 equation forall x:skey, y:skey; dh(x, pk(y)) = dh(y, pk(x)).
 
+(* Models the existing Rust/C session-key KDF that AUTH v3 consumes:
+   HKDF-SHA256 over the ephemeral Ristretto shared point, nonce_c || nonce_s,
+   and the "session key v2" || pid || eph_c || eph_s info string. The
+   constructor abstracts HKDF and concrete encodings; it does not prove their
+   implementation correctness or computational security. *)
+fun session_key_v2(sesskey, nonce, nonce, bitstring, pkey, pkey): sesskey.
+
 fun pid(pkey, nonce, pkey, pkey): bitstring.
 fun replay_key(bitstring, nonce, pkey): bitstring.
 fun client_auth_context(bitstring, nonce, pkey): bitstring.
@@ -66,6 +73,7 @@ event ReplayRecordedV3(pkey, pkey, sessionid, bitstring).
 event ServerAuth1AcceptedV3(pkey, pkey, sessionid, bitstring, bitstring).
 event AuthorizationCheckedV3(pkey, role, sessionid, bitstring).
 event ServerAuth2SentV3(pkey, pkey, sessionid, bitstring, bitstring).
+event SessionKeyEstablishedV3(pkey, pkey, sessionid, bitstring, bitstring, sesskey).
 event FinishedDirectionsDerivedV3(pkey, pkey, sessionid, bitstring, bitstring, bitstring, bitstring).
 event ClientAuth3SentV3(pkey, pkey, sessionid, bitstring, bitstring).
 event ServerCompleteV3(pkey, pkey, sessionid, bitstring, bitstring).
@@ -98,6 +106,16 @@ query cpk:pkey, spk:pkey, sid:sessionid, secctx:bitstring, kcctx:bitstring;
 query cpk:pkey, spk:pkey, sid:sessionid, secctx:bitstring, kcctx:bitstring;
   event(ServerCompleteV3(cpk, spk, sid, secctx, kcctx))
   ==> event(AuthorizationContextAdmittedV3(cpk, spk, sid, secctx)).
+
+(* FM-01 session-key secrecy, scoped to A0 active-network attack without
+   endpoint compromise. SessionKeyEstablishedV3 records the exact symbolic
+   boundary corresponding to the existing Rust/C session-key KDF consumed by
+   AUTH v3. The reachability query asks whether an attacker can know any key at
+   that boundary in an honest modeled run. This does not establish forward
+   secrecy after compromise, HKDF/Ristretto implementation correctness,
+   side-channel resistance, secure erasure, or DATA-plane key secrecy. *)
+query cpk:pkey, spk:pkey, sid:sessionid, secctx:bitstring, kcctx:bitstring, key:sesskey;
+  event(SessionKeyEstablishedV3(cpk, spk, sid, secctx, kcctx, key)) && attacker(key).
 
 (* FM-07 reflection resistance, scoped to the symbolic Finished interface.
    A normal server derivation records both directional Finished values. The
@@ -134,9 +152,10 @@ let ClientV3(csk:skey, spk:pkey, allowed:role) =
     let shared = dh(ce, ephs) in
     let base_kc = kc_context_v2(p, cpf, nc, ephc, spk, server_pf, ns, ephs) in
     let kcctx = kc_context_v3(secctx, base_kc) in
-    let k_s2c = k_s2c_v3(shared, kcctx) in
-    let k_c2s = k_c2s_v3(shared, kcctx) in
-    let k_complete = k_complete_v3(shared, kcctx) in
+    let session_key = session_key_v2(shared, nc, ns, p, ephc, ephs) in
+    let k_s2c = k_s2c_v3(session_key, kcctx) in
+    let k_c2s = k_c2s_v3(session_key, kcctx) in
+    let k_complete = k_complete_v3(session_key, kcctx) in
     if tagS = hmac(k_s2c, (server_finished_v3_label, kcctx)) then
       let tagC = hmac(k_c2s, (client_finished_v3_label, kcctx)) in
       event ClientAuth3SentV3(cpk, spk, sid, secctx, kcctx);
@@ -144,6 +163,7 @@ let ClientV3(csk:skey, spk:pkey, allowed:role) =
       in(c, (=sid, tagAck:bitstring));
       let completion = completion_hash_v3(kcctx, tagC) in
       if tagAck = hmac(k_complete, (server_complete_v3_label, completion)) then
+        event SessionKeyEstablishedV3(cpk, spk, sid, secctx, kcctx, session_key);
         event ClientCompleteV3(cpk, spk, sid, secctx, kcctx).
 
 let ServerV3(ssk:skey, trusted_cpk:pkey, allowed:role) =
@@ -183,9 +203,10 @@ let ServerV3(ssk:skey, trusted_cpk:pkey, allowed:role) =
             let shared = dh(se, ephc) in
             let base_kc = kc_context_v2(p, cpf, nc, ephc, spk, server_pf, ns, ephs) in
             let kcctx = kc_context_v3(secctx, base_kc) in
-            let k_s2c = k_s2c_v3(shared, kcctx) in
-            let k_c2s = k_c2s_v3(shared, kcctx) in
-            let k_complete = k_complete_v3(shared, kcctx) in
+            let session_key = session_key_v2(shared, nc, ns, p, ephc, ephs) in
+            let k_s2c = k_s2c_v3(session_key, kcctx) in
+            let k_c2s = k_c2s_v3(session_key, kcctx) in
+            let k_complete = k_complete_v3(session_key, kcctx) in
             let tagS = hmac(k_s2c, (server_finished_v3_label, kcctx)) in
             let expected_tagC = hmac(k_c2s, (client_finished_v3_label, kcctx)) in
             event FinishedDirectionsDerivedV3(cpk, spk, sid, secctx, kcctx, tagS, expected_tagC);
@@ -193,6 +214,7 @@ let ServerV3(ssk:skey, trusted_cpk:pkey, allowed:role) =
             out(c, (sid, ns, ephs, server_pf, tagS));
             in(c, (=sid, tagC:bitstring));
             if tagC = expected_tagC then
+              event SessionKeyEstablishedV3(cpk, spk, sid, secctx, kcctx, session_key);
               let completion = completion_hash_v3(kcctx, tagC) in
               let tagAck = hmac(k_complete, (server_complete_v3_label, completion)) in
               event ServerCompleteV3(cpk, spk, sid, secctx, kcctx);
