@@ -34,6 +34,33 @@ pub struct IotCoreAuthorizationContextV1 {
     pub revocation_epoch: u64,
 }
 
+/// One locally authoritative attribution tuple for `iot-core` AUTH.
+///
+/// This is local state only: it is not a wire format, registry identifier, or
+/// enrollment mechanism. A caller selects a credential reference and expected
+/// peer identity, then this tuple binds that selection to the exact holder,
+/// audience, role/policy, scope, and freshness context used by AUTH.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct IotCoreAttributionRecordV1 {
+    pub credential_reference: [u8; 32],
+    pub peer_identity: [u8; 32],
+    pub holder_binding: [u8; 32],
+    pub audience_id: [u8; 32],
+    pub role_policy_id: u64,
+    pub scope_bits: u64,
+    pub authorization_generation: u64,
+    pub policy_epoch: u64,
+    pub revocation_epoch: u64,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum IotCoreAttributionError {
+    MissingReference,
+    AmbiguousReference,
+    IdentityMismatch,
+    AuthorizationMismatch,
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum IotCoreAuthorizationError {
     InvalidHolderBinding,
@@ -95,6 +122,48 @@ pub fn validate_iot_core_authorization_context(
         return Err(IotCoreAuthorizationError::InvalidRevocationEpoch);
     }
     Ok(())
+}
+
+/// Resolve one credential reference to exactly one locally authorized peer.
+///
+/// The resolver is intentionally pure and read-only. It does not create
+/// aliases, repair records, learn credentials, or mutate trust. Ambiguous
+/// references fail before identity or authorization use. A selected record
+/// must match both the caller's expected peer identity and every authorization
+/// field that is carried by the active `iot-core` context.
+pub fn resolve_iot_core_attribution<'a>(
+    records: &'a [IotCoreAttributionRecordV1],
+    credential_reference: &[u8; 32],
+    expected_peer_identity: &[u8; 32],
+    context: &IotCoreAuthorizationContextV1,
+) -> Result<&'a IotCoreAttributionRecordV1, IotCoreAttributionError> {
+    let mut candidates = records
+        .iter()
+        .filter(|record| &record.credential_reference == credential_reference);
+
+    let record = candidates
+        .next()
+        .ok_or(IotCoreAttributionError::MissingReference)?;
+    if candidates.next().is_some() {
+        return Err(IotCoreAttributionError::AmbiguousReference);
+    }
+
+    if &record.peer_identity != expected_peer_identity {
+        return Err(IotCoreAttributionError::IdentityMismatch);
+    }
+
+    if record.holder_binding != context.holder_binding
+        || record.audience_id != context.audience_id
+        || record.role_policy_id != context.role_policy_id
+        || record.scope_bits != context.scope_bits
+        || record.authorization_generation != context.authorization_generation
+        || record.policy_epoch != context.policy_epoch
+        || record.revocation_epoch != context.revocation_epoch
+    {
+        return Err(IotCoreAttributionError::AuthorizationMismatch);
+    }
+
+    Ok(record)
 }
 
 fn with_entries<T>(
@@ -257,6 +326,21 @@ mod tests {
         }
     }
 
+    fn attribution_fixture() -> IotCoreAttributionRecordV1 {
+        let context = fixture();
+        IotCoreAttributionRecordV1 {
+            credential_reference: [0xa1; 32],
+            peer_identity: [0xb1; 32],
+            holder_binding: context.holder_binding,
+            audience_id: context.audience_id,
+            role_policy_id: context.role_policy_id,
+            scope_bits: context.scope_bits,
+            authorization_generation: context.authorization_generation,
+            policy_epoch: context.policy_epoch,
+            revocation_epoch: context.revocation_epoch,
+        }
+    }
+
     #[test]
     fn shared_vector_is_stable() {
         let context = fixture();
@@ -374,6 +458,130 @@ mod tests {
         assert_eq!(
             validate_iot_core_authorization_context(&case),
             Err(IotCoreAuthorizationError::InvalidRevocationEpoch)
+        );
+    }
+
+    #[test]
+    fn attribution_resolver_accepts_exact_local_binding() {
+        let context = fixture();
+        let record = attribution_fixture();
+        let records = [record.clone()];
+
+        assert_eq!(
+            resolve_iot_core_attribution(
+                &records,
+                &record.credential_reference,
+                &record.peer_identity,
+                &context,
+            ),
+            Ok(&record)
+        );
+    }
+
+    #[test]
+    fn attribution_resolver_rejects_missing_and_ambiguous_references() {
+        let context = fixture();
+        let record = attribution_fixture();
+
+        assert_eq!(
+            resolve_iot_core_attribution(&[], &[0xa1; 32], &[0xb1; 32], &context),
+            Err(IotCoreAttributionError::MissingReference)
+        );
+
+        let mut conflicting = record.clone();
+        conflicting.peer_identity = [0xb2; 32];
+        let records = [record.clone(), conflicting];
+        assert_eq!(
+            resolve_iot_core_attribution(
+                &records,
+                &record.credential_reference,
+                &record.peer_identity,
+                &context,
+            ),
+            Err(IotCoreAttributionError::AmbiguousReference)
+        );
+    }
+
+    #[test]
+    fn attribution_resolver_rejects_identity_and_policy_substitution() {
+        let context = fixture();
+        let record = attribution_fixture();
+        let records = [record.clone()];
+
+        assert_eq!(
+            resolve_iot_core_attribution(
+                &records,
+                &record.credential_reference,
+                &[0xb2; 32],
+                &context,
+            ),
+            Err(IotCoreAttributionError::IdentityMismatch)
+        );
+
+        let mut stale = record.clone();
+        stale.authorization_generation -= 1;
+        assert_eq!(
+            resolve_iot_core_attribution(
+                &[stale],
+                &record.credential_reference,
+                &record.peer_identity,
+                &context,
+            ),
+            Err(IotCoreAttributionError::AuthorizationMismatch)
+        );
+
+        let mut wrong_role = record.clone();
+        wrong_role.role_policy_id += 1;
+        assert_eq!(
+            resolve_iot_core_attribution(
+                &[wrong_role],
+                &record.credential_reference,
+                &record.peer_identity,
+                &context,
+            ),
+            Err(IotCoreAttributionError::AuthorizationMismatch)
+        );
+
+        let mut wrong_audience = record.clone();
+        wrong_audience.audience_id[0] ^= 1;
+        assert_eq!(
+            resolve_iot_core_attribution(
+                &[wrong_audience],
+                &record.credential_reference,
+                &record.peer_identity,
+                &context,
+            ),
+            Err(IotCoreAttributionError::AuthorizationMismatch)
+        );
+    }
+
+    #[test]
+    fn same_holder_does_not_create_implicit_identity_equivalence() {
+        let context = fixture();
+        let first = attribution_fixture();
+        let mut second = first.clone();
+        second.credential_reference = [0xa2; 32];
+        second.peer_identity = [0xb2; 32];
+        let records = [first.clone(), second.clone()];
+
+        assert_eq!(
+            resolve_iot_core_attribution(
+                &records,
+                &first.credential_reference,
+                &second.peer_identity,
+                &context,
+            ),
+            Err(IotCoreAttributionError::IdentityMismatch)
+        );
+
+        assert_eq!(
+            resolve_iot_core_attribution(
+                &records,
+                &second.credential_reference,
+                &second.peer_identity,
+                &context,
+            ),
+            Ok(&second)
         );
     }
 }
