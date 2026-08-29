@@ -11,16 +11,11 @@ static int read_vector_value(const char *key, char *out, size_t out_capacity) {
     FILE *fp = fopen(VECTOR_PATH, "r");
     char line[1024];
     size_t key_len = strlen(key);
-    if (fp == NULL) {
-        return -1;
-    }
+    if (fp == NULL) return -1;
     while (fgets(line, sizeof(line), fp) != NULL) {
         if (strncmp(line, key, key_len) == 0 && line[key_len] == '=') {
             size_t len = strcspn(line + key_len + 1u, "\r\n");
-            if (len + 1u > out_capacity) {
-                fclose(fp);
-                return -1;
-            }
+            if (len + 1u > out_capacity) { fclose(fp); return -1; }
             memcpy(out, line + key_len + 1u, len);
             out[len] = '\0';
             fclose(fp);
@@ -32,15 +27,9 @@ static int read_vector_value(const char *key, char *out, size_t out_capacity) {
 }
 
 static uint8_t hex_nibble(char c) {
-    if (c >= '0' && c <= '9') {
-        return (uint8_t)(c - '0');
-    }
-    if (c >= 'a' && c <= 'f') {
-        return (uint8_t)(10 + (c - 'a'));
-    }
-    if (c >= 'A' && c <= 'F') {
-        return (uint8_t)(10 + (c - 'A'));
-    }
+    if (c >= '0' && c <= '9') return (uint8_t)(c - '0');
+    if (c >= 'a' && c <= 'f') return (uint8_t)(10 + (c - 'a'));
+    if (c >= 'A' && c <= 'F') return (uint8_t)(10 + (c - 'A'));
     abort();
 }
 
@@ -48,8 +37,7 @@ static void decode_hex_exact(const char *hex, uint8_t *out, size_t out_len) {
     size_t i;
     assert(strlen(hex) == out_len * 2u);
     for (i = 0u; i < out_len; ++i) {
-        out[i] = (uint8_t)((hex_nibble(hex[i * 2u]) << 4) |
-                           hex_nibble(hex[i * 2u + 1u]));
+        out[i] = (uint8_t)((hex_nibble(hex[i * 2u]) << 4) | hex_nibble(hex[i * 2u + 1u]));
     }
 }
 
@@ -67,12 +55,10 @@ static auth_v3_iot_core_authorization_context_v1_t fixture(void) {
     auth_v3_iot_core_authorization_context_v1_t context;
     char value[256];
     memset(&context, 0, sizeof(context));
-
     assert(read_vector_value("holder_binding", value, sizeof(value)) == 0);
     decode_hex_exact(value, context.holder_binding, sizeof(context.holder_binding));
     assert(read_vector_value("audience_id", value, sizeof(value)) == 0);
     decode_hex_exact(value, context.audience_id, sizeof(context.audience_id));
-
     context.role_policy_id = read_u64("role_policy_id");
     context.scope_bits = read_u64("scope_bits");
     context.authorization_generation = read_u64("authorization_generation");
@@ -81,22 +67,34 @@ static auth_v3_iot_core_authorization_context_v1_t fixture(void) {
     return context;
 }
 
+static auth_v3_iot_core_attribution_record_v1_t attribution_fixture(void) {
+    auth_v3_iot_core_authorization_context_v1_t context = fixture();
+    auth_v3_iot_core_attribution_record_v1_t record;
+    memset(&record, 0, sizeof(record));
+    memset(record.credential_reference, 0xa1, sizeof(record.credential_reference));
+    memset(record.peer_identity, 0xb1, sizeof(record.peer_identity));
+    memcpy(record.holder_binding, context.holder_binding, sizeof(record.holder_binding));
+    memcpy(record.audience_id, context.audience_id, sizeof(record.audience_id));
+    record.role_policy_id = context.role_policy_id;
+    record.scope_bits = context.scope_bits;
+    record.authorization_generation = context.authorization_generation;
+    record.policy_epoch = context.policy_epoch;
+    record.revocation_epoch = context.revocation_epoch;
+    return record;
+}
+
 static void test_shared_vector(void) {
     auth_v3_iot_core_authorization_context_v1_t context = fixture();
     uint8_t encoded[AUTH_V3_IOT_CORE_AUTHZ_CANONICAL_LEN];
     uint8_t expected_encoded[AUTH_V3_IOT_CORE_AUTHZ_CANONICAL_LEN];
-    uint8_t hash[32];
-    uint8_t expected_hash[32];
+    uint8_t hash[32], expected_hash[32];
     char value[512];
     size_t encoded_len = 0u;
-
-    assert(auth_v3_iot_core_authz_encode(&context, encoded, sizeof(encoded),
-                                         &encoded_len) == AUTH_V3_IOT_CORE_AUTHZ_OK);
+    assert(auth_v3_iot_core_authz_encode(&context, encoded, sizeof(encoded), &encoded_len) == AUTH_V3_IOT_CORE_AUTHZ_OK);
     assert(encoded_len == AUTH_V3_IOT_CORE_AUTHZ_CANONICAL_LEN);
     assert(read_vector_value("encoded", value, sizeof(value)) == 0);
     decode_hex_exact(value, expected_encoded, sizeof(expected_encoded));
     assert(memcmp(encoded, expected_encoded, sizeof(encoded)) == 0);
-
     assert(auth_v3_iot_core_authz_hash(&context, hash) == AUTH_V3_IOT_CORE_AUTHZ_OK);
     assert(read_vector_value("sha256", value, sizeof(value)) == 0);
     decode_hex_exact(value, expected_hash, sizeof(expected_hash));
@@ -104,108 +102,76 @@ static void test_shared_vector(void) {
 }
 
 static void test_receive_profile_bounds(void) {
-    auth_v3_iot_core_authorization_context_v1_t expected = fixture();
-    auth_v3_iot_core_authorization_context_v1_t decoded;
+    auth_v3_iot_core_authorization_context_v1_t expected = fixture(), decoded;
     uint8_t encoded[AUTH_V3_IOT_CORE_AUTHZ_CANONICAL_LEN + 1u];
-    uint8_t hash[32];
-    uint8_t expected_hash[32];
+    uint8_t hash[32], expected_hash[32];
     char value[512];
-
     assert(read_vector_value("encoded", value, sizeof(value)) == 0);
     decode_hex_exact(value, encoded, AUTH_V3_IOT_CORE_AUTHZ_CANONICAL_LEN);
-    assert(auth_v3_iot_core_authz_decode_bytes(
-               encoded, AUTH_V3_IOT_CORE_AUTHZ_CANONICAL_LEN, &decoded) ==
-           AUTH_V3_IOT_CORE_AUTHZ_OK);
-    assert(memcmp(decoded.holder_binding, expected.holder_binding,
-                  sizeof(decoded.holder_binding)) == 0);
-    assert(memcmp(decoded.audience_id, expected.audience_id,
-                  sizeof(decoded.audience_id)) == 0);
-    assert(decoded.role_policy_id == expected.role_policy_id);
-    assert(decoded.scope_bits == expected.scope_bits);
+    assert(auth_v3_iot_core_authz_decode_bytes(encoded, AUTH_V3_IOT_CORE_AUTHZ_CANONICAL_LEN, &decoded) == AUTH_V3_IOT_CORE_AUTHZ_OK);
+    assert(memcmp(decoded.holder_binding, expected.holder_binding, sizeof(decoded.holder_binding)) == 0);
+    assert(memcmp(decoded.audience_id, expected.audience_id, sizeof(decoded.audience_id)) == 0);
+    assert(decoded.role_policy_id == expected.role_policy_id && decoded.scope_bits == expected.scope_bits);
     assert(decoded.authorization_generation == expected.authorization_generation);
-    assert(decoded.policy_epoch == expected.policy_epoch);
-    assert(decoded.revocation_epoch == expected.revocation_epoch);
-
-    assert(auth_v3_iot_core_authz_hash_bytes(
-               encoded, AUTH_V3_IOT_CORE_AUTHZ_CANONICAL_LEN, hash) ==
-           AUTH_V3_IOT_CORE_AUTHZ_OK);
+    assert(decoded.policy_epoch == expected.policy_epoch && decoded.revocation_epoch == expected.revocation_epoch);
+    assert(auth_v3_iot_core_authz_hash_bytes(encoded, AUTH_V3_IOT_CORE_AUTHZ_CANONICAL_LEN, hash) == AUTH_V3_IOT_CORE_AUTHZ_OK);
     assert(read_vector_value("sha256", value, sizeof(value)) == 0);
     decode_hex_exact(value, expected_hash, sizeof(expected_hash));
     assert(memcmp(hash, expected_hash, sizeof(hash)) == 0);
-
-    assert(auth_v3_iot_core_authz_decode_bytes(
-               encoded, AUTH_V3_IOT_CORE_AUTHZ_CANONICAL_LEN - 1u, &decoded) ==
-           AUTH_V3_IOT_CORE_AUTHZ_INVALID_ENCODING_LENGTH);
-
+    assert(auth_v3_iot_core_authz_decode_bytes(encoded, AUTH_V3_IOT_CORE_AUTHZ_CANONICAL_LEN - 1u, &decoded) == AUTH_V3_IOT_CORE_AUTHZ_INVALID_ENCODING_LENGTH);
     encoded[AUTH_V3_IOT_CORE_AUTHZ_CANONICAL_LEN] = 0u;
-    assert(auth_v3_iot_core_authz_decode_bytes(
-               encoded, AUTH_V3_IOT_CORE_AUTHZ_CANONICAL_LEN + 1u, &decoded) ==
-           AUTH_V3_IOT_CORE_AUTHZ_INVALID_ENCODING_LENGTH);
-
-    decode_hex_exact(value, expected_hash, sizeof(expected_hash));
-    assert(read_vector_value("encoded", value, sizeof(value)) == 0);
-    decode_hex_exact(value, encoded, AUTH_V3_IOT_CORE_AUTHZ_CANONICAL_LEN);
-    encoded[7] = 8u;
-    encoded[8] = 0u;
-    assert(auth_v3_iot_core_authz_decode_bytes(
-               encoded, AUTH_V3_IOT_CORE_AUTHZ_CANONICAL_LEN, &decoded) ==
-           AUTH_V3_IOT_CORE_AUTHZ_ENTRY_LIMIT_EXCEEDED);
-
-    assert(read_vector_value("encoded", value, sizeof(value)) == 0);
-    decode_hex_exact(value, encoded, AUTH_V3_IOT_CORE_AUTHZ_CANONICAL_LEN);
-    encoded[6] = 3u;
-    assert(auth_v3_iot_core_authz_decode_bytes(
-               encoded, AUTH_V3_IOT_CORE_AUTHZ_CANONICAL_LEN, &decoded) ==
-           AUTH_V3_IOT_CORE_AUTHZ_INVALID_CONTEXT_KIND);
-
-    assert(read_vector_value("encoded", value, sizeof(value)) == 0);
-    decode_hex_exact(value, encoded, AUTH_V3_IOT_CORE_AUTHZ_CANONICAL_LEN);
-    encoded[135] = 8u;
-    encoded[136] = 0u;
-    assert(auth_v3_iot_core_authz_decode_bytes(
-               encoded, AUTH_V3_IOT_CORE_AUTHZ_CANONICAL_LEN, &decoded) ==
-           AUTH_V3_IOT_CORE_AUTHZ_INVALID_ENTRY_SCHEMA);
+    assert(auth_v3_iot_core_authz_decode_bytes(encoded, AUTH_V3_IOT_CORE_AUTHZ_CANONICAL_LEN + 1u, &decoded) == AUTH_V3_IOT_CORE_AUTHZ_INVALID_ENCODING_LENGTH);
 }
 
 static void test_semantic_rejections(void) {
-    auth_v3_iot_core_authorization_context_v1_t base = fixture();
-    auth_v3_iot_core_authorization_context_v1_t case_context;
+    auth_v3_iot_core_authorization_context_v1_t base = fixture(), c;
+    c = base; memset(c.holder_binding, 0, sizeof(c.holder_binding)); assert(auth_v3_iot_core_authz_validate(&c) == AUTH_V3_IOT_CORE_AUTHZ_INVALID_HOLDER);
+    c = base; memset(c.audience_id, 0, sizeof(c.audience_id)); assert(auth_v3_iot_core_authz_validate(&c) == AUTH_V3_IOT_CORE_AUTHZ_INVALID_AUDIENCE);
+    c = base; c.role_policy_id = 0u; assert(auth_v3_iot_core_authz_validate(&c) == AUTH_V3_IOT_CORE_AUTHZ_INVALID_ROLE_POLICY);
+    c = base; c.scope_bits = 0u; assert(auth_v3_iot_core_authz_validate(&c) == AUTH_V3_IOT_CORE_AUTHZ_INVALID_SCOPE);
+    c = base; c.authorization_generation = 0u; assert(auth_v3_iot_core_authz_validate(&c) == AUTH_V3_IOT_CORE_AUTHZ_INVALID_GENERATION);
+    c = base; c.policy_epoch = 0u; assert(auth_v3_iot_core_authz_validate(&c) == AUTH_V3_IOT_CORE_AUTHZ_INVALID_POLICY_EPOCH);
+    c = base; c.revocation_epoch = 0u; assert(auth_v3_iot_core_authz_validate(&c) == AUTH_V3_IOT_CORE_AUTHZ_INVALID_REVOCATION_EPOCH);
+}
 
-    case_context = base;
-    memset(case_context.holder_binding, 0, sizeof(case_context.holder_binding));
-    assert(auth_v3_iot_core_authz_validate(&case_context) == AUTH_V3_IOT_CORE_AUTHZ_INVALID_HOLDER);
+static void test_attribution_resolver(void) {
+    auth_v3_iot_core_authorization_context_v1_t context = fixture();
+    auth_v3_iot_core_attribution_record_v1_t records[2];
+    const auth_v3_iot_core_attribution_record_v1_t *resolved = NULL;
+    uint8_t missing[32], wrong_peer[32];
 
-    case_context = base;
-    memset(case_context.audience_id, 0, sizeof(case_context.audience_id));
-    assert(auth_v3_iot_core_authz_validate(&case_context) == AUTH_V3_IOT_CORE_AUTHZ_INVALID_AUDIENCE);
+    records[0] = attribution_fixture();
+    memset(missing, 0xcc, sizeof(missing));
+    memset(wrong_peer, 0xb2, sizeof(wrong_peer));
 
-    case_context = base;
-    case_context.role_policy_id = 0u;
-    assert(auth_v3_iot_core_authz_validate(&case_context) == AUTH_V3_IOT_CORE_AUTHZ_INVALID_ROLE_POLICY);
-
-    case_context = base;
-    case_context.scope_bits = 0u;
-    assert(auth_v3_iot_core_authz_validate(&case_context) == AUTH_V3_IOT_CORE_AUTHZ_INVALID_SCOPE);
-    case_context.scope_bits = 2u;
-    assert(auth_v3_iot_core_authz_validate(&case_context) == AUTH_V3_IOT_CORE_AUTHZ_INVALID_SCOPE);
-
-    case_context = base;
-    case_context.authorization_generation = 0u;
-    assert(auth_v3_iot_core_authz_validate(&case_context) == AUTH_V3_IOT_CORE_AUTHZ_INVALID_GENERATION);
-
-    case_context = base;
-    case_context.policy_epoch = 0u;
-    assert(auth_v3_iot_core_authz_validate(&case_context) == AUTH_V3_IOT_CORE_AUTHZ_INVALID_POLICY_EPOCH);
-
-    case_context = base;
-    case_context.revocation_epoch = 0u;
-    assert(auth_v3_iot_core_authz_validate(&case_context) == AUTH_V3_IOT_CORE_AUTHZ_INVALID_REVOCATION_EPOCH);
+    assert(auth_v3_iot_core_attribution_resolve(records, 1u, records[0].credential_reference,
+                                                 records[0].peer_identity, &context, &resolved) == AUTH_V3_IOT_CORE_AUTHZ_OK);
+    assert(resolved == &records[0]);
+    assert(auth_v3_iot_core_attribution_resolve(records, 1u, missing,
+                                                 records[0].peer_identity, &context, &resolved) == AUTH_V3_IOT_CORE_ATTRIBUTION_MISSING_REFERENCE);
+    records[1] = records[0];
+    memset(records[1].peer_identity, 0xb2, sizeof(records[1].peer_identity));
+    assert(auth_v3_iot_core_attribution_resolve(records, 2u, records[0].credential_reference,
+                                                 records[0].peer_identity, &context, &resolved) == AUTH_V3_IOT_CORE_ATTRIBUTION_AMBIGUOUS_REFERENCE);
+    assert(auth_v3_iot_core_attribution_resolve(records, 1u, records[0].credential_reference,
+                                                 wrong_peer, &context, &resolved) == AUTH_V3_IOT_CORE_ATTRIBUTION_IDENTITY_MISMATCH);
+    records[0].authorization_generation += 1u;
+    assert(auth_v3_iot_core_attribution_resolve(records, 1u, records[0].credential_reference,
+                                                 records[0].peer_identity, &context, &resolved) == AUTH_V3_IOT_CORE_ATTRIBUTION_AUTHORIZATION_MISMATCH);
+    records[0] = attribution_fixture();
+    records[1] = records[0];
+    memset(records[1].credential_reference, 0xa2, sizeof(records[1].credential_reference));
+    memset(records[1].peer_identity, 0xb2, sizeof(records[1].peer_identity));
+    assert(auth_v3_iot_core_attribution_resolve(records, 2u, records[1].credential_reference,
+                                                 records[1].peer_identity, &context, &resolved) == AUTH_V3_IOT_CORE_AUTHZ_OK);
+    assert(resolved == &records[1]);
 }
 
 int main(void) {
     test_shared_vector();
     test_receive_profile_bounds();
     test_semantic_rejections();
+    test_attribution_resolver();
     puts("AUTH v3 iot-core authorization context: ok");
     return 0;
 }

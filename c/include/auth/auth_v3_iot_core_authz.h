@@ -26,6 +26,18 @@ typedef struct auth_v3_iot_core_authorization_context_v1 {
     uint64_t revocation_epoch;
 } auth_v3_iot_core_authorization_context_v1_t;
 
+typedef struct auth_v3_iot_core_attribution_record_v1 {
+    uint8_t credential_reference[32];
+    uint8_t peer_identity[32];
+    uint8_t holder_binding[32];
+    uint8_t audience_id[32];
+    uint64_t role_policy_id;
+    uint64_t scope_bits;
+    uint64_t authorization_generation;
+    uint64_t policy_epoch;
+    uint64_t revocation_epoch;
+} auth_v3_iot_core_attribution_record_v1_t;
+
 typedef enum auth_v3_iot_core_authz_result {
     AUTH_V3_IOT_CORE_AUTHZ_OK = 0,
     AUTH_V3_IOT_CORE_AUTHZ_INVALID_ARGUMENT = -100,
@@ -40,7 +52,11 @@ typedef enum auth_v3_iot_core_authz_result {
     AUTH_V3_IOT_CORE_AUTHZ_INVALID_CONTEXT_KIND = -109,
     AUTH_V3_IOT_CORE_AUTHZ_INVALID_ENTRY_SCHEMA = -110,
     AUTH_V3_IOT_CORE_AUTHZ_ENTRY_LIMIT_EXCEEDED = -111,
-    AUTH_V3_IOT_CORE_AUTHZ_INVALID_ENCODING = -112
+    AUTH_V3_IOT_CORE_AUTHZ_INVALID_ENCODING = -112,
+    AUTH_V3_IOT_CORE_ATTRIBUTION_MISSING_REFERENCE = -120,
+    AUTH_V3_IOT_CORE_ATTRIBUTION_AMBIGUOUS_REFERENCE = -121,
+    AUTH_V3_IOT_CORE_ATTRIBUTION_IDENTITY_MISMATCH = -122,
+    AUTH_V3_IOT_CORE_ATTRIBUTION_AUTHORIZATION_MISMATCH = -123
 } auth_v3_iot_core_authz_result_t;
 
 int auth_v3_iot_core_authz_validate(
@@ -65,5 +81,13 @@ int auth_v3_iot_core_authz_hash_bytes(
     const uint8_t *input,
     size_t input_len,
     uint8_t out_hash[32]);
+
+int auth_v3_iot_core_attribution_resolve(
+    const auth_v3_iot_core_attribution_record_v1_t *records,
+    size_t record_count,
+    const uint8_t credential_reference[32],
+    const uint8_t expected_peer_identity[32],
+    const auth_v3_iot_core_authorization_context_v1_t *context,
+    const auth_v3_iot_core_attribution_record_v1_t **record_out);
 
 #endif

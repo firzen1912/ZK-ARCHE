@@ -246,3 +246,48 @@ int auth_v3_iot_core_authz_hash_bytes(
     }
     return AUTH_V3_IOT_CORE_AUTHZ_OK;
 }
+
+int auth_v3_iot_core_attribution_resolve(
+    const auth_v3_iot_core_attribution_record_v1_t *records,
+    size_t record_count,
+    const uint8_t credential_reference[32],
+    const uint8_t expected_peer_identity[32],
+    const auth_v3_iot_core_authorization_context_v1_t *context,
+    const auth_v3_iot_core_attribution_record_v1_t **record_out) {
+    const auth_v3_iot_core_attribution_record_v1_t *match = NULL;
+    size_t i;
+
+    if ((records == NULL && record_count != 0u) || credential_reference == NULL ||
+        expected_peer_identity == NULL || context == NULL || record_out == NULL) {
+        return AUTH_V3_IOT_CORE_AUTHZ_INVALID_ARGUMENT;
+    }
+    *record_out = NULL;
+
+    for (i = 0u; i < record_count; ++i) {
+        if (memcmp(records[i].credential_reference, credential_reference, 32u) == 0) {
+            if (match != NULL) {
+                return AUTH_V3_IOT_CORE_ATTRIBUTION_AMBIGUOUS_REFERENCE;
+            }
+            match = &records[i];
+        }
+    }
+
+    if (match == NULL) {
+        return AUTH_V3_IOT_CORE_ATTRIBUTION_MISSING_REFERENCE;
+    }
+    if (memcmp(match->peer_identity, expected_peer_identity, 32u) != 0) {
+        return AUTH_V3_IOT_CORE_ATTRIBUTION_IDENTITY_MISMATCH;
+    }
+    if (memcmp(match->holder_binding, context->holder_binding, 32u) != 0 ||
+        memcmp(match->audience_id, context->audience_id, 32u) != 0 ||
+        match->role_policy_id != context->role_policy_id ||
+        match->scope_bits != context->scope_bits ||
+        match->authorization_generation != context->authorization_generation ||
+        match->policy_epoch != context->policy_epoch ||
+        match->revocation_epoch != context->revocation_epoch) {
+        return AUTH_V3_IOT_CORE_ATTRIBUTION_AUTHORIZATION_MISMATCH;
+    }
+
+    *record_out = match;
+    return AUTH_V3_IOT_CORE_AUTHZ_OK;
+}
