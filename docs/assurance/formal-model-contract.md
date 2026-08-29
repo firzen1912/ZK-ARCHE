@@ -135,7 +135,7 @@ Every formal-analysis run must state which rows are actually modeled. An unmodel
 | FM-03 | Server-to-client agreement | Client completion implies matching server completion/authentication for the bound context | Replay, injection, modification, interleaving | **FORMALLY ANALYZED, scoped** — retained injective/completion correspondences |
 | FM-04 | Replay / injective acceptance | Accepted AUTH cannot be justified by replay outside explicit retransmission semantics | Capture, replay, reordering, duplicate races | **FORMALLY ANALYZED only under persistent/unbounded AUTH-v3 replay table; runtime FIFO and replay-continuity are separate TESTED/analyzed lanes** |
 | FM-05 | Transcript/security-context integrity | Security-relevant fields cannot be changed without failure | Active transcript mutation | **FORMALLY ANALYZED for modeled fields; partially IMPLEMENTATION-TRACEABLE** |
-| FM-06 | Unknown-key-share resistance | Peers cannot complete while disagreeing about peer identity/commitment or security context | Identity substitution/session splicing | **DEFINED; partially covered by agreement identities; dedicated non-redundant scenario/query not yet justified** |
+| FM-06 | Unknown-key-share resistance | Peers cannot complete while disagreeing about peer identity/commitment or security context | Identity substitution/session splicing | **DEFINED; concrete non-redundant credential/identity misbinding shape identified; BLOCKED-NORMATIVE until one repository-owned resolver relation binds credential/reference → authentication key or commitment → peer identity → role/policy/audience/domain and executable mapping-substitution semantics exist** |
 | FM-07 | Reflection resistance | Messages from one protocol direction cannot satisfy the opposite direction | Reflection/cross-role replay | **FORMALLY ANALYZED, scoped** — Rust/C deterministic negative fixtures plus retained Finished-direction non-reachability query; not a generic all-message reflection proof |
 | FM-08 | Downgrade resistance | Peer cannot be induced below the authenticated mandatory floor | Capability stripping/selection modification | **BLOCKED-NORMATIVE** |
 | FM-09 | NO-LEARNING AUTH | Successful AUTH cannot create or expand trust state | Active attacker + unknown/untrusted peer | **FORMALLY ANALYZED, scoped** relative to pre-existing modeled trust |
@@ -151,7 +151,7 @@ Every formal-analysis run must state which rows are actually modeled. An unmodel
 | FM-19 | Role confidentiality | Observable behavior does not disclose exact role beyond declared claim | Passive/active privacy observer | **EXTERNALLY/ABSTRACTION BLOCKED**; idealized role proof is too strong |
 | FM-20 | Unlinkability | Allowed runs are not linkable beyond declared unavoidable metadata | Passive/active privacy observer | **BLOCKED-NORMATIVE / modeling** |
 | FM-21 | Failure-observability privacy | Error/no-response/size/retry behavior does not leak protected state beyond policy | Adaptive active probing | **BLOCKED-NORMATIVE / runtime evidence** |
-| FM-22 | Compromise/recovery boundaries | Results state which guarantees survive specified compromise and recovery transitions | Selective key/state compromise | **BLOCKED-NORMATIVE / model expansion** |
+| FM-22 | Compromise/recovery boundaries | Results state which guarantees survive specified compromise and recovery transitions | Selective key/state compromise | **BLOCKED-NORMATIVE / model expansion**; a dynamic-corruption timing/composition matrix is the next research-owned evidence artifact before any PFS/PCS/recovery theorem is attempted |
 
 ## 5. Attacker profiles
 
@@ -185,7 +185,7 @@ persistent replay state
 cached authorization state
 ```
 
-Results must identify which guarantees fail and which remain for uncompromised peers/sessions. A3 is not yet instantiated in the AUTH-v3 model; therefore FM-01 does not establish forward secrecy or post-compromise security.
+Results must identify which guarantees fail and which remain for uncompromised peers/sessions. A3 is not yet instantiated in the AUTH-v3 model; therefore FM-01 does not establish forward secrecy or post-compromise security. Before A3 is promoted into a theorem, repository evidence must define what state can be compromised, when compromise occurs relative to AUTH/lifecycle transitions, the exact recovery transition, and whether AUTH/replay/resumption/authorization/rekey components share state in ways that invalidate compositional assumptions.
 
 ### A4 — infrastructure loss
 
@@ -239,7 +239,7 @@ The following material gaps remain:
 - compromise events/recovery boundaries are missing;
 - `schnorr_proof` and `role_proof` remain idealized symbolic interfaces;
 - parser/model equivalence is not established;
-- the generic Rust canonical-context parser still has the August 28 hostile-count pre-allocation evidence gap outside selected-profile bounded validation.
+- generic-parser resource behavior is now bounded against structurally impossible hostile entry counts before Rust heap materialization, with the `entry_count=65535` truncated-header case covered by shared Rust/C decision evidence and a Rust zero-allocation-before-rejection regression; this does **not** establish parser↔model equivalence, general zero-allocation parsing, physical MCU bounds, or broad DoS resistance.
 
 ## 7. Session-key secrecy boundary
 
@@ -523,7 +523,7 @@ FM-09 pre-existing trust / NO-LEARNING          FORMALLY ANALYZED, scoped
 Still open:
 
 ```text
-FM-06 non-redundant UKS property/scenario
+FM-06 identity-attribution/credential-misbinding resolver property and scenario
 FM-08 downgrade semantics
 FM-10 full authorization/provenance semantics
 FM-11..FM-18 lifecycle/trust/binding properties
@@ -543,12 +543,13 @@ Formal work must not outrun normative/runtime ownership.
 
 The next packets should follow this order:
 
-1. **FM-06 UKS only if non-redundant:** advance only after defining a peer-identity/security-context disagreement scenario that is not already implied by FM-02/FM-03 identity agreement, FM-01 session-key secrecy, and FM-07 direction separation. If no distinct scenario can be justified, do not manufacture a theorem.
+1. **FM-06 identity attribution / UKS:** the 2026-08-29 research identifies a non-redundant mapping-substitution shape in which cryptographic possession/agreement can remain valid while a credential/reference/key is attributed to the wrong peer or policy record. Do not add the theorem yet. First define one authoritative repository-owned resolver relation and its fail-closed consistency rules, then add shared Rust/C negative fixtures for conflicting references, stale aliases, same-key/different-identity substitution, and wrong role/policy/audience mapping. Only after that executable/normative owner exists should FM-06 gain a dedicated event/query.
 2. **TD-003 traceability closure work:** continue improving exact model/spec/Rust/C/test mapping and canonical/single-source model ownership where this can be done without inventing missing protocol semantics.
 3. **TD-004 prerequisites:** FM-08, FM-10 through FM-18, privacy, and compromise recovery remain downstream of missing normative/runtime semantics.
 4. **Replay lifecycle:** do not model a fresh replay epoch until its authenticated transition, predecessor binding, crash behavior, and Rust/C conformance semantics are specified.
+5. **FM-22 compromise/recovery:** before expanding FM-01 into forward-secrecy or post-compromise claims, define an A3 secret/state inventory with compromise timing, desired guarantee boundaries, authenticated recovery transitions, and a shared-state/disjointness audit across AUTH, replay continuity, resumption, authorization, and future rekey/DATA components.
 
-The August 28 research findings remain controlling constraints: authorization authority/provenance is unresolved for stronger FM-10/FM-13 claims, the authenticated fresh replay-epoch transition is unresolved, and hostile-count parser resource behavior still requires explicit bounded evidence. No formal model should invent an issuer namespace, lifecycle authority, recovery transition, or parser guarantee that the specification/runtime does not own.
+The August 29 research is the current formal-method input. It supersedes the August 28 hostile-count hypothesis for the specifically tested malformed-count path, while preserving the narrower fact that parser↔symbolic equivalence and physical target resource bounds remain unproven. Authorization authority/provenance and authenticated fresh replay-epoch recovery also remain unresolved. No formal model should invent an issuer namespace, resolver relation, lifecycle authority, recovery transition, compositional independence assumption, or parser guarantee that the specification/runtime does not own.
 
 ## 15. Claim boundary
 
