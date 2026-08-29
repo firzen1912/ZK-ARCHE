@@ -23,7 +23,8 @@ Current assurance state:
 ```text
 PROPERTY/ATTACKER CONTRACT DEFINED
 + SYNCHRONIZED DRAFT AUTH-v3 MODEL PRESENT
-+ 8 AUTH-v3 QUERIES RETAINED GREEN
++ 9 AUTH-v3 QUERIES RETAINED GREEN
++ FM-01 ACCEPTED SESSION-KEY SECRECY PROPERTY RETAINED GREEN
 + AUTHORIZATION-ADMISSION ABSTRACTION BOUNDARY PRESENT
 + FM-07 FINISHED-DIRECTION REFLECTION PROPERTY RETAINED GREEN
 + SYNCHRONIZED REPLAY-CONTINUITY MODEL PRESENT
@@ -41,12 +42,12 @@ PROPERTY/ATTACKER CONTRACT DEFINED
 Current retained AUTH-v3 result:
 
 ```text
-run record         = docs/assurance/formal-runs/2026-08-28-bda0e5f-proverif-auth-v3.md
-repository commit  = bda0e5f65e660ffb1c542305b8a3e9a4ff1eb4b9
-CI run             = #64 / 33229665049
+run record         = docs/assurance/formal-runs/2026-08-29-4a7db91-proverif-auth-v3.md
+repository commit  = 4a7db91597e6df6442200b808acdca62e026ad31
+CI run             = #68 / 33239334561
 tool               = ProVerif 2.05
-model blob         = 22e4f94f2f02d5ee3a7ef5aa6c2a9f3765f7c219
-retained queries   = 8
+model blob         = a8e2a19c5f1178dacd3e140d722c121e0d556056
+retained queries   = 9
 result             = fail-closed gate passed
 ```
 
@@ -129,7 +130,7 @@ Every formal-analysis run must state which rows are actually modeled. An unmodel
 
 | ID | Property | Required claim | Minimum attacker capability | Current evidence state |
 |---|---|---|---|---|
-| FM-01 | Session-key secrecy | Network attacker does not learn an accepted session/association secret absent modeled compromise | Full active Dolev-Yao control | **DEFINED; model key material exists; no retained explicit secrecy query** |
+| FM-01 | Session-key secrecy | Network attacker does not learn an accepted session/association secret absent modeled compromise | Full active Dolev-Yao control | **FORMALLY ANALYZED, scoped** — retained `SessionKeyEstablishedV3(..., key) && attacker(key)` secrecy query under A0/no endpoint compromise; `session_key_v2(...)` boundary is implementation-traceable, not computational proof |
 | FM-02 | Client-to-server agreement | Server completion implies a matching authenticated client run for the bound context | Replay, injection, modification, interleaving | **FORMALLY ANALYZED, scoped** — retained injective AUTH-v3 correspondence |
 | FM-03 | Server-to-client agreement | Client completion implies matching server completion/authentication for the bound context | Replay, injection, modification, interleaving | **FORMALLY ANALYZED, scoped** — retained injective/completion correspondences |
 | FM-04 | Replay / injective acceptance | Accepted AUTH cannot be justified by replay outside explicit retransmission semantics | Capture, replay, reordering, duplicate races | **FORMALLY ANALYZED only under persistent/unbounded AUTH-v3 replay table; runtime FIFO and replay-continuity are separate TESTED/analyzed lanes** |
@@ -158,7 +159,7 @@ Every formal-analysis run must state which rows are actually modeled. An unmodel
 
 May read, drop, delay, reorder, replay, modify, inject, initiate concurrent sessions, and operate malicious peers. Does not initially know uncompromised long-term secrets.
 
-Current AUTH-v3 retained correspondences and the scoped Finished-direction FM-07 result are primarily A0 evidence.
+Current AUTH-v3 retained agreement, FM-01 accepted-session-key secrecy, and scoped Finished-direction FM-07 results are primarily A0 evidence. The FM-01 result does not instantiate endpoint or long-term-secret compromise.
 
 ### A1 — authorized-but-malicious peer
 
@@ -184,7 +185,7 @@ persistent replay state
 cached authorization state
 ```
 
-Results must identify which guarantees fail and which remain for uncompromised peers/sessions. A3 is not yet instantiated in the AUTH-v3 model.
+Results must identify which guarantees fail and which remain for uncompromised peers/sessions. A3 is not yet instantiated in the AUTH-v3 model; therefore FM-01 does not establish forward secrecy or post-compromise security.
 
 ### A4 — infrastructure loss
 
@@ -205,10 +206,12 @@ The synchronized draft AUTH-v3 model includes:
 - explicit `AuthorizationContextAdmittedV3` abstraction boundary;
 - AUTH_1/AUTH_2/AUTH_3/authenticated-completion events;
 - security-context and key-confirmation context constructors;
+- an explicit symbolic `session_key_v2(shared, nonce_c, nonce_s, pid, eph_c, eph_s)` constructor corresponding to the existing session-key derivation boundary consumed by AUTH v3;
+- `SessionKeyEstablishedV3(..., key)` emitted on accepted completion paths;
 - persistent/unbounded `replay_seen_v3` state;
 - `ReplayRecordedV3` and `ReplayRejectedV3` events;
 - explicit `FinishedDirectionsDerivedV3` observation of normally derived server/client Finished values;
-- eight retained AUTH-v3 queries.
+- nine retained AUTH-v3 queries.
 
 The exact retained AUTH-v3 query inventory is:
 
@@ -219,22 +222,57 @@ The exact retained AUTH-v3 query inventory is:
 5. `ServerCompleteV3 ==> ClientAuth3SentV3`;
 6. `ServerCompleteV3 ==> TrustedRecordPresent(client)`;
 7. `ServerCompleteV3 ==> AuthorizationContextAdmittedV3(client, server, session, secctx)`;
-8. `FinishedDirectionsDerivedV3(..., tag, tag) ==> false`.
+8. `event(SessionKeyEstablishedV3(..., key)) && attacker(key)`;
+9. `FinishedDirectionsDerivedV3(..., tag, tag) ==> false`.
 
-The eighth query is scoped FM-07 evidence only. It establishes non-reachability of equal normally derived server/client Finished symbolic terms under the model's distinct directional KDF constructors and Finished labels. Independent Rust/C deterministic fixtures separately exercise concrete cross-direction substitution rejection. It does not establish computational HMAC collision resistance, formal HKDF/HMAC implementation correctness, arbitrary-message reflection resistance, or FM-06 UKS.
+Query 8 is scoped FM-01 evidence. Under A0 with no modeled endpoint or long-term-secret compromise, the retained ProVerif 2.05 run found no accepted modeled `session_key_v2` value reachable by the attacker. `session_key_v2(...)` abstracts the concrete HKDF-SHA256/Ristretto/serialization/RNG/storage implementation boundary; the result is not computational proof, implementation verification, forward-secrecy-after-compromise evidence, or DATA traffic-key secrecy evidence.
+
+Query 9 is scoped FM-07 evidence only. It establishes non-reachability of equal normally derived server/client Finished symbolic terms under the model's distinct directional KDF constructors and Finished labels. Independent Rust/C deterministic fixtures separately exercise concrete cross-direction substitution rejection. It does not establish computational HMAC collision resistance, formal HKDF/HMAC implementation correctness, arbitrary-message reflection resistance, or FM-06 UKS.
 
 The following material gaps remain:
 
-- FM-01 does not yet have an explicit retained secrecy query tied to a precisely named session/association secret;
 - production AUTH-v3 negotiation is not selectable;
 - critical-extension and channel-binding canonical schemas are less concrete than the `iot-core` authorization schema;
 - authority/provenance namespace semantics for authorization generations/epochs remain unresolved;
 - delegation, revocation convergence, resumption, and P2P symmetry are incomplete;
 - observable error/retry behavior and privacy-equivalence properties are missing;
 - compromise events/recovery boundaries are missing;
-- `schnorr_proof` and `role_proof` remain idealized symbolic interfaces.
+- `schnorr_proof` and `role_proof` remain idealized symbolic interfaces;
+- parser/model equivalence is not established;
+- the generic Rust canonical-context parser still has the August 28 hostile-count pre-allocation evidence gap outside selected-profile bounded validation.
 
-## 7. Authorization-context admission boundary
+## 7. Session-key secrecy boundary
+
+The current runtime AUTH-v3 path consumes the existing session key derived from the ephemeral shared point and transcript inputs before deriving purpose-separated AUTH-v3 key-confirmation/completion keys. The model represents that boundary explicitly:
+
+```text
+modeled ephemeral DH shared point
+        ↓
+session_key_v2(shared, nonce_c, nonce_s, pid, eph_c, eph_s)
+        ↓
+k_s2c_v3 / k_c2s_v3 / k_complete_v3
+        ↓
+accepted AUTH-v3 completion
+        ↓
+SessionKeyEstablishedV3(..., key)
+        ↓
+query event(SessionKeyEstablishedV3(..., key)) && attacker(key)
+```
+
+Allowed claim:
+
+> Under the draft AUTH-v3 symbolic A0 active-network model, with no modeled endpoint or long-term-secret compromise, the retained ProVerif 2.05 run supports non-reachability of an accepted modeled `session_key_v2` value by the attacker. The constructor is explicitly traceable to the existing session-key KDF boundary consumed by AUTH v3.
+
+Disallowed inference:
+
+- computational HKDF, SHA-256, Ristretto, or custom-proof security is formally proven;
+- Rust or C implementation correctness is formally verified;
+- forward secrecy or post-compromise security is established under endpoint compromise;
+- RNG/DRBG quality, memory safety, constant-time behavior, secure storage, erasure, or side-channel resistance is established;
+- DATA/application traffic-key secrecy follows automatically;
+- TD-001 independent cryptographic review is satisfied.
+
+## 8. Authorization-context admission boundary
 
 The current `iot-core` authorization receive contract is independently executable in Rust and C before the symbolic AUTH-v3 admission point:
 
@@ -289,11 +327,11 @@ Disallowed inference:
 - holder/audience/role/provenance/revocation policy has authorized the requested operation;
 - FM-10 is complete.
 
-## 8. Replay evidence is split into two complementary lanes
+## 9. Replay evidence is split into two complementary lanes
 
 Replay must not be treated as one undifferentiated model.
 
-### 8.1 AUTH-v3 accepted-message replay lane
+### 9.1 AUTH-v3 accepted-message replay lane
 
 The AUTH-v3 model uses a persistent/unbounded symbolic replay table:
 
@@ -311,7 +349,7 @@ rust/test-vectors/replay-cache/fifo-capacity-64.txt
 
 Green repository CI executes the Rust and C consumers, including FT-022/FT-023 replay-edge tests. This is retained executable evidence through successful exact-head CI runs, but it does not make production capacities identical.
 
-### 8.2 Replay-continuity lane
+### 9.2 Replay-continuity lane
 
 `spec/replay-continuity.md` defines:
 
@@ -333,7 +371,7 @@ The dedicated replay-continuity model has a retained nine-query ProVerif 2.05 ru
 
 The authenticated fresh replay-epoch mechanism remains unresolved and blocks stronger replay-lifecycle claims.
 
-### 8.3 FM-04 claim boundary
+### 9.3 FM-04 claim boundary
 
 FM-04 may currently be reported only as:
 
@@ -341,7 +379,7 @@ FM-04 may currently be reported only as:
 
 It is not a proof of runtime persistence, production-capacity equivalence, rollback resistance, or safe fresh-epoch recovery.
 
-## 9. Model-to-spec-to-code traceability map
+## 10. Model-to-spec-to-code traceability map
 
 This table is a mapping obligation, not a proof result.
 
@@ -350,9 +388,10 @@ This table is a mapping obligation, not a proof result.
 | framing/message type/sequence | `spec/zk-arche-protocol.md`, `spec/registries.md`, `rust/wire-spec.md` | `rust/crates/proto/src/wire.rs` | `c/src/wire/**`, `c/include/auth/wire.h` | parser/vector tests | implementation exists; root spec incomplete |
 | capability/profile negotiation | `spec/iot-profiles.md`, `spec/registries.md` | `caps.rs`, `profile.rs` | `c/include/auth/**`, `c/src/proto/**` | compatibility/profile fixtures | production AUTH-v3 selection incomplete |
 | transcript/security context / FM-05 | AUTH-v3 design + context specs | AUTH-v3 context/transcript helpers | corresponding AUTH-v3 C helpers | deterministic vectors + context tests | modeled fields scoped analyzed; full context incomplete |
+| session-key derivation / FM-01 | current AUTH key-schedule design/ADR + KDF implementation | Rust session-key KDF consumed by AUTH-v3 key-confirmation derivation | C session-key KDF consumed by AUTH-v3 key-confirmation derivation | deterministic key/KDF vectors + retained query 8 | implementation-traceable symbolic boundary + scoped formal secrecy result; computational/implementation proof not established |
 | cryptographic primitives/KDF/MAC | protocol spec + Security Considerations | `crypto.rs` | `c/src/crypto/**` | deterministic crypto/protocol vectors | abstracted; TD-001 separate |
 | AUTH state/agreement / FM-02/FM-03 | AUTH-v3 design/spec work | AUTH-v3 reference primitives | AUTH-v3 reference primitives | Rust/C tests/vectors | scoped formally analyzed |
-| Finished direction separation / FM-07 | AUTH-v3 directional key schedule / Finished labels | `rust/crates/proto/tests/auth_v3_reflection.rs` + AUTH-v3 key/Finished helpers | `c/tests/test_auth_v3_reflection.c` + AUTH-v3 key/Finished helpers | deterministic cross-direction negative fixtures + retained query 8 | TESTED Rust/C + scoped formally analyzed; generic reflection not established |
+| Finished direction separation / FM-07 | AUTH-v3 directional key schedule / Finished labels | `rust/crates/proto/tests/auth_v3_reflection.rs` + AUTH-v3 key/Finished helpers | `c/tests/test_auth_v3_reflection.c` + AUTH-v3 key/Finished helpers | deterministic cross-direction negative fixtures + retained query 9 | TESTED Rust/C + scoped formally analyzed; generic reflection not established |
 | trusted records / FM-09 | future TRUST/AUTH normative text | registry lookup path | registry callback/store path | unknown-peer/trust separation tests | scoped pre-existing trust modeled |
 | authorization admission / FM-05 seam | `spec/auth-v3-context-encoding.md`, `spec/iot-core-authorization-context.md` | raw parser + iot-core decode/hash | raw parser + iot-core decode/hash | canonical + negative corpora | implementation-traceable boundary; parser equivalence not proven |
 | accepted-message replay / FM-04 | AUTH/LINK replay + `spec/replay-continuity.md` | replay cache, guard, edge tests | replay cache, guard, dispatch tests | shared FIFO corpus + FT-022/FT-023 | tested; production capacity/lifetime mismatch remains |
@@ -376,7 +415,7 @@ model event/query/lemma
 + explicit abstraction/lifetime assumptions
 ```
 
-## 10. Shared formal/conformance scenarios
+## 11. Shared formal/conformance scenarios
 
 At minimum, formal/conformance work should share scenario identifiers:
 
@@ -408,7 +447,8 @@ FT-023 concurrent duplicate AUTH_1: at most one new accepted transition
 
 Current important coverage:
 
-- FT-004: deterministic Rust/C cross-direction Finished negative fixtures are executed in green exact-head CI, and retained AUTH-v3 query 8 provides scoped symbolic non-reachability for equal normally derived directional Finished terms.
+- FM-01: retained query 8 provides scoped A0/no-compromise secrecy evidence for the accepted modeled `session_key_v2` boundary; this is primarily a formal property rather than a new byte-level attack fixture.
+- FT-004: deterministic Rust/C cross-direction Finished negative fixtures are executed in green exact-head CI, and retained AUTH-v3 query 9 provides scoped symbolic non-reachability for equal normally derived directional Finished terms.
 - FT-020: shared capacity-64 FIFO decision corpus is executed by both lanes; production capacities still differ.
 - FT-021: replay-continuity contract/tests fail closed on state loss; physical persistence is not proven.
 - FT-022: Rust and C executable scenarios are exercised in green CI.
@@ -416,7 +456,7 @@ Current important coverage:
 
 Where a scenario can be represented as deterministic bytes/state, it should receive Rust/C positive or negative conformance coverage in addition to formal analysis.
 
-## 11. Formal-run evidence manifest
+## 12. Formal-run evidence manifest
 
 Every retained formal run should record at least:
 
@@ -446,7 +486,7 @@ limitations:
 
 A clean tool exit alone is not sufficient. CI formal gates must fail on zero results, false results, or unproved results, and retained records must identify the exact query/lemma set that was evaluated.
 
-## 12. Validation and promotion gates
+## 13. Validation and promotion gates
 
 TD-003 remains **open**.
 
@@ -460,7 +500,7 @@ MODEL EXPANDED
   draft AUTH-v3 and replay-continuity semantics are represented
 
 FORMALLY ANALYZED
-  selected scoped correspondences/non-reachability properties have retained ProVerif results
+  selected scoped secrecy/correspondence/non-reachability properties have retained ProVerif results
 
 IMPLEMENTATION-TRACEABLE
   selected boundaries map to spec + exact Rust/C code + executable evidence
@@ -469,19 +509,20 @@ IMPLEMENTATION-TRACEABLE
 Current scoped advances:
 
 ```text
-FM-02/FM-03 agreement                         FORMALLY ANALYZED, scoped
-FM-04 accepted-message replay ordering        FORMALLY ANALYZED under persistent/unbounded model state
-FM-04 replay-continuity state semantics       FORMALLY ANALYZED in separate state model
-FM-05 modeled security-context integrity      FORMALLY ANALYZED for modeled fields
-FM-05 iot-core authz admission boundary       IMPLEMENTATION-TRACEABLE + FORMALLY ANALYZED at handoff
-FM-07 Finished-direction reflection           TESTED Rust+C + FORMALLY ANALYZED, scoped
-FM-09 pre-existing trust / NO-LEARNING        FORMALLY ANALYZED, scoped
+FM-01 accepted session-key secrecy              FORMALLY ANALYZED under A0/no endpoint compromise
+FM-01 session-key derivation boundary           IMPLEMENTATION-TRACEABLE, scoped
+FM-02/FM-03 agreement                           FORMALLY ANALYZED, scoped
+FM-04 accepted-message replay ordering          FORMALLY ANALYZED under persistent/unbounded model state
+FM-04 replay-continuity state semantics         FORMALLY ANALYZED in separate state model
+FM-05 modeled security-context integrity        FORMALLY ANALYZED for modeled fields
+FM-05 iot-core authz admission boundary         IMPLEMENTATION-TRACEABLE + FORMALLY ANALYZED at handoff
+FM-07 Finished-direction reflection             TESTED Rust+C + FORMALLY ANALYZED, scoped
+FM-09 pre-existing trust / NO-LEARNING          FORMALLY ANALYZED, scoped
 ```
 
 Still open:
 
 ```text
-FM-01 explicit secrecy result
 FM-06 non-redundant UKS property/scenario
 FM-08 downgrade semantics
 FM-10 full authorization/provenance semantics
@@ -491,24 +532,25 @@ FM-22 compromise/recovery properties
 fresh authenticated replay epoch
 parser↔symbolic equivalence
 complete model/spec/code traceability
+canonical/single-source formal-model generation beyond synchronized copies
 ```
 
 `FORMALLY ANALYZED` does not imply `EXTERNALLY REVIEWED`, `CONSTANT-TIME`, `MEMORY-SAFE`, `COMMON-CONFORMANT`, `FIELD-READY`, or `RFC-CLASS DOCUMENTED`.
 
-## 13. Dependency ordering for the next formal packets
+## 14. Dependency ordering for the next formal packets
 
 Formal work must not outrun normative/runtime ownership.
 
 The next packets should follow this order:
 
-1. **FM-01 secrecy:** name the exact derived session/association secret whose secrecy is being claimed, document the no-compromise assumptions, and add/retain an explicit secrecy query without conflating symbolic secrecy with computational proof.
-2. **FM-06 UKS only if non-redundant:** advance only after defining a peer-identity/security-context disagreement scenario that is not already implied by FM-02/FM-03 identity agreement and FM-07 direction separation.
+1. **FM-06 UKS only if non-redundant:** advance only after defining a peer-identity/security-context disagreement scenario that is not already implied by FM-02/FM-03 identity agreement, FM-01 session-key secrecy, and FM-07 direction separation. If no distinct scenario can be justified, do not manufacture a theorem.
+2. **TD-003 traceability closure work:** continue improving exact model/spec/Rust/C/test mapping and canonical/single-source model ownership where this can be done without inventing missing protocol semantics.
 3. **TD-004 prerequisites:** FM-08, FM-10 through FM-18, privacy, and compromise recovery remain downstream of missing normative/runtime semantics.
 4. **Replay lifecycle:** do not model a fresh replay epoch until its authenticated transition, predecessor binding, crash behavior, and Rust/C conformance semantics are specified.
 
-The August 28 research finding on authorization authority/provenance remains a blocker for stronger FM-10/FM-13 claims; no formal model should invent an issuer namespace or lifecycle authority that the specification has not selected.
+The August 28 research findings remain controlling constraints: authorization authority/provenance is unresolved for stronger FM-10/FM-13 claims, the authenticated fresh replay-epoch transition is unresolved, and hostile-count parser resource behavior still requires explicit bounded evidence. No formal model should invent an issuer namespace, lifecycle authority, recovery transition, or parser guarantee that the specification/runtime does not own.
 
-## 14. Claim boundary
+## 15. Claim boundary
 
 This contract is an assurance-control artifact.
 
