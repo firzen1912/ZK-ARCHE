@@ -23,12 +23,14 @@ Current assurance state:
 ```text
 PROPERTY/ATTACKER CONTRACT DEFINED
 + SYNCHRONIZED DRAFT AUTH-v3 MODEL PRESENT
-+ 7 AUTH-v3 CORRESPONDENCE QUERIES RETAINED GREEN
++ 8 AUTH-v3 QUERIES RETAINED GREEN
 + AUTHORIZATION-ADMISSION ABSTRACTION BOUNDARY PRESENT
++ FM-07 FINISHED-DIRECTION REFLECTION PROPERTY RETAINED GREEN
 + SYNCHRONIZED REPLAY-CONTINUITY MODEL PRESENT
 + 9 REPLAY-CONTINUITY CORRESPONDENCE QUERIES RETAINED GREEN
 + INITIAL MODEL→SPEC→RUST/C TRACEABILITY PRESENT
 + MATCHED-CAPACITY FIFO REPLAY CORPUS EXECUTED IN GREEN RUST+C CI
++ FT-004 RUST+C REFLECTION NEGATIVE FIXTURES EXECUTED IN GREEN CI
 + FT-022/FT-023 RUST+C EXECUTABLE SCENARIOS EXECUTED IN GREEN CI
 != FULL MODEL/RUNTIME EQUIVALENCE
 != COMPLETE PROPERTY COVERAGE
@@ -39,12 +41,12 @@ PROPERTY/ATTACKER CONTRACT DEFINED
 Current retained AUTH-v3 result:
 
 ```text
-run record         = docs/assurance/formal-runs/2026-08-28-16de6da-proverif-auth-v3.md
-repository commit  = 16de6da915a39e8d74dbab665ce1d98385681e8d
-CI run             = #58 / 33209827503
+run record         = docs/assurance/formal-runs/2026-08-28-bda0e5f-proverif-auth-v3.md
+repository commit  = bda0e5f65e660ffb1c542305b8a3e9a4ff1eb4b9
+CI run             = #64 / 33229665049
 tool               = ProVerif 2.05
-model blob         = 0fefe938988feb49086ecf579f2b0ae5df8d16eb
-retained queries   = 7
+model blob         = 22e4f94f2f02d5ee3a7ef5aa6c2a9f3765f7c219
+retained queries   = 8
 result             = fail-closed gate passed
 ```
 
@@ -133,7 +135,7 @@ Every formal-analysis run must state which rows are actually modeled. An unmodel
 | FM-04 | Replay / injective acceptance | Accepted AUTH cannot be justified by replay outside explicit retransmission semantics | Capture, replay, reordering, duplicate races | **FORMALLY ANALYZED only under persistent/unbounded AUTH-v3 replay table; runtime FIFO and replay-continuity are separate TESTED/analyzed lanes** |
 | FM-05 | Transcript/security-context integrity | Security-relevant fields cannot be changed without failure | Active transcript mutation | **FORMALLY ANALYZED for modeled fields; partially IMPLEMENTATION-TRACEABLE** |
 | FM-06 | Unknown-key-share resistance | Peers cannot complete while disagreeing about peer identity/commitment or security context | Identity substitution/session splicing | **DEFINED; partially covered by agreement identities; dedicated non-redundant scenario/query not yet justified** |
-| FM-07 | Reflection resistance | Messages from one protocol direction cannot satisfy the opposite direction | Reflection/cross-role replay | **DEFINED; next plausible property after shared Rust/C cross-direction negative evidence** |
+| FM-07 | Reflection resistance | Messages from one protocol direction cannot satisfy the opposite direction | Reflection/cross-role replay | **FORMALLY ANALYZED, scoped** — Rust/C deterministic negative fixtures plus retained Finished-direction non-reachability query; not a generic all-message reflection proof |
 | FM-08 | Downgrade resistance | Peer cannot be induced below the authenticated mandatory floor | Capability stripping/selection modification | **BLOCKED-NORMATIVE** |
 | FM-09 | NO-LEARNING AUTH | Successful AUTH cannot create or expand trust state | Active attacker + unknown/untrusted peer | **FORMALLY ANALYZED, scoped** relative to pre-existing modeled trust |
 | FM-10 | Authentication/authorization separation | Possession proof alone does not imply authorization outside bound scope/policy | Valid credential in wrong audience/scope | **BLOCKED-NORMATIVE**; authorization-admission syntax/hash boundary is not authorization policy |
@@ -156,7 +158,7 @@ Every formal-analysis run must state which rows are actually modeled. An unmodel
 
 May read, drop, delay, reorder, replay, modify, inject, initiate concurrent sessions, and operate malicious peers. Does not initially know uncompromised long-term secrets.
 
-Current AUTH-v3 retained correspondences are scoped primarily to A0.
+Current AUTH-v3 retained correspondences and the scoped Finished-direction FM-07 result are primarily A0 evidence.
 
 ### A1 — authorized-but-malicious peer
 
@@ -205,7 +207,8 @@ The synchronized draft AUTH-v3 model includes:
 - security-context and key-confirmation context constructors;
 - persistent/unbounded `replay_seen_v3` state;
 - `ReplayRecordedV3` and `ReplayRejectedV3` events;
-- seven retained correspondence queries.
+- explicit `FinishedDirectionsDerivedV3` observation of normally derived server/client Finished values;
+- eight retained AUTH-v3 queries.
 
 The exact retained AUTH-v3 query inventory is:
 
@@ -215,7 +218,10 @@ The exact retained AUTH-v3 query inventory is:
 4. `ClientCompleteV3 ==> ServerAuth2SentV3`;
 5. `ServerCompleteV3 ==> ClientAuth3SentV3`;
 6. `ServerCompleteV3 ==> TrustedRecordPresent(client)`;
-7. `ServerCompleteV3 ==> AuthorizationContextAdmittedV3(client, server, session, secctx)`.
+7. `ServerCompleteV3 ==> AuthorizationContextAdmittedV3(client, server, session, secctx)`;
+8. `FinishedDirectionsDerivedV3(..., tag, tag) ==> false`.
+
+The eighth query is scoped FM-07 evidence only. It establishes non-reachability of equal normally derived server/client Finished symbolic terms under the model's distinct directional KDF constructors and Finished labels. Independent Rust/C deterministic fixtures separately exercise concrete cross-direction substitution rejection. It does not establish computational HMAC collision resistance, formal HKDF/HMAC implementation correctness, arbitrary-message reflection resistance, or FM-06 UKS.
 
 The following material gaps remain:
 
@@ -346,6 +352,7 @@ This table is a mapping obligation, not a proof result.
 | transcript/security context / FM-05 | AUTH-v3 design + context specs | AUTH-v3 context/transcript helpers | corresponding AUTH-v3 C helpers | deterministic vectors + context tests | modeled fields scoped analyzed; full context incomplete |
 | cryptographic primitives/KDF/MAC | protocol spec + Security Considerations | `crypto.rs` | `c/src/crypto/**` | deterministic crypto/protocol vectors | abstracted; TD-001 separate |
 | AUTH state/agreement / FM-02/FM-03 | AUTH-v3 design/spec work | AUTH-v3 reference primitives | AUTH-v3 reference primitives | Rust/C tests/vectors | scoped formally analyzed |
+| Finished direction separation / FM-07 | AUTH-v3 directional key schedule / Finished labels | `rust/crates/proto/tests/auth_v3_reflection.rs` + AUTH-v3 key/Finished helpers | `c/tests/test_auth_v3_reflection.c` + AUTH-v3 key/Finished helpers | deterministic cross-direction negative fixtures + retained query 8 | TESTED Rust/C + scoped formally analyzed; generic reflection not established |
 | trusted records / FM-09 | future TRUST/AUTH normative text | registry lookup path | registry callback/store path | unknown-peer/trust separation tests | scoped pre-existing trust modeled |
 | authorization admission / FM-05 seam | `spec/auth-v3-context-encoding.md`, `spec/iot-core-authorization-context.md` | raw parser + iot-core decode/hash | raw parser + iot-core decode/hash | canonical + negative corpora | implementation-traceable boundary; parser equivalence not proven |
 | accepted-message replay / FM-04 | AUTH/LINK replay + `spec/replay-continuity.md` | replay cache, guard, edge tests | replay cache, guard, dispatch tests | shared FIFO corpus + FT-022/FT-023 | tested; production capacity/lifetime mismatch remains |
@@ -401,11 +408,11 @@ FT-023 concurrent duplicate AUTH_1: at most one new accepted transition
 
 Current important coverage:
 
+- FT-004: deterministic Rust/C cross-direction Finished negative fixtures are executed in green exact-head CI, and retained AUTH-v3 query 8 provides scoped symbolic non-reachability for equal normally derived directional Finished terms.
 - FT-020: shared capacity-64 FIFO decision corpus is executed by both lanes; production capacities still differ.
 - FT-021: replay-continuity contract/tests fail closed on state loss; physical persistence is not proven.
 - FT-022: Rust and C executable scenarios are exercised in green CI.
 - FT-023: Rust and C executable scenarios are exercised in green CI; future state/locking changes must preserve the exactly-one-new-acceptance invariant.
-- FT-004: remains the preferred next new-property seam only after a shared cross-direction Rust/C negative fixture is present.
 
 Where a scenario can be represented as deterministic bytes/state, it should receive Rust/C positive or negative conformance coverage in addition to formal analysis.
 
@@ -453,7 +460,7 @@ MODEL EXPANDED
   draft AUTH-v3 and replay-continuity semantics are represented
 
 FORMALLY ANALYZED
-  selected scoped correspondences have retained ProVerif results
+  selected scoped correspondences/non-reachability properties have retained ProVerif results
 
 IMPLEMENTATION-TRACEABLE
   selected boundaries map to spec + exact Rust/C code + executable evidence
@@ -467,6 +474,7 @@ FM-04 accepted-message replay ordering        FORMALLY ANALYZED under persistent
 FM-04 replay-continuity state semantics       FORMALLY ANALYZED in separate state model
 FM-05 modeled security-context integrity      FORMALLY ANALYZED for modeled fields
 FM-05 iot-core authz admission boundary       IMPLEMENTATION-TRACEABLE + FORMALLY ANALYZED at handoff
+FM-07 Finished-direction reflection           TESTED Rust+C + FORMALLY ANALYZED, scoped
 FM-09 pre-existing trust / NO-LEARNING        FORMALLY ANALYZED, scoped
 ```
 
@@ -475,7 +483,6 @@ Still open:
 ```text
 FM-01 explicit secrecy result
 FM-06 non-redundant UKS property/scenario
-FM-07 reflection property + shared runtime negative fixture
 FM-08 downgrade semantics
 FM-10 full authorization/provenance semantics
 FM-11..FM-18 lifecycle/trust/binding properties
@@ -494,11 +501,10 @@ Formal work must not outrun normative/runtime ownership.
 
 The next packets should follow this order:
 
-1. **FM-07 reflection seam:** first add one deterministic/shared Rust+C cross-direction negative scenario proving that server-direction material cannot satisfy the client-direction acceptance path (and vice versa where representable); only then add a non-redundant formal query/event.
-2. **FM-06 UKS only if non-redundant:** define an identity-disagreement scenario that is not already implied by FM-02/FM-03 identity agreement before adding a dedicated query.
-3. **FM-01 secrecy:** name the exact derived secret whose secrecy is being claimed and the compromise assumptions, then retain an explicit secrecy query.
-4. **TD-004 prerequisites:** FM-08, FM-10 through FM-18, privacy, and compromise recovery remain downstream of missing normative/runtime semantics.
-5. **Replay lifecycle:** do not model a fresh replay epoch until its authenticated transition, predecessor binding, crash behavior, and Rust/C conformance semantics are specified.
+1. **FM-01 secrecy:** name the exact derived session/association secret whose secrecy is being claimed, document the no-compromise assumptions, and add/retain an explicit secrecy query without conflating symbolic secrecy with computational proof.
+2. **FM-06 UKS only if non-redundant:** advance only after defining a peer-identity/security-context disagreement scenario that is not already implied by FM-02/FM-03 identity agreement and FM-07 direction separation.
+3. **TD-004 prerequisites:** FM-08, FM-10 through FM-18, privacy, and compromise recovery remain downstream of missing normative/runtime semantics.
+4. **Replay lifecycle:** do not model a fresh replay epoch until its authenticated transition, predecessor binding, crash behavior, and Rust/C conformance semantics are specified.
 
 The August 28 research finding on authorization authority/provenance remains a blocker for stronger FM-10/FM-13 claims; no formal model should invent an issuer namespace or lifecycle authority that the specification has not selected.
 
