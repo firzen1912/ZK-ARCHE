@@ -58,6 +58,28 @@ A constrained peer MUST locally verify the mandatory authentication decision. A 
 
 Trust MUST be treated as local and non-transitive by default. Delegated authority MUST NOT be inferred merely from a trust relationship unless an applicable future delegation specification explicitly authorizes and bounds that transition.
 
+### 4.1 Identity-attribution resolver requirements
+
+When an implementation accepts a credential, credential reference, opaque local handle, registry entry, key identifier, commitment, or equivalent lookup result for AUTH, it MUST resolve that object through one authoritative local attribution relation before treating possession/proof verification as authentication of a peer identity or policy subject.
+
+The resolved attribution relation MUST bind, as applicable to the selected profile, the exact credential or security object to the exact authentication key or commitment, peer identity, role/policy identity, audience or deployment/domain, authorization provenance, permitted key operations, and profile/version context on which the local decision depends.
+
+A key identifier, transport address, registry slot, database row number, cache key, opaque hint, or lookup accelerator MUST NOT by itself define protocol identity or authorization. Such values MAY select candidate local state, but the implementation MUST validate the complete locally required attribution relation before authenticated completion or authorization admission.
+
+If the same credential or security object is supplied or referenced through more than one accepted path in one decision, all authoritative paths MUST resolve to the same security object and the same locally required attribution tuple. Conflicting, stale, ambiguous, or multiply bound results MUST fail closed.
+
+An implementation MUST reject a mapping substitution in which cryptographic possession or proof verification succeeds for one key/commitment while the selected local record attributes that proof to a different peer identity, role/policy subject, audience/domain, authorization lineage, or incompatible profile/key-operation context.
+
+Reusing the same authentication key or commitment across multiple locally authorized identities or policy records MUST NOT cause implicit identity equivalence. If a deployment intentionally permits such reuse, each accepted identity/policy binding MUST remain explicit and the active AUTH decision MUST select exactly one locally authorized attribution tuple.
+
+Resolver success during normal AUTH MUST NOT create a new alias, repair a missing mapping, merge records, learn a new credential, or mutate trust. Missing authoritative attribution state MUST cause AUTH to fail closed unless the active state is a separately specified and authorized trust-mutation flow.
+
+Cached resolver results MAY be used only while the implementation can prove they remain valid under the applicable credential generation, authorization generation, policy epoch, revocation epoch, profile/version context, and local invalidation rules. A stale cache entry MUST NOT override newer local authoritative state.
+
+Where Rust and C claim the same resolver behavior, shared negative evidence SHOULD cover at least: same key under two identity records without an explicit selected binding; stale alias after reprovisioning; credential/reference mismatch across accepted input paths; correct key with wrong role/policy or audience/domain record; incompatible key-operation/profile binding; and consistent references that legitimately resolve to the same credential/security object.
+
+This subsection defines local attribution semantics only. It does not define a new wire field, credential format, global identifier namespace, enrollment authority, delegation model, certificate dependency, cloud registry, or online lookup requirement. A future wire-visible credential/reference mechanism requires its own TD-004 specification, registry, vectors, and interoperability review.
+
 ## 5. Negotiation, profiles, and downgrade behavior
 
 Implementations MUST distinguish protocol version, cryptographic suite/method, selected profile, optional capabilities, and critical extensions according to their normative registries and compatibility rules.
@@ -116,7 +138,7 @@ Rust remains the canonical checked-in vector source under the current roadmap. C
 
 A semantic wire/vector change MUST NOT overwrite prior vector meaning under the same version/profile identity. Versioning, replacement, or deprecation MUST follow the applicable registry/change-control rules.
 
-Interop qualification MUST include negative behavior, not only successful handshakes. Unsupported critical values, malformed encodings, wrong profile/suite combinations, reflection/replay cases, context mismatches, and incompatible mandatory floors MUST be represented where applicable.
+Interop qualification MUST include negative behavior, not only successful handshakes. Unsupported critical values, malformed encodings, wrong profile/suite combinations, reflection/replay cases, context mismatches, incompatible mandatory floors, and identity-attribution/mapping-substitution cases MUST be represented where applicable.
 
 Transport adapters MUST NOT change the protocol-level authentication, authorization, trust, transcript, or identity semantics of the Common Contract merely to fit a transport API.
 
@@ -168,7 +190,8 @@ The following remain open and prevent stronger blanket claims:
 - TD-002 physical STM32/ESP32-S3-class measurements and execution-context evidence;
 - TD-003 complete model/runtime traceability and properties blocked by missing normative semantics;
 - TD-004 complete RFC-class normative grammar, production state machines, downgrade behavior, privacy/error contract, annotated traces, and specification-grade conformance package;
-- authorization authority/provenance semantics;
+- executable Rust/C identity-attribution resolver implementations and shared mapping-substitution negative fixtures;
+- authorization authority/provenance and enrollment/delegation semantics beyond the local attribution contract above;
 - revocation convergence and bounded stale-authorization policy;
 - authorization-aware resumption;
 - authenticated fresh replay-epoch transition;
