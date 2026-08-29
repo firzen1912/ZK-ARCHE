@@ -7,29 +7,33 @@ Status: **scoped assurance evidence**. This record reconciles the current synchr
 Current reconciliation base for this traceability record:
 
 ```text
-repository_commit = 31c1fcb22348a7ea0be78dec9e591b7af26f2526
+repository_commit = 085957262b40f33dfa48220752a5b09b3d8cbd06
 branch            = dev
-latest retained AUTH-v3 formal evidence = bda0e5f65e660ffb1c542305b8a3e9a4ff1eb4b9 / CI #64
+latest retained AUTH-v3 formal evidence = 4a7db91597e6df6442200b808acdca62e026ad31 / CI #68
 ```
 
 Current retained formal result:
 
 ```text
-docs/assurance/formal-runs/2026-08-28-bda0e5f-proverif-auth-v3.md
-formal_run_commit = bda0e5f65e660ffb1c542305b8a3e9a4ff1eb4b9
-ci_run            = #64 / 33229665049
+docs/assurance/formal-runs/2026-08-29-4a7db91-proverif-auth-v3.md
+formal_run_commit = 4a7db91597e6df6442200b808acdca62e026ad31
+ci_run            = #68 / 33239334561
 ci_result         = success
-formal_job        = 99040095990 / success
+formal_job        = 99065843751 / success
 tool              = ProVerif 2.05
-model_blob         = 22e4f94f2f02d5ee3a7ef5aa6c2a9f3765f7c219
-retained_queries   = 8 queries, all accepted by the fail-closed CI gate
-artifact           = formal-proverif-evidence / 9708091599
-artifact_digest    = sha256:f88574d0f66d3e417566ed6f5040b751404c3dc6d7c82651a1cac8e4561864d4
+model_blob         = a8e2a19c5f1178dacd3e140d722c121e0d556056
+retained_queries   = 9 queries, all accepted by the fail-closed CI gate
+artifact           = formal-proverif-evidence / 9710892240
+artifact_digest    = sha256:8dab0e7f9bd0d1edfa5ae952ae89ed6427df114e8917498cc1af49258982d8f9
 ```
 
 Previous retained AUTH-v3 evidence remains historical provenance:
 
 ```text
+docs/assurance/formal-runs/2026-08-28-bda0e5f-proverif-auth-v3.md
+formal_run_commit = bda0e5f65e660ffb1c542305b8a3e9a4ff1eb4b9
+retained_results  = 8 queries accepted by the fail-closed CI gate
+
 docs/assurance/formal-runs/2026-08-28-16de6da-proverif-auth-v3.md
 formal_run_commit = 16de6da915a39e8d74dbab665ce1d98385681e8d
 retained_results  = 7 queries accepted by the fail-closed CI gate
@@ -44,10 +48,10 @@ Current synchronized model copies are:
 ```text
 rust/models/proverif/zk_arche_auth_v3_draft.pv
 c/models/proverif/zk_arche_auth_v3_draft.pv
-Git blob SHA = 22e4f94f2f02d5ee3a7ef5aa6c2a9f3765f7c219
+Git blob SHA = a8e2a19c5f1178dacd3e140d722c121e0d556056
 ```
 
-The Rust and C paths are synchronized copies, not independent formal implementations. CI #64 explicitly checked synchronization before running ProVerif. A future model edit requires a new exact-model retained run before this result may be cited for the edited model text.
+The Rust and C paths are synchronized copies, not independent formal implementations. CI #68 explicitly checked synchronization before running ProVerif. A future model edit requires a new exact-model retained run before this result may be cited for the edited model text.
 
 ## 2. Attacker and abstraction scope
 
@@ -58,6 +62,8 @@ Important abstractions remain:
 - `schnorr_proof` is idealized; computational Schnorr security is not established;
 - `role_proof` is idealized; TD-001 independent cryptographic review remains required;
 - concrete canonical hashing and byte encoding are abstracted as symbolic bitstrings;
+- `session_key_v2(...)` is a symbolic constructor representing the existing session-key KDF boundary, not a proof of HKDF-SHA256, Ristretto, encoding, RNG, storage, or implementation correctness;
+- the FM-01 secrecy result is scoped to accepted modeled session keys under A0 with no endpoint/long-term-secret compromise; it does not establish forward secrecy or post-compromise security;
 - the replay table is persistent and unbounded;
 - restart, rollback, bounded eviction, fresh replay epochs, resumption, revocation convergence, and transport observability are not part of this AUTH-v3 model;
 - the FM-07 reflection query reasons over distinct symbolic directional KDF constructors and Finished labels; it is not a computational proof of HMAC collision resistance or implementation correctness;
@@ -69,12 +75,13 @@ Every successful query below is therefore a scoped model result, not a whole-pro
 
 | Property | ProVerif correspondence | Normative/design owner | Concrete anchors | Evidence state |
 |---|---|---|---|---|
+| FM-01 accepted session-key secrecy | `event(SessionKeyEstablishedV3(..., key)) && attacker(key)` | existing session-key derivation boundary + AUTH-v3 use of the established session key | Rust/C session-key KDF boundary consumed by AUTH-v3; synchronized `session_key_v2(...)` abstraction | **scoped formally analyzed in CI #68 under A0/no-compromise**; computational KDF/group/implementation security not established |
 | FM-02 client-to-server agreement | injective `ServerCompleteV3 ==> ClientAuth3SentV3` | ADR 0001 + draft AUTH-v3 state/completion semantics | Rust/C `auth_v3` reference primitives + deterministic reference vectors | scoped formally analyzed |
 | FM-03 mutual completion | injective `ClientCompleteV3 ==> ServerCompleteV3`; `ClientCompleteV3 ==> ServerAuth2SentV3` | ADR 0001 authenticated AUTH_ACK-v3 design | same Rust/C draft-v3 reference primitives/vectors | scoped formally analyzed |
 | FM-04 accepted-message replay ordering | `ServerAuth1AcceptedV3 ==> ReplayRecordedV3` | `spec/iot-profiles.md` + `spec/replay-continuity.md` | bounded runtime replay + shared replay fixtures; separate replay-continuity model | scoped formally analyzed only under persistent/unbounded AUTH-v3 replay abstraction |
 | FM-05 transcript/security-context integrity | completion/agreement queries carry identical `secctx`/`kcctx` | AUTH-v3 security context + `spec/auth-v3-context-encoding.md` + `spec/iot-core-authorization-context.md` | Rust/C `AuthV3Context`/`auth_v3_context_t`; `iot-core` raw receive/decode/hash paths | scoped formally analyzed for modeled fields; concrete byte validation remains separate executable evidence |
 | FM-05 authorization-context admission handoff | `ServerCompleteV3 ==> AuthorizationContextAdmittedV3(client, server, session, secctx)` | this traceability boundary + concrete `iot-core` authorization spec | Rust/C strict canonical parser, 7-entry/148-byte `iot-core` validation, exact accepted-byte hash | scoped formally analyzed at the symbolic admission boundary; parser equivalence not established |
-| FM-07 Finished-direction reflection resistance | `FinishedDirectionsDerivedV3(..., tag, tag) ==> false` | draft AUTH-v3 directional key/Finished separation | Rust/C `auth_v3_reflection` negative fixtures + AUTH-v3 Finished/KDF helpers | **scoped formally analyzed in CI #64**; computational HMAC/HKDF correctness not established |
+| FM-07 Finished-direction reflection resistance | `FinishedDirectionsDerivedV3(..., tag, tag) ==> false` | draft AUTH-v3 directional key/Finished separation | Rust/C `auth_v3_reflection` negative fixtures + AUTH-v3 Finished/KDF helpers | scoped formally analyzed; computational HMAC/HKDF correctness not established |
 | FM-09 NO-LEARNING AUTH | `ServerCompleteV3 ==> TrustedRecordPresent(client)` | roadmap NO-LEARNING invariant and future TRUST/AUTH normative text | production trust-store mutation remains separate from draft-v3 reference helpers | scoped formally analyzed relative to pre-existing modeled trust |
 
 ## 4. Security-context and authorization admission traceability
@@ -131,9 +138,11 @@ c/src/proto/auth_v3_iot_core_authz.c
   auth_v3_iot_core_authz_hash_bytes(...)
 ```
 
-The Rust path checks the exact 148-byte profile length before generic parsing, applies the seven-entry bound before entry-vector allocation, validates the exact schema and semantic zero/scope rules, then hashes the exact accepted bytes. The C path enforces the same profile length and schema using fixed caller-owned seven-entry storage and likewise hashes the exact accepted bytes.
+The selected `iot-core` receive path checks the exact 148-byte profile length before generic parsing, applies the seven-entry profile bound, validates the exact schema and semantic zero/scope rules, then hashes the exact accepted bytes. The C path enforces the same profile length and schema using fixed caller-owned seven-entry storage and likewise hashes the exact accepted bytes.
 
-Existing tests cover the canonical vector and profile-bound failures including 147/149-byte inputs, encoded entry count eight, wrong context kind, wrong schema ID, and the broader shared malformed `ZKCTX` corpus. The exact-head implementation lanes associated with the current FM-07 formal evidence were green in CI #64.
+The August 28 research separately identifies a hostile-count resource asymmetry in the generic Rust parser when it is used without a selected-profile bound. That issue does not change the fixed `iot-core` selected-profile evidence above and must not be hidden by this traceability record.
+
+Existing tests cover the canonical vector and profile-bound failures including 147/149-byte inputs, encoded entry count eight, wrong context kind, wrong schema ID, and the broader shared malformed `ZKCTX` corpus.
 
 ### 4.2 Explicit symbolic authorization handoff
 
@@ -182,8 +191,8 @@ Critical-extension and channel-binding canonical schemas remain less concrete th
 The current model records both normally derived directional Finished values under one authenticated security/key-confirmation context:
 
 ```text
-k_s2c_v3(shared, kcctx)
-k_c2s_v3(shared, kcctx)
+k_s2c_v3(session_key, kcctx)
+k_c2s_v3(session_key, kcctx)
         ↓
 hmac(k_s2c, (server_finished_v3_label, kcctx))
 hmac(k_c2s, (client_finished_v3_label, kcctx))
@@ -211,6 +220,39 @@ Disallowed inference:
 - FM-06 unknown-key-share resistance follows from FM-07;
 - peer-role symmetry, downgrade resistance, authorization, resumption, rekey, or revocation follows from FM-07.
 
+### 4.4 Accepted session-key secrecy traceability
+
+The concrete AUTH-v3 path consumes the existing session key derived from the ephemeral shared point and transcript inputs before deriving purpose-separated AUTH-v3 key-confirmation/completion keys. The model now represents that boundary explicitly:
+
+```text
+modeled ephemeral DH shared point
+        ↓
+session_key_v2(shared, nonce_c, nonce_s, pid, eph_c, eph_s)
+        ↓
+k_s2c_v3 / k_c2s_v3 / k_complete_v3
+        ↓
+accepted AUTH-v3 completion
+        ↓
+SessionKeyEstablishedV3(..., key)
+        ↓
+query event(SessionKeyEstablishedV3(..., key)) && attacker(key)
+```
+
+The retained CI #68 result accepted the secrecy query under the A0 active-network model with no modeled endpoint or long-term-secret compromise.
+
+Allowed claim:
+
+> Under the draft AUTH-v3 symbolic A0 model, ProVerif 2.05 accepted the reachability/secrecy query showing that an accepted modeled `session_key_v2` value is not learned by the attacker. The symbolic constructor is traceable to the existing session-key KDF boundary consumed by AUTH v3.
+
+Disallowed inference:
+
+- computational HKDF-SHA256 or Ristretto security is formally proven;
+- Rust/C KDF implementation correctness is formally verified;
+- forward secrecy or post-compromise security is established under selective endpoint compromise;
+- RNG/DRBG quality, constant-time behavior, memory safety, secure key storage, erasure, or side-channel resistance is established;
+- application/DATA traffic-key secrecy follows automatically;
+- TD-001 independent cryptographic review is satisfied.
+
 ## 5. Replay traceability
 
 The current repository has bounded runtime replay behavior plus a separate replay-continuity state machine/model. The AUTH-v3 model still uses persistent/unbounded symbolic replay memory.
@@ -228,14 +270,13 @@ The legacy AUTH-v2 formal evidence remains part of the assurance chain. Its mate
 1. the outer `session_id` was not authenticated by the v2 key-confirmation context;
 2. the public one-byte AUTH_ACK could be synthesized by an active attacker, so client completion did not establish server acceptance of AUTH_3.
 
-Draft-v3 binds `session_id` and the wider security context into its KC context and authenticates server completion with a dedicated completion key/MAC. The retained AUTH-v3 lineage progressed from six queries, to seven with the explicit authorization-admission handoff, to the current eight-query result adding the scoped FM-07 Finished-direction reflection property. These results are regression evidence for the modeled fixes and boundaries; they are not proof that all AUTH-v3 properties are complete.
+Draft-v3 binds `session_id` and the wider security context into its KC context and authenticates server completion with a dedicated completion key/MAC. The retained AUTH-v3 lineage progressed from six queries, to seven with the explicit authorization-admission handoff, to eight with scoped FM-07 Finished-direction reflection, and now to nine with scoped FM-01 accepted session-key secrecy. These results are regression evidence for the modeled fixes and boundaries; they are not proof that all AUTH-v3 properties are complete.
 
 ## 7. Explicitly open formal properties
 
 The following remain open or not comprehensively analyzed by this record:
 
 ```text
-FM-01 explicit session/association-secret secrecy
 FM-06 unknown-key-share resistance beyond currently bound identities/context
 FM-08 downgrade resistance and production negotiation
 FM-10 full authorization-scope / authority-provenance semantics
@@ -250,16 +291,19 @@ FM-19..FM-21 privacy and observable-failure properties
 FM-22 compromise/recovery boundaries
 ```
 
-FM-07 is no longer listed as merely open: its narrow Finished-direction property is now scoped formally analyzed. That state must not be generalized into generic reflection resistance for every protocol message/state.
+FM-01 is no longer merely defined/modeled: its accepted session-key secrecy property is now scoped formally analyzed under A0 with no modeled endpoint compromise. That state must not be generalized into forward secrecy, post-compromise security, traffic-key secrecy, or implementation verification.
+
+FM-07 remains scoped formally analyzed for its narrow Finished-direction property and must not be generalized into generic reflection resistance for every protocol message/state.
 
 The authorization-admission correspondence does not upgrade FM-10. The concrete `iot-core` validator establishes syntax, fixed schema, basic semantic invariants, and exact-byte hashing; it does not prove local authority/provenance, holder/audience/role-policy lineage, revocation freshness, or operation authorization. The August 28 research specifically keeps authority/provenance namespace semantics unresolved.
 
 ## 8. Evidence-state update
 
 ```text
-DRAFT AUTH-v3 MODEL COPIES SYNCHRONIZED             YES — CI #64
-DRAFT AUTH-v3 EXACT-MODEL PROVERIF RUN              RETAINED — bda0e5f / CI #64
-AUTH-v3 RETAINED QUERY COUNT                        8
+DRAFT AUTH-v3 MODEL COPIES SYNCHRONIZED             YES — CI #68
+DRAFT AUTH-v3 EXACT-MODEL PROVERIF RUN              RETAINED — 4a7db91 / CI #68
+AUTH-v3 RETAINED QUERY COUNT                        9
+FM-01 ACCEPTED SESSION-KEY SECRECY                  IMPLEMENTATION-TRACEABLE + SCOPED FORMALLY ANALYZED UNDER A0/NO-COMPROMISE
 FM-02/FM-03 AGREEMENT                               SCOPED FORMALLY ANALYZED
 FM-04 REPLAY-RECORD ORDERING                        SCOPED FORMALLY ANALYZED UNDER PERSISTENT/UNBOUNDED MODEL STATE
 FM-05 MODELED SECURITY-CONTEXT INTEGRITY            SCOPED FORMALLY ANALYZED FOR MODELED FIELDS
@@ -285,6 +329,6 @@ DEPLOYMENT-QUALIFIED                                NOT CLAIMED
 
 ## 9. Next dependency-ready packet
 
-The long-lived AUTH-v3 traceability record is now reconciled to the retained eight-query FM-07 result. The next TD-003 packet should reconcile `docs/assurance/formal-model-contract.md` to the same evidence state before adding another theorem.
+The long-lived AUTH-v3 traceability record is now reconciled to the retained nine-query FM-01/FM-07 result. The next TD-003 packet should reconcile `docs/assurance/formal-model-contract.md` to the same exact evidence state before adding another theorem.
 
-After that reconciliation, the strongest agent-closable formal candidate is FM-01 only if the exact derived session/association secret and compromise assumptions can be named without inventing missing protocol semantics. FM-06 should advance only if a non-redundant peer-identity mismatch scenario can be specified beyond the identities already carried by the FM-02/FM-03 agreement correspondences. FM-08 and FM-10 remain blocked on TD-004 normative ownership, and critical-extension/channel-binding canonical boundaries remain explicit FM-05 assumptions until their schemas and executable validation are comparably concrete.
+After that reconciliation, FM-06 should advance only if a non-redundant peer-identity/security-context mismatch scenario can be specified beyond the identities already carried by the FM-02/FM-03 agreement correspondences. FM-08 and FM-10 remain blocked on TD-004 normative ownership. The August 28 hostile-count parser resource finding, authority/provenance namespace, authenticated fresh replay-epoch transition, and critical-extension/channel-binding canonical boundaries remain explicit open evidence/specification gaps rather than being inferred closed by this formal result.
