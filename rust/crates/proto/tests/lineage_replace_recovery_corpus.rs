@@ -2,8 +2,7 @@ use proto::lineage_replace::LineageReplaceState;
 use proto::lineage_replace_recovery::recover_lineage_replace;
 use proto::lineage_replace_recovery::LineageReplaceRecoveryFacts;
 
-const CORPUS: &str =
-    include_str!("../../../test-vectors/replay/lineage-replace-recovery-v1.txt");
+const CORPUS: &str = include_str!("../../../test-vectors/replay/lineage-replace-recovery-v1.txt");
 
 fn bit(value: &str) -> bool {
     match value {
