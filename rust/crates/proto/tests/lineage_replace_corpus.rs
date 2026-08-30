@@ -2,8 +2,7 @@ use proto::lineage_replace::{
     evaluate_lineage_replace, LineageReplaceDecision, LineageReplaceFacts, LineageReplaceTrigger,
 };
 
-const CORPUS: &str =
-    include_str!("../../../test-vectors/replay/lineage-replace-decisions-v1.txt");
+const CORPUS: &str = include_str!("../../../test-vectors/replay/lineage-replace-decisions-v1.txt");
 
 fn fixture() -> LineageReplaceFacts {
     LineageReplaceFacts {
