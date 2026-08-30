@@ -1,4 +1,5 @@
 #include "auth/lineage_replace_convergence.h"
+#include <stddef.h>
 
 lineage_replace_convergence_decision_t lineage_replace_classify_convergence(
     const lineage_replace_convergence_facts_t *facts) {
