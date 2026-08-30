@@ -1,0 +1,10 @@
+version=1
+# case=name|local_authorized|peer_authorized|same_successor|local_confirmed|peer_confirmed|decision
+case=CV-01|1|1|1|1|1|CONVERGED
+case=CV-02|1|1|1|1|0|AWAITING_CONFIRMATION
+case=CV-03|1|1|1|0|1|AWAITING_CONFIRMATION
+case=CV-04|1|1|1|0|0|AWAITING_CONFIRMATION
+case=CV-05|0|1|1|1|1|UNAUTHORIZED
+case=CV-06|1|0|1|1|1|UNAUTHORIZED
+case=CV-07|1|1|0|1|1|SUCCESSOR_CONFLICT
+case=CV-08|1|1|0|0|0|SUCCESSOR_CONFLICT
