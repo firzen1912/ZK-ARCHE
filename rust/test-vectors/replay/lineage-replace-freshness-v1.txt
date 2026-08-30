@@ -1,0 +1,14 @@
+# Canonical LINEAGE_REPLACE freshness corpus.
+# Fields:
+# case=name|recovery_fixture|anchor_available|anchor_integrity_valid|anchor_binding_valid|record_generation|trusted_high_water_generation|expected_decision|expected_state
+version=1
+case=FR-01-current-predecessor|PREDECESSOR|1|1|1|7|7|CURRENT|ACTIVE_PREDECESSOR
+case=FR-02-current-successor|SUCCESSOR|1|1|1|8|8|CURRENT|ACTIVE_SUCCESSOR_PREDECESSOR_RETIRED
+case=FR-03-rollback-predecessor|PREDECESSOR|1|1|1|6|7|ROLLBACK_DETECTED|CONTINUITY_BROKEN
+case=FR-04-rollback-successor|SUCCESSOR|1|1|1|7|8|ROLLBACK_DETECTED|CONTINUITY_BROKEN
+case=FR-05-generation-ahead|SUCCESSOR|1|1|1|9|8|GENERATION_AHEAD|CONTINUITY_BROKEN
+case=FR-06-anchor-unavailable|PREDECESSOR|0|1|1|7|7|ANCHOR_UNAVAILABLE|CONTINUITY_BROKEN
+case=FR-07-anchor-invalid|PREDECESSOR|1|0|1|7|7|ANCHOR_INVALID|CONTINUITY_BROKEN
+case=FR-08-binding-mismatch|PREDECESSOR|1|1|0|7|7|BINDING_MISMATCH|CONTINUITY_BROKEN
+case=FR-09-freshness-cannot-rescue-partial-state|PARTIAL|1|1|1|8|8|CURRENT|CONTINUITY_BROKEN
+case=FR-10-max-generation-current|SUCCESSOR|1|1|1|18446744073709551615|18446744073709551615|CURRENT|ACTIVE_SUCCESSOR_PREDECESSOR_RETIRED

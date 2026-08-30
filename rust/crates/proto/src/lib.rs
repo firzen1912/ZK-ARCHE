@@ -21,6 +21,7 @@
 //! | `lineage_replace`         | Wire-neutral lifecycle replacement decisions     |
 //! | `lineage_replace_recovery` | Storage-neutral replacement restart classifier  |
 //! | `lineage_replace_faults`  | Deterministic logical storage write-cut model    |
+//! | `lineage_replace_freshness` | Durable-generation freshness decision model    |
 //! | `wire`                    | Packet header, framing, TLV codec                |
 //! | `transport`               | Transport abstraction (UDP, TCP, ...)            |
 //! | `store`                   | Credential / registry / replay-cache traits      |
@@ -49,6 +50,7 @@ pub mod crypto;
 pub mod error;
 pub mod lineage_replace;
 pub mod lineage_replace_faults;
+pub mod lineage_replace_freshness;
 pub mod lineage_replace_recovery;
 pub mod profile;
 pub mod proto;
