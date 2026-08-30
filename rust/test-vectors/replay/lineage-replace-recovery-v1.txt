@@ -1,0 +1,14 @@
+version=1
+# case=<name>|integrity|predecessor_active|pending|successor_active|predecessor_retired|invalidations_complete|expected_state
+case=DR-01-clean-predecessor|1|1|0|0|0|0|ACTIVE_PREDECESSOR
+case=DR-02-clean-successor|1|0|0|1|1|1|ACTIVE_SUCCESSOR_PREDECESSOR_RETIRED
+case=DR-03-pending-only|1|0|1|0|0|0|CONTINUITY_BROKEN
+case=DR-04-predecessor-plus-pending|1|1|1|0|0|0|CONTINUITY_BROKEN
+case=DR-05-successor-before-retirement|1|0|0|1|0|1|CONTINUITY_BROKEN
+case=DR-06-retired-without-successor|1|0|0|0|1|1|CONTINUITY_BROKEN
+case=DR-07-successor-with-incomplete-invalidations|1|0|0|1|1|0|CONTINUITY_BROKEN
+case=DR-08-both-active|1|1|0|1|0|0|CONTINUITY_BROKEN
+case=DR-09-corrupt-record|0|1|0|0|0|0|CONTINUITY_BROKEN
+case=DR-10-empty-observation|1|0|0|0|0|0|CONTINUITY_BROKEN
+case=DR-11-pending-successor-mix|1|0|1|1|1|1|CONTINUITY_BROKEN
+case=DR-12-predecessor-with-invalidations|1|1|0|0|0|1|CONTINUITY_BROKEN

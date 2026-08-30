@@ -19,6 +19,7 @@
 //! | `auth_v3_iot_core_authz`  | Draft `iot-core` authorization-context schema    |
 //! | `replay_continuity`       | Draft fail-closed replay restart state           |
 //! | `lineage_replace`         | Wire-neutral lifecycle replacement decisions     |
+//! | `lineage_replace_recovery` | Storage-neutral replacement restart classifier  |
 //! | `wire`                    | Packet header, framing, TLV codec                |
 //! | `transport`               | Transport abstraction (UDP, TCP, ...)            |
 //! | `store`                   | Credential / registry / replay-cache traits      |
@@ -46,6 +47,7 @@ pub mod caps;
 pub mod crypto;
 pub mod error;
 pub mod lineage_replace;
+pub mod lineage_replace_recovery;
 pub mod profile;
 pub mod proto;
 pub mod replay_continuity;
