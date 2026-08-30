@@ -1,10 +1,11 @@
-//! Wire-neutral `LINEAGE_REPLACE` decision predicate and commit planner.
+//! Wire-neutral `LINEAGE_REPLACE` decision predicate, commit planner, and logical state machine.
 //!
 //! This module classifies normalized lifecycle replacement facts and, only
-//! after an accepted decision, derives the minimum atomic commit plan. It does
-//! not parse packets, mutate trust, allocate registry values, perform durable
-//! writes, or activate a successor lineage. Normal AUTH must never use it as
-//! an implicit trust mutation path.
+//! after an accepted decision, derives the minimum atomic commit plan. The
+//! logical state machine can stage that plan, commit it logically, or fail
+//! closed on interruption. It does not parse packets, mutate trust, allocate
+//! registry values, perform durable writes, or activate a production successor
+//! lineage. Normal AUTH must never use it as an implicit trust mutation path.
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LineageReplaceTrigger {
@@ -61,6 +62,21 @@ pub struct LineageReplacePlan {
     pub invalidate_replay_state: bool,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LineageReplaceState {
+    ActivePredecessor,
+    ReplacementPending,
+    ActiveSuccessorPredecessorRetired,
+    ContinuityBroken,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LineageReplaceEvent {
+    Begin,
+    Commit,
+    Interrupt,
+}
+
 pub fn evaluate_lineage_replace(facts: &LineageReplaceFacts) -> LineageReplaceDecision {
     if facts.trigger != LineageReplaceTrigger::Lifecycle || !facts.authority_valid {
         return LineageReplaceDecision::RejectAuthority;
@@ -112,4 +128,53 @@ pub fn plan_lineage_replace(decision: LineageReplaceDecision) -> Option<LineageR
         invalidate_channel_binding: true,
         invalidate_replay_state: true,
     })
+}
+
+fn lineage_replace_plan_complete(plan: &LineageReplacePlan) -> bool {
+    plan.retire_predecessor
+        && plan.activate_successor
+        && plan.invalidate_session_keys
+        && plan.invalidate_resumption
+        && plan.invalidate_authorization_cache
+        && plan.invalidate_attribution_cache
+        && plan.invalidate_channel_binding
+        && plan.invalidate_replay_state
+}
+
+/// Advance the storage-neutral replacement state machine.
+///
+/// A complete accepted plan is required both to stage and to logically commit
+/// replacement. `Interrupt` is meaningful only while replacement is pending and
+/// moves the machine to `ContinuityBroken`. This layer intentionally has no
+/// recovery transition out of `ContinuityBroken`; recovery requires separately
+/// specified durable evidence and authority.
+pub fn advance_lineage_replace(
+    state: LineageReplaceState,
+    event: LineageReplaceEvent,
+    plan: Option<&LineageReplacePlan>,
+) -> (LineageReplaceState, bool) {
+    let plan_complete = plan.is_some_and(lineage_replace_plan_complete);
+
+    if state == LineageReplaceState::ActivePredecessor
+        && event == LineageReplaceEvent::Begin
+        && plan_complete
+    {
+        return (LineageReplaceState::ReplacementPending, true);
+    }
+
+    if state == LineageReplaceState::ReplacementPending
+        && event == LineageReplaceEvent::Commit
+        && plan_complete
+    {
+        return (
+            LineageReplaceState::ActiveSuccessorPredecessorRetired,
+            true,
+        );
+    }
+
+    if state == LineageReplaceState::ReplacementPending && event == LineageReplaceEvent::Interrupt {
+        return (LineageReplaceState::ContinuityBroken, true);
+    }
+
+    (state, false)
 }

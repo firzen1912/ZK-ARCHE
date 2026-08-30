@@ -6,6 +6,7 @@
 
 #define VECTOR_PATH "../rust/test-vectors/replay/lineage-replace-decisions-v1.txt"
 #define PLAN_VECTOR_PATH "../rust/test-vectors/replay/lineage-replace-plans-v1.txt"
+#define STATE_VECTOR_PATH "../rust/test-vectors/replay/lineage-replace-states-v1.txt"
 
 static lineage_replace_facts_t fixture(void) {
     lineage_replace_facts_t facts = {
@@ -28,6 +29,39 @@ static lineage_replace_decision_t expected_decision(const char *name) {
     if (strcmp(name, "REJECT_STORAGE") == 0) return LINEAGE_REPLACE_REJECT_STORAGE;
     assert(0 && "unknown lineage-replace decision");
     return LINEAGE_REPLACE_REJECT_STORAGE;
+}
+
+static lineage_replace_state_t expected_state(const char *name) {
+    if (strcmp(name, "ACTIVE_PREDECESSOR") == 0)
+        return LINEAGE_REPLACE_STATE_ACTIVE_PREDECESSOR;
+    if (strcmp(name, "REPLACEMENT_PENDING") == 0)
+        return LINEAGE_REPLACE_STATE_REPLACEMENT_PENDING;
+    if (strcmp(name, "ACTIVE_SUCCESSOR_PREDECESSOR_RETIRED") == 0)
+        return LINEAGE_REPLACE_STATE_ACTIVE_SUCCESSOR_PREDECESSOR_RETIRED;
+    if (strcmp(name, "CONTINUITY_BROKEN") == 0)
+        return LINEAGE_REPLACE_STATE_CONTINUITY_BROKEN;
+    assert(0 && "unknown lineage-replace state");
+    return LINEAGE_REPLACE_STATE_CONTINUITY_BROKEN;
+}
+
+static lineage_replace_event_t expected_event(const char *name) {
+    if (strcmp(name, "BEGIN") == 0) return LINEAGE_REPLACE_EVENT_BEGIN;
+    if (strcmp(name, "COMMIT") == 0) return LINEAGE_REPLACE_EVENT_COMMIT;
+    if (strcmp(name, "INTERRUPT") == 0) return LINEAGE_REPLACE_EVENT_INTERRUPT;
+    assert(0 && "unknown lineage-replace event");
+    return LINEAGE_REPLACE_EVENT_INTERRUPT;
+}
+
+static const lineage_replace_plan_t *plan_fixture(const char *marker, lineage_replace_plan_t *plan) {
+    if (strcmp(marker, "none") == 0) return NULL;
+    assert(lineage_replace_plan(LINEAGE_REPLACE_ACCEPT_SUCCESSOR, plan));
+    if (strcmp(marker, "full") == 0) return plan;
+    if (strcmp(marker, "partial") == 0) {
+        plan->invalidate_replay_state = false;
+        return plan;
+    }
+    assert(0 && "unknown lineage-replace plan marker");
+    return NULL;
 }
 
 static void apply_mutation(lineage_replace_facts_t *facts, const char *mutation) {
@@ -135,9 +169,58 @@ static void test_plan_corpus(void) {
     assert(!lineage_replace_plan(LINEAGE_REPLACE_ACCEPT_SUCCESSOR, NULL));
 }
 
+static void test_state_corpus(void) {
+    FILE *fp = fopen(STATE_VECTOR_PATH, "r");
+    char line[256];
+    unsigned case_count = 0u;
+    int saw_version = 0;
+    assert(fp != NULL);
+
+    while (fgets(line, sizeof(line), fp) != NULL) {
+        char *name, *initial_name, *event_name, *plan_marker, *should_advance, *next_name, *extra;
+        lineage_replace_plan_t plan;
+        lineage_replace_state_t state;
+        const lineage_replace_plan_t *plan_ptr;
+        bool advanced;
+        bool expected_advanced;
+
+        line[strcspn(line, "\r\n")] = '\0';
+        if (strcmp(line, "version=1") == 0) {
+            saw_version = 1;
+            continue;
+        }
+        if (strncmp(line, "case=", 5u) != 0) continue;
+        name = strtok(line + 5u, "|");
+        initial_name = strtok(NULL, "|");
+        event_name = strtok(NULL, "|");
+        plan_marker = strtok(NULL, "|");
+        should_advance = strtok(NULL, "|");
+        next_name = strtok(NULL, "|");
+        extra = strtok(NULL, "|");
+        assert(name != NULL && initial_name != NULL && event_name != NULL && plan_marker != NULL);
+        assert(should_advance != NULL && next_name != NULL && extra == NULL);
+
+        state = expected_state(initial_name);
+        plan_ptr = plan_fixture(plan_marker, &plan);
+        advanced = lineage_replace_advance(&state, expected_event(event_name), plan_ptr);
+        assert(strcmp(should_advance, "0") == 0 || strcmp(should_advance, "1") == 0);
+        expected_advanced = strcmp(should_advance, "1") == 0;
+        assert(advanced == expected_advanced);
+        assert(state == expected_state(next_name));
+        case_count += 1u;
+    }
+
+    fclose(fp);
+    assert(saw_version == 1);
+    assert(case_count == 14u);
+
+    assert(!lineage_replace_advance(NULL, LINEAGE_REPLACE_EVENT_BEGIN, NULL));
+}
+
 int main(void) {
     test_decision_corpus();
     test_plan_corpus();
+    test_state_corpus();
     puts("lineage-replace shared corpora: ok");
     return 0;
 }

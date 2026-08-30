@@ -48,7 +48,22 @@ typedef struct {
     bool invalidate_replay_state;
 } lineage_replace_plan_t;
 
+typedef enum {
+    LINEAGE_REPLACE_STATE_ACTIVE_PREDECESSOR = 0,
+    LINEAGE_REPLACE_STATE_REPLACEMENT_PENDING,
+    LINEAGE_REPLACE_STATE_ACTIVE_SUCCESSOR_PREDECESSOR_RETIRED,
+    LINEAGE_REPLACE_STATE_CONTINUITY_BROKEN
+} lineage_replace_state_t;
+
+typedef enum {
+    LINEAGE_REPLACE_EVENT_BEGIN = 0,
+    LINEAGE_REPLACE_EVENT_COMMIT,
+    LINEAGE_REPLACE_EVENT_INTERRUPT
+} lineage_replace_event_t;
+
 lineage_replace_decision_t lineage_replace_evaluate(const lineage_replace_facts_t *facts);
 bool lineage_replace_plan(lineage_replace_decision_t decision, lineage_replace_plan_t *out_plan);
+bool lineage_replace_advance(lineage_replace_state_t *state, lineage_replace_event_t event,
+                             const lineage_replace_plan_t *plan);
 
 #endif
