@@ -42,7 +42,10 @@ fn canonical_write_cut_corpus_is_fail_closed() {
         let name = fields.next().expect("case name");
         let expected = fields.next().expect("expected state");
         assert!(fields.next().is_none(), "malformed write-cut corpus line");
-        assert_eq!(recover_lineage_replace(&facts_at_write_cut(cut(name))), state(expected));
+        assert_eq!(
+            recover_lineage_replace(&facts_at_write_cut(cut(name))),
+            state(expected)
+        );
         count += 1;
     }
 
