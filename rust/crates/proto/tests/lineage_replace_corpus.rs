@@ -169,7 +169,10 @@ fn shared_lineage_replace_state_corpus_is_enforced() {
     assert!(STATE_CORPUS.lines().any(|line| line == "version=1"));
     let mut case_count = 0usize;
 
-    for line in STATE_CORPUS.lines().filter(|line| line.starts_with("case=")) {
+    for line in STATE_CORPUS
+        .lines()
+        .filter(|line| line.starts_with("case="))
+    {
         let body = line.strip_prefix("case=").unwrap();
         let mut fields = body.split('|');
         let name = fields.next().unwrap();

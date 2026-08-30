@@ -166,15 +166,10 @@ pub fn advance_lineage_replace(
         && event == LineageReplaceEvent::Commit
         && plan_complete
     {
-        return (
-            LineageReplaceState::ActiveSuccessorPredecessorRetired,
-            true,
-        );
+        return (LineageReplaceState::ActiveSuccessorPredecessorRetired, true);
     }
 
-    if state == LineageReplaceState::ReplacementPending
-        && event == LineageReplaceEvent::Interrupt
-    {
+    if state == LineageReplaceState::ReplacementPending && event == LineageReplaceEvent::Interrupt {
         return (LineageReplaceState::ContinuityBroken, true);
     }
 
