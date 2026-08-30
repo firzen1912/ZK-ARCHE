@@ -1,8 +1,10 @@
 use proto::lineage_replace::{
-    evaluate_lineage_replace, LineageReplaceDecision, LineageReplaceFacts, LineageReplaceTrigger,
+    evaluate_lineage_replace, plan_lineage_replace, LineageReplaceDecision, LineageReplaceFacts,
+    LineageReplaceTrigger,
 };
 
 const CORPUS: &str = include_str!("../../../test-vectors/replay/lineage-replace-decisions-v1.txt");
+const PLAN_CORPUS: &str = include_str!("../../../test-vectors/replay/lineage-replace-plans-v1.txt");
 
 fn fixture() -> LineageReplaceFacts {
     LineageReplaceFacts {
@@ -82,4 +84,38 @@ fn shared_lineage_replace_decision_corpus_is_enforced() {
     }
 
     assert_eq!(case_count, 20);
+}
+
+#[test]
+fn shared_lineage_replace_plan_corpus_is_enforced() {
+    assert!(PLAN_CORPUS.lines().any(|line| line == "version=1"));
+    let mut case_count = 0usize;
+
+    for line in PLAN_CORPUS.lines().filter(|line| line.starts_with("case=")) {
+        let body = line.strip_prefix("case=").unwrap();
+        let mut fields = body.split('|');
+        let decision_name = fields.next().unwrap();
+        let should_plan = fields.next().unwrap();
+        assert!(fields.next().is_none(), "malformed plan corpus line: {line}");
+
+        let plan = plan_lineage_replace(expected(decision_name));
+        match should_plan {
+            "1" => {
+                let plan = plan.expect("accepted decision must produce a commit plan");
+                assert!(plan.retire_predecessor);
+                assert!(plan.activate_successor);
+                assert!(plan.invalidate_session_keys);
+                assert!(plan.invalidate_resumption);
+                assert!(plan.invalidate_authorization_cache);
+                assert!(plan.invalidate_attribution_cache);
+                assert!(plan.invalidate_channel_binding);
+                assert!(plan.invalidate_replay_state);
+            }
+            "0" => assert!(plan.is_none(), "rejected decision produced a commit plan"),
+            other => panic!("invalid should-plan marker: {other}"),
+        }
+        case_count += 1;
+    }
+
+    assert_eq!(case_count, 10);
 }

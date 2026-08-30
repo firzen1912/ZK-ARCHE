@@ -16,3 +16,13 @@ lineage_replace_decision_t lineage_replace_evaluate(const lineage_replace_facts_
     if (!facts->storage_safe) return LINEAGE_REPLACE_REJECT_STORAGE;
     return LINEAGE_REPLACE_ACCEPT_SUCCESSOR;
 }
+
+bool lineage_replace_plan(lineage_replace_decision_t decision, lineage_replace_plan_t *out_plan) {
+    if (out_plan == NULL) return false;
+
+    *out_plan = (lineage_replace_plan_t){false, false, false, false, false, false, false, false};
+    if (decision != LINEAGE_REPLACE_ACCEPT_SUCCESSOR) return false;
+
+    *out_plan = (lineage_replace_plan_t){true, true, true, true, true, true, true, true};
+    return true;
+}

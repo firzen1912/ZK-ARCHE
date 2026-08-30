@@ -1,9 +1,10 @@
-//! Wire-neutral `LINEAGE_REPLACE` decision predicate.
+//! Wire-neutral `LINEAGE_REPLACE` decision predicate and commit planner.
 //!
-//! This module classifies normalized lifecycle replacement facts. It does not
-//! parse packets, mutate trust, allocate registry values, or activate a
-//! successor lineage. Normal AUTH must never use it as an implicit trust
-//! mutation path.
+//! This module classifies normalized lifecycle replacement facts and, only
+//! after an accepted decision, derives the minimum atomic commit plan. It does
+//! not parse packets, mutate trust, allocate registry values, perform durable
+//! writes, or activate a successor lineage. Normal AUTH must never use it as
+//! an implicit trust mutation path.
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LineageReplaceTrigger {
@@ -42,6 +43,24 @@ pub struct LineageReplaceFacts {
     pub dependent_state_safe: bool,
 }
 
+/// Pure logical plan for the eventual atomic predecessor -> successor commit.
+///
+/// Every dependent-state bit is intentionally invalidating rather than
+/// revalidating. Revalidation may be introduced only by a separately specified
+/// and tested lifecycle rule; the constrained floor fails closed by dropping
+/// predecessor-bound state.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LineageReplacePlan {
+    pub retire_predecessor: bool,
+    pub activate_successor: bool,
+    pub invalidate_session_keys: bool,
+    pub invalidate_resumption: bool,
+    pub invalidate_authorization_cache: bool,
+    pub invalidate_attribution_cache: bool,
+    pub invalidate_channel_binding: bool,
+    pub invalidate_replay_state: bool,
+}
+
 pub fn evaluate_lineage_replace(facts: &LineageReplaceFacts) -> LineageReplaceDecision {
     if facts.trigger != LineageReplaceTrigger::Lifecycle || !facts.authority_valid {
         return LineageReplaceDecision::RejectAuthority;
@@ -71,4 +90,26 @@ pub fn evaluate_lineage_replace(facts: &LineageReplaceFacts) -> LineageReplaceDe
         return LineageReplaceDecision::RejectStorage;
     }
     LineageReplaceDecision::AcceptSuccessor
+}
+
+/// Derive a mutation-free commit plan only for an already accepted decision.
+///
+/// Rejected decisions cannot produce a plan. This makes the planner unsuitable
+/// as an alternate authorization path and keeps trust mutation downstream of
+/// the explicit lifecycle decision gate.
+pub fn plan_lineage_replace(decision: LineageReplaceDecision) -> Option<LineageReplacePlan> {
+    if decision != LineageReplaceDecision::AcceptSuccessor {
+        return None;
+    }
+
+    Some(LineageReplacePlan {
+        retire_predecessor: true,
+        activate_successor: true,
+        invalidate_session_keys: true,
+        invalidate_resumption: true,
+        invalidate_authorization_cache: true,
+        invalidate_attribution_cache: true,
+        invalidate_channel_binding: true,
+        invalidate_replay_state: true,
+    })
 }

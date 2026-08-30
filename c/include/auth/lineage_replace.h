@@ -37,6 +37,18 @@ typedef struct {
     bool dependent_state_safe;
 } lineage_replace_facts_t;
 
+typedef struct {
+    bool retire_predecessor;
+    bool activate_successor;
+    bool invalidate_session_keys;
+    bool invalidate_resumption;
+    bool invalidate_authorization_cache;
+    bool invalidate_attribution_cache;
+    bool invalidate_channel_binding;
+    bool invalidate_replay_state;
+} lineage_replace_plan_t;
+
 lineage_replace_decision_t lineage_replace_evaluate(const lineage_replace_facts_t *facts);
+bool lineage_replace_plan(lineage_replace_decision_t decision, lineage_replace_plan_t *out_plan);
 
 #endif

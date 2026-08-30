@@ -5,6 +5,7 @@
 #include <string.h>
 
 #define VECTOR_PATH "../rust/test-vectors/replay/lineage-replace-decisions-v1.txt"
+#define PLAN_VECTOR_PATH "../rust/test-vectors/replay/lineage-replace-plans-v1.txt"
 
 static lineage_replace_facts_t fixture(void) {
     lineage_replace_facts_t facts = {
@@ -47,7 +48,7 @@ static void apply_mutation(lineage_replace_facts_t *facts, const char *mutation)
     else assert(0 && "unknown lineage-replace mutation");
 }
 
-int main(void) {
+static void test_decision_corpus(void) {
     FILE *fp = fopen(VECTOR_PATH, "r");
     char line[256];
     unsigned case_count = 0u;
@@ -78,6 +79,65 @@ int main(void) {
     fclose(fp);
     assert(saw_version == 1);
     assert(case_count == 20u);
-    puts("lineage-replace shared corpus: ok");
+}
+
+static void test_plan_corpus(void) {
+    FILE *fp = fopen(PLAN_VECTOR_PATH, "r");
+    char line[256];
+    unsigned case_count = 0u;
+    int saw_version = 0;
+    assert(fp != NULL);
+
+    while (fgets(line, sizeof(line), fp) != NULL) {
+        char *decision_name, *should_plan, *extra;
+        lineage_replace_plan_t plan;
+        bool planned;
+        line[strcspn(line, "\r\n")] = '\0';
+        if (strcmp(line, "version=1") == 0) {
+            saw_version = 1;
+            continue;
+        }
+        if (strncmp(line, "case=", 5u) != 0) continue;
+        decision_name = strtok(line + 5u, "|");
+        should_plan = strtok(NULL, "|");
+        extra = strtok(NULL, "|");
+        assert(decision_name != NULL && should_plan != NULL && extra == NULL);
+
+        planned = lineage_replace_plan(expected_decision(decision_name), &plan);
+        if (strcmp(should_plan, "1") == 0) {
+            assert(planned);
+            assert(plan.retire_predecessor);
+            assert(plan.activate_successor);
+            assert(plan.invalidate_session_keys);
+            assert(plan.invalidate_resumption);
+            assert(plan.invalidate_authorization_cache);
+            assert(plan.invalidate_attribution_cache);
+            assert(plan.invalidate_channel_binding);
+            assert(plan.invalidate_replay_state);
+        } else {
+            assert(strcmp(should_plan, "0") == 0);
+            assert(!planned);
+            assert(!plan.retire_predecessor);
+            assert(!plan.activate_successor);
+            assert(!plan.invalidate_session_keys);
+            assert(!plan.invalidate_resumption);
+            assert(!plan.invalidate_authorization_cache);
+            assert(!plan.invalidate_attribution_cache);
+            assert(!plan.invalidate_channel_binding);
+            assert(!plan.invalidate_replay_state);
+        }
+        case_count += 1u;
+    }
+
+    fclose(fp);
+    assert(saw_version == 1);
+    assert(case_count == 10u);
+    assert(!lineage_replace_plan(LINEAGE_REPLACE_ACCEPT_SUCCESSOR, NULL));
+}
+
+int main(void) {
+    test_decision_corpus();
+    test_plan_corpus();
+    puts("lineage-replace shared corpora: ok");
     return 0;
 }
