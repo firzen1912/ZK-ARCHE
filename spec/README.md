@@ -21,6 +21,8 @@ Research or roadmap text does not override this package. If current implementati
 - `zk-arche-protocol.md` — protocol overview, message flows, state machines, cryptographic computations.
 - `registries.md` — version, suite, profile, extension, alert, and transport-binding registries.
 - `iot-profiles.md` — constrained and edge profile requirements.
+- `replay-continuity.md` — fail-closed replay state across restart/state loss.
+- `replay-epoch-recovery.md` — authenticated lineage-replacement requirements for any future fresh replay epoch; implementation remains blocked.
 - `security-considerations.md` — security threat analysis and assurance gates.
 - `privacy-considerations.md` — identity, role, metadata, and credential privacy.
 - `test-vectors.md` — canonical vectors, negative vectors, and regeneration procedure.
