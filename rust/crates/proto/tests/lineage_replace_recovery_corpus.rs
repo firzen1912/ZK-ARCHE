@@ -42,7 +42,11 @@ fn shared_lineage_replace_recovery_corpus_is_enforced() {
         };
         let expected = expected_state(fields.next().unwrap());
         assert!(fields.next().is_none(), "malformed recovery corpus: {line}");
-        assert_eq!(recover_lineage_replace(&facts), expected, "recovery case {name}");
+        assert_eq!(
+            recover_lineage_replace(&facts),
+            expected,
+            "recovery case {name}"
+        );
         case_count += 1;
     }
 
