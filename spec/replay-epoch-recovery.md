@@ -10,7 +10,7 @@ A fresh replay epoch exists to recover safely from `CONTINUITY_BROKEN` without t
 
 Replay-epoch recovery is a **trust/lifecycle transition**, not normal AUTH. The owning operation MUST be an explicit reviewed rekey, re-registration, reprovisioning, or equivalent recovery flow that is authorized to replace security lineage. Normal AUTH remains NO-LEARNING and MUST NOT create a replay epoch merely because authentication succeeds.
 
-This document defines the minimum recovery contract shared by future owners such as zk213 and the replay lifecycle. Exact wire grammar, message identifiers, transcript encoding, registry values, and executable transition APIs remain future TD-004/implementation work.
+This document defines the minimum recovery contract shared by future owners such as zk213 and the replay lifecycle. The wire-neutral semantic owner and canonical transition tuple are defined in `replay-epoch-transition-owner.md`. Exact wire grammar, message identifiers, transcript encoding, registry values, and executable Rust/C transition APIs remain future TD-004/implementation work.
 
 ## 2. Terms
 
@@ -121,7 +121,9 @@ RE-11 predecessor-bound resumption state is invalidated or explicitly revalidate
 RE-12 Rust/C agree on canonical transition inputs and accept/reject outcomes
 ```
 
-A profile contract MAY identify this recovery policy as resolved only after its exact transition owner, canonical authenticated inputs, and decision evidence are registered. `iot-core` remains non-selectable while those executable surfaces are absent.
+`replay-epoch-transition-owner.md` extends this corpus with concurrency, lineage-generation, successor-binding, downgrade, audience/domain, freshness, and partial-write cases while preserving the same security boundary.
+
+A profile contract MAY identify this recovery policy as resolved only after its exact wire/runtime transition, canonical authenticated inputs, and decision evidence are registered and implemented. `iot-core` remains non-selectable while those executable surfaces are absent.
 
 ## 9. Formal-analysis boundary
 
@@ -137,11 +139,13 @@ At the current repository state:
 restart/state-loss fail-closed behavior      IMPLEMENTED + TESTED in Rust/C
 replay continuity symbolic model             SCOPED FORMALLY ANALYZED
 authenticated recovery requirements          SPECIFIED in this document
-exact recovery wire/state owner              NOT IMPLEMENTED
+semantic recovery state owner                SPECIFIED in replay-epoch-transition-owner.md
+canonical semantic transition inputs         SPECIFIED in replay-epoch-transition-owner.md
+wire grammar / registry allocation           NOT PRESENT
 successor epoch transition in Rust/C          NOT IMPLEMENTED
-shared RE-01..RE-12 executable corpus         NOT PRESENT
+shared RE-01..RE-20 executable corpus         NOT PRESENT
 iot-core replay_epoch_rule                    remains unresolved
-selectable                                     0
+selectable                                    0
 ```
 
 Therefore this document advances TD-004/lifecycle specification precision but does not close TD-003, TD-004, zk213, profile promotion, Common Contract conformance, or deployment qualification.

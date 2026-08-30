@@ -22,7 +22,8 @@ Research or roadmap text does not override this package. If current implementati
 - `registries.md` — version, suite, profile, extension, alert, and transport-binding registries.
 - `iot-profiles.md` — constrained and edge profile requirements.
 - `replay-continuity.md` — fail-closed replay state across restart/state loss.
-- `replay-epoch-recovery.md` — authenticated lineage-replacement requirements for any future fresh replay epoch; implementation remains blocked.
+- `replay-epoch-recovery.md` — authenticated lineage-replacement security requirements for any future fresh replay epoch; implementation remains blocked.
+- `replay-epoch-transition-owner.md` — wire-neutral zk213 lifecycle state owner, canonical predecessor→successor transition inputs, decision classes, and atomic replacement semantics; Rust/C implementation remains absent.
 - `security-considerations.md` — security threat analysis and assurance gates.
 - `privacy-considerations.md` — identity, role, metadata, and credential privacy.
 - `test-vectors.md` — canonical vectors, negative vectors, and regeneration procedure.
