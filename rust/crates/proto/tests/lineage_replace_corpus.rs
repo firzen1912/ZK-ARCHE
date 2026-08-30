@@ -10,7 +10,8 @@ use proto::lineage_replace::LineageReplaceTrigger;
 
 const CORPUS: &str = include_str!("../../../test-vectors/replay/lineage-replace-decisions-v1.txt");
 const PLAN_CORPUS: &str = include_str!("../../../test-vectors/replay/lineage-replace-plans-v1.txt");
-const STATE_CORPUS: &str = include_str!("../../../test-vectors/replay/lineage-replace-states-v1.txt");
+const STATE_CORPUS: &str =
+    include_str!("../../../test-vectors/replay/lineage-replace-states-v1.txt");
 
 fn fixture() -> LineageReplaceFacts {
     LineageReplaceFacts {

@@ -172,7 +172,9 @@ pub fn advance_lineage_replace(
         );
     }
 
-    if state == LineageReplaceState::ReplacementPending && event == LineageReplaceEvent::Interrupt {
+    if state == LineageReplaceState::ReplacementPending
+        && event == LineageReplaceEvent::Interrupt
+    {
         return (LineageReplaceState::ContinuityBroken, true);
     }
 
