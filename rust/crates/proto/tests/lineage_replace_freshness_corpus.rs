@@ -87,7 +87,10 @@ fn shared_lineage_replace_freshness_corpus_is_enforced() {
         };
         let decision = expected_decision(fields.next().unwrap());
         let state = expected_state(fields.next().unwrap());
-        assert!(fields.next().is_none(), "malformed freshness corpus: {line}");
+        assert!(
+            fields.next().is_none(),
+            "malformed freshness corpus: {line}"
+        );
         assert_eq!(
             classify_lineage_replace_freshness(&freshness),
             decision,

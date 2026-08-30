@@ -1,0 +1,274 @@
+name: ZK-ARCHE CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  rust:
+    name: Rust lane — fmt, check, test, clippy, audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install Rust toolchain
+        working-directory: rust
+        run: |
+          rustup show
+          rustup component add rustfmt clippy
+
+      - name: Cache cargo build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+
+      - name: Install Rust security tooling
+        run: cargo install cargo-audit --locked
+
+      - name: Run Rust CI
+        run: bash ./scripts/ci-rust.sh
+
+      - name: Upload Rust evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-ci-log
+          path: rust/evidence/rust-ci.log
+          if-no-files-found: ignore
+
+  c:
+    name: C lane — build, tests, static analysis, sanitizers
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CC: gcc
+      REQUIRE_SANITIZERS: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install C build and analysis dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential clang cppcheck pkg-config libsodium-dev
+
+      - name: Run C CI
+        run: bash ./scripts/ci-c.sh
+
+      - name: Upload C evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: c-ci-log
+          path: c/evidence/c-ci.log
+          if-no-files-found: ignore
+
+  formal:
+    name: Formal lane — legacy v2 + AUTH v3 + replay continuity gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install ProVerif 2.05
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y opam graphviz pkg-config libgtk2.0-dev
+          opam init --disable-sandboxing -y
+          opam update
+          opam install -y proverif.2.05
+          echo "$HOME/.opam/default/bin" >> "$GITHUB_PATH"
+
+      - name: Check synchronized formal models
+        run: bash ./scripts/sync-formal-models.sh --check
+
+      - name: Run legacy v2 model as retained expected-negative regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p evidence/formal
+          {
+            echo "== ZK-ARCHE ProVerif legacy AUTH v2 regression model =="
+            date -u +"timestamp_utc=%Y-%m-%dT%H:%M:%SZ"
+            echo "commit=$(git rev-parse HEAD)"
+            echo "== installed proverif package =="
+            opam list --installed proverif
+            echo "== synchronized legacy model hashes =="
+            sha256sum \
+              rust/models/proverif/zk_arche_auth_skeleton.pv \
+              c/models/proverif/zk_arche_auth_skeleton.pv
+            echo "== proverif query results =="
+            proverif rust/models/proverif/zk_arche_auth_skeleton.pv
+          } 2>&1 | tee evidence/formal/proverif-auth-v2-legacy.log
+
+          result_count="$(grep -c '^RESULT ' evidence/formal/proverif-auth-v2-legacy.log || true)"
+          if [ "$result_count" -eq 0 ]; then
+            echo "ERROR: legacy v2 ProVerif model produced no RESULT lines." >&2
+            exit 1
+          fi
+
+          echo "Retained $result_count legacy v2 RESULT lines. False results are expected evidence for ADR 0001 and do not gate the draft v3 model."
+
+      - name: Run draft AUTH v3 model and fail closed
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "== ZK-ARCHE ProVerif draft AUTH v3 model =="
+            date -u +"timestamp_utc=%Y-%m-%dT%H:%M:%SZ"
+            echo "commit=$(git rev-parse HEAD)"
+            echo "== installed proverif package =="
+            opam list --installed proverif
+            echo "== synchronized draft v3 model hashes =="
+            sha256sum \
+              rust/models/proverif/zk_arche_auth_v3_draft.pv \
+              c/models/proverif/zk_arche_auth_v3_draft.pv
+            echo "== proverif query results =="
+            proverif rust/models/proverif/zk_arche_auth_v3_draft.pv
+          } 2>&1 | tee evidence/formal/proverif-auth-v3-draft.log
+
+          result_count="$(grep -c '^RESULT ' evidence/formal/proverif-auth-v3-draft.log || true)"
+          if [ "$result_count" -eq 0 ]; then
+            echo "ERROR: draft AUTH v3 ProVerif model produced no RESULT lines; refusing a formal-success claim." >&2
+            exit 1
+          fi
+
+          if grep -Eq '^RESULT .* (is false\.|cannot be proved\.)' evidence/formal/proverif-auth-v3-draft.log; then
+            echo "ERROR: one or more draft AUTH v3 ProVerif queries are false or unproved; retain the artifact and fail closed." >&2
+            exit 1
+          fi
+
+          echo "Validated $result_count draft AUTH v3 ProVerif RESULT lines with no false/unproved query result."
+
+      - name: Run replay continuity model and fail closed
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "== ZK-ARCHE ProVerif replay continuity model =="
+            date -u +"timestamp_utc=%Y-%m-%dT%H:%M:%SZ"
+            echo "commit=$(git rev-parse HEAD)"
+            echo "== installed proverif package =="
+            opam list --installed proverif
+            echo "== synchronized replay continuity model hashes =="
+            sha256sum \
+              rust/models/proverif/zk_arche_replay_continuity_draft.pv \
+              c/models/proverif/zk_arche_replay_continuity_draft.pv
+            echo "== proverif query results =="
+            proverif rust/models/proverif/zk_arche_replay_continuity_draft.pv
+          } 2>&1 | tee evidence/formal/proverif-replay-continuity-draft.log
+
+          result_count="$(grep -c '^RESULT ' evidence/formal/proverif-replay-continuity-draft.log || true)"
+          if [ "$result_count" -eq 0 ]; then
+            echo "ERROR: replay continuity ProVerif model produced no RESULT lines; refusing a formal-success claim." >&2
+            exit 1
+          fi
+
+          if grep -Eq '^RESULT .* (is false\.|cannot be proved\.)' evidence/formal/proverif-replay-continuity-draft.log; then
+            echo "ERROR: one or more replay continuity ProVerif queries are false or unproved; retain the artifact and fail closed." >&2
+            exit 1
+          fi
+
+          echo "Validated $result_count replay continuity ProVerif RESULT lines with no false/unproved query result."
+
+      - name: Upload formal evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: formal-proverif-evidence
+          path: |
+            evidence/formal/proverif-auth-v2-legacy.log
+            evidence/formal/proverif-auth-v3-draft.log
+            evidence/formal/proverif-replay-continuity-draft.log
+          if-no-files-found: error
+
+  release-qualification:
+    name: Release qualification — Rust/C interop & security gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    needs: [rust, c]
+    if: always()
+    env:
+      CC: gcc
+      REQUIRE_SANITIZERS: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install Rust toolchain
+        working-directory: rust
+        run: |
+          rustup show
+          rustup component add rustfmt clippy
+
+      - name: Cache cargo build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+
+      - name: Install Rust security tooling
+        run: cargo install cargo-audit --locked
+
+      - name: Install C build and analysis dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential clang cppcheck pkg-config libsodium-dev
+
+      - name: Run release qualification
+        run: bash ./scripts/ci-release-qualification.sh
+
+      - name: Upload release qualification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-qualification-evidence
+          path: |
+            evidence/release-qualification/**
+            rust/evidence/**
+            c/evidence/**
+          if-no-files-found: ignore
+
+  ci-complete:
+    name: CI complete — required-lane gate
+    runs-on: ubuntu-latest
+    needs: [rust, c, formal, release-qualification]
+    if: always()
+    steps:
+      - name: Check required jobs
+        run: |
+          if [ "${{ needs.rust.result }}" != "success" ]; then
+            echo "Rust CI failed: ${{ needs.rust.result }}" >&2
+            exit 1
+          fi
+          if [ "${{ needs.c.result }}" != "success" ]; then
+            echo "C CI failed: ${{ needs.c.result }}" >&2
+            exit 1
+          fi
+          if [ "${{ needs.formal.result }}" != "success" ]; then
+            echo "Formal CI failed: ${{ needs.formal.result }}" >&2
+            exit 1
+          fi
+          if [ "${{ needs.release-qualification.result }}" != "success" ]; then
+            echo "Release qualification failed: ${{ needs.release-qualification.result }}" >&2
+            exit 1
+          fi
+          echo "All CI lanes, formal gates, and release qualification passed."
