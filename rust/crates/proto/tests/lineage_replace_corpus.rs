@@ -96,7 +96,10 @@ fn shared_lineage_replace_plan_corpus_is_enforced() {
         let mut fields = body.split('|');
         let decision_name = fields.next().unwrap();
         let should_plan = fields.next().unwrap();
-        assert!(fields.next().is_none(), "malformed plan corpus line: {line}");
+        assert!(
+            fields.next().is_none(),
+            "malformed plan corpus line: {line}"
+        );
 
         let plan = plan_lineage_replace(expected(decision_name));
         match should_plan {
