@@ -1,0 +1,13 @@
+version=1
+# case=name|local_attempt|peer_attempt|local_confirmation|peer_confirmation|expected
+# 0 is the wire-neutral unset sentinel in the C normalization; Rust maps it to None.
+case=AE-01|1|1|1|1|FRESH_CURRENT_ATTEMPT
+case=AE-02|0|0|0|0|MISSING_CURRENT_ATTEMPT
+case=AE-03|1|0|1|0|MISSING_CURRENT_ATTEMPT
+case=AE-04|0|1|0|1|MISSING_CURRENT_ATTEMPT
+case=AE-05|1|2|1|2|ATTEMPT_MISMATCH
+case=AE-06|2|2|0|2|LOCAL_CONFIRMATION_MISSING
+case=AE-07|2|2|1|2|LOCAL_CONFIRMATION_MISSING
+case=AE-08|2|2|2|0|PEER_CONFIRMATION_MISSING
+case=AE-09|2|2|2|1|PEER_CONFIRMATION_MISSING
+case=AE-10|4294967295|4294967295|4294967295|4294967295|FRESH_CURRENT_ATTEMPT

@@ -1,15 +1,16 @@
 //! Wire-neutral transition guard for lineage replacement reconciliation.
 //!
-//! Durable state alone MUST NOT manufacture the fresh authenticated attempt
-//! evidence required to activate a successor after reconciliation.
+//! Durable state alone MUST NOT manufacture current-attempt confirmation
+//! provenance required to activate a successor after reconciliation.
 
+use crate::lineage_replace_attempt_evidence::LineageReplaceAttemptEvidenceDecision;
 use crate::lineage_replace_reconciliation::LineageReplaceReconciliationDecision;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct LineageReplaceReconciliationTransitionFacts {
     pub prior: LineageReplaceReconciliationDecision,
     pub current: LineageReplaceReconciliationDecision,
-    pub fresh_authenticated_attempt_evidence: bool,
+    pub attempt_evidence: LineageReplaceAttemptEvidenceDecision,
     pub explicit_clean_retry: bool,
 }
 
@@ -49,7 +50,7 @@ pub fn classify_lineage_replace_reconciliation_transition(
         if facts.prior == PairSuccessorReady {
             return ActivateSuccessor;
         }
-        if facts.fresh_authenticated_attempt_evidence
+        if facts.attempt_evidence == LineageReplaceAttemptEvidenceDecision::FreshCurrentAttempt
             && (facts.prior == ReconciliationRequired
                 || (facts.prior == SuccessorDivergence && facts.explicit_clean_retry))
         {

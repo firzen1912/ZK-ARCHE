@@ -1,3 +1,4 @@
+use proto::lineage_replace_attempt_evidence::LineageReplaceAttemptEvidenceDecision;
 use proto::lineage_replace_reconciliation::LineageReplaceReconciliationDecision;
 use proto::lineage_replace_reconciliation_transition::{
     classify_lineage_replace_reconciliation_transition,
@@ -23,6 +24,14 @@ fn bit(value: &str) -> bool {
         "0" => false,
         "1" => true,
         _ => panic!("invalid bit"),
+    }
+}
+
+fn evidence(value: &str) -> LineageReplaceAttemptEvidenceDecision {
+    if bit(value) {
+        LineageReplaceAttemptEvidenceDecision::FreshCurrentAttempt
+    } else {
+        LineageReplaceAttemptEvidenceDecision::MissingCurrentAttempt
     }
 }
 
@@ -52,7 +61,7 @@ fn reconciliation_transition_corpus() {
             &LineageReplaceReconciliationTransitionFacts {
                 prior: pair(fields[1]),
                 current: pair(fields[2]),
-                fresh_authenticated_attempt_evidence: bit(fields[3]),
+                attempt_evidence: evidence(fields[3]),
                 explicit_clean_retry: bit(fields[4]),
             },
         );

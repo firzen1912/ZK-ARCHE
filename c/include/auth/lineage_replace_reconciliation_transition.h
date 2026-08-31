@@ -2,12 +2,13 @@
 #define AUTH_LINEAGE_REPLACE_RECONCILIATION_TRANSITION_H
 
 #include <stdbool.h>
+#include "auth/lineage_replace_attempt_evidence.h"
 #include "auth/lineage_replace_reconciliation.h"
 
 typedef struct {
     lineage_replace_reconciliation_decision_t prior;
     lineage_replace_reconciliation_decision_t current;
-    bool fresh_authenticated_attempt_evidence;
+    lineage_replace_attempt_evidence_decision_t attempt_evidence;
     bool explicit_clean_retry;
 } lineage_replace_reconciliation_transition_facts_t;
 

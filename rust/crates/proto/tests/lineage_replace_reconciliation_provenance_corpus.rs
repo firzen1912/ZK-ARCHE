@@ -1,3 +1,7 @@
+use proto::lineage_replace_attempt_evidence::{
+    classify_lineage_replace_attempt_evidence, LineageReplaceAttemptEvidenceDecision,
+    LineageReplaceAttemptEvidenceFacts,
+};
 use proto::lineage_replace_reconciliation::LineageReplaceReconciliationDecision;
 use proto::lineage_replace_reconciliation_transition::{
     classify_lineage_replace_reconciliation_transition,
@@ -65,13 +69,13 @@ fn apply(state: &mut ProvenanceState, event: &str) {
     }
 }
 
-fn fresh(state: &ProvenanceState) -> bool {
-    let Some(id) = state.local_attempt else {
-        return false;
-    };
-    state.peer_attempt == Some(id)
-        && state.local_confirmation == Some(id)
-        && state.peer_confirmation == Some(id)
+fn evidence(state: &ProvenanceState) -> LineageReplaceAttemptEvidenceDecision {
+    classify_lineage_replace_attempt_evidence(&LineageReplaceAttemptEvidenceFacts {
+        local_attempt_id: state.local_attempt,
+        peer_attempt_id: state.peer_attempt,
+        local_confirmation_attempt_id: state.local_confirmation,
+        peer_confirmation_attempt_id: state.peer_confirmation,
+    })
 }
 
 fn decision(value: &str) -> LineageReplaceReconciliationDecision {
@@ -119,7 +123,7 @@ fn shared_reconciliation_provenance_corpus() {
         let facts = LineageReplaceReconciliationTransitionFacts {
             prior: decision(fields[1]),
             current: decision(fields[2]),
-            fresh_authenticated_attempt_evidence: fresh(&state),
+            attempt_evidence: evidence(&state),
             explicit_clean_retry: fields[4] == "1",
         };
         assert_eq!(

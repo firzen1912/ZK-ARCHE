@@ -19,12 +19,13 @@ static lineage_replace_reconciliation_transition_t expected(const char *v){
  assert(!strcmp(v,"CONTINUITY_BROKEN")); return LINEAGE_REPLACE_RECONCILIATION_CONTINUITY_BROKEN;
 }
 static bool bit(const char *v){ if(!strcmp(v,"0")) return false; assert(!strcmp(v,"1")); return true; }
+static lineage_replace_attempt_evidence_decision_t evidence(const char *v){ return bit(v) ? LINEAGE_REPLACE_ATTEMPT_EVIDENCE_FRESH_CURRENT_ATTEMPT : LINEAGE_REPLACE_ATTEMPT_EVIDENCE_MISSING_CURRENT_ATTEMPT; }
 int main(void){
  FILE *fp=fopen(VECTOR_PATH,"r"); char line[512]; unsigned n=0; int ver=0; assert(fp);
  while(fgets(line,sizeof(line),fp)){ char *f[6]={0},*p; unsigned i=0; lineage_replace_reconciliation_transition_facts_t facts;
    line[strcspn(line,"\r\n")]='\0'; if(!strcmp(line,"version=1")){ver=1;continue;} if(strncmp(line,"case=",5u)) continue;
    p=strtok(line+5u,"|"); while(p && i<6u){f[i++]=p;p=strtok(NULL,"|");} assert(i==6u && p==NULL);
-   facts=(lineage_replace_reconciliation_transition_facts_t){pair(f[1]),pair(f[2]),bit(f[3]),bit(f[4])};
+   facts=(lineage_replace_reconciliation_transition_facts_t){pair(f[1]),pair(f[2]),evidence(f[3]),bit(f[4])};
    assert(lineage_replace_classify_reconciliation_transition(&facts)==expected(f[5])); n++;
  }
  fclose(fp); assert(ver==1 && n==12u);

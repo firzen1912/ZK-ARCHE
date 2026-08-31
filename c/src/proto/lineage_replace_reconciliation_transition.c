@@ -18,7 +18,7 @@ lineage_replace_reconciliation_transition_t lineage_replace_classify_reconciliat
     if (facts->current == LINEAGE_REPLACE_PAIR_SUCCESSOR_READY) {
         if (facts->prior == LINEAGE_REPLACE_PAIR_SUCCESSOR_READY)
             return LINEAGE_REPLACE_RECONCILIATION_ACTIVATE_SUCCESSOR;
-        if (facts->fresh_authenticated_attempt_evidence &&
+        if (facts->attempt_evidence == LINEAGE_REPLACE_ATTEMPT_EVIDENCE_FRESH_CURRENT_ATTEMPT &&
             (facts->prior == LINEAGE_REPLACE_RECONCILIATION_REQUIRED ||
              (facts->prior == LINEAGE_REPLACE_SUCCESSOR_DIVERGENCE &&
               facts->explicit_clean_retry)))

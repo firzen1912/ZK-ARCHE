@@ -18,7 +18,10 @@ static void apply(provenance_state_t *state, const char *event) {
     if (event[0] == 'L') { observe(&state->local_attempt, &state->local_confirmation, id); return; }
     assert(event[0] == 'P'); observe(&state->peer_attempt, &state->peer_confirmation, id);
 }
-static bool fresh(const provenance_state_t *state) { return state->local_attempt != 0u && state->local_attempt == state->peer_attempt && state->local_confirmation == state->local_attempt && state->peer_confirmation == state->peer_attempt; }
+static lineage_replace_attempt_evidence_decision_t evidence(const provenance_state_t *state) {
+    lineage_replace_attempt_evidence_facts_t facts = {state->local_attempt, state->peer_attempt, state->local_confirmation, state->peer_confirmation};
+    return lineage_replace_classify_attempt_evidence(&facts);
+}
 static lineage_replace_reconciliation_decision_t decision(const char *value) {
     if (strcmp(value, "PAIR_SUCCESSOR_READY") == 0) return LINEAGE_REPLACE_PAIR_SUCCESSOR_READY;
     if (strcmp(value, "PAIR_PREDECESSOR_READY") == 0) return LINEAGE_REPLACE_PAIR_PREDECESSOR_READY;
@@ -40,7 +43,7 @@ int main(void) {
         line[strcspn(line, "\r\n")] = '\0'; if (strcmp(line, "version=1") == 0) { version = 1; continue; } if (strncmp(line, "case=", 5u) != 0) continue;
         cursor = strtok(line + 5u, "|"); for (i = 0u; i < 6u && cursor != NULL; i += 1u) { fields[i] = cursor; cursor = strtok(NULL, "|"); } assert(i == 6u && cursor == NULL);
         event = strtok(fields[3], ","); while (event != NULL) { apply(&state, event); event = strtok(NULL, ","); }
-        facts = (lineage_replace_reconciliation_transition_facts_t){ decision(fields[1]), decision(fields[2]), fresh(&state), strcmp(fields[4], "1") == 0 };
+        facts = (lineage_replace_reconciliation_transition_facts_t){ decision(fields[1]), decision(fields[2]), evidence(&state), strcmp(fields[4], "1") == 0 };
         assert(lineage_replace_classify_reconciliation_transition(&facts) == transition(fields[5])); cases += 1u;
     }
     fclose(fp); assert(version == 1); assert(cases == 14u); puts("lineage-replace reconciliation provenance corpus: ok"); return EXIT_SUCCESS;
