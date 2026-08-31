@@ -1,0 +1,14 @@
+version=1
+# case=name|local_authorized|peer_authorized|same_attempt|same_predecessor_generation|same_successor|same_context|local_confirmation_bound|peer_confirmation_bound|decision
+case=AB-01|1|1|1|1|1|1|1|1|CONVERGED
+case=AB-02|1|1|1|1|1|1|0|1|AWAITING_CONFIRMATION
+case=AB-03|1|1|1|1|1|1|1|0|AWAITING_CONFIRMATION
+case=AB-04|1|1|0|1|1|1|1|1|ATTEMPT_ID_MISMATCH
+case=AB-05|1|1|1|0|1|1|1|1|PREDECESSOR_MISMATCH
+case=AB-06|1|1|1|1|0|1|1|1|SUCCESSOR_MISMATCH
+case=AB-07|1|1|1|1|1|0|1|1|CONTEXT_MISMATCH
+case=AB-08|0|1|1|1|1|1|1|1|UNAUTHORIZED
+case=AB-09|1|0|1|1|1|1|1|1|UNAUTHORIZED
+case=AB-10|1|1|1|1|1|1|0|0|AWAITING_CONFIRMATION
+case=AB-11|1|1|1|1|1|1|0|1|AWAITING_CONFIRMATION
+case=AB-12|1|1|0|1|1|1|0|0|ATTEMPT_ID_MISMATCH
