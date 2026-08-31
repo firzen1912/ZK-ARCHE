@@ -5,16 +5,11 @@ use proto::lineage_replace_attempt::{
 use proto::lineage_replace_freshness::{
     recover_lineage_replace_with_freshness, LineageReplaceFreshnessFacts,
 };
+use proto::lineage_replace_reconciliation::{
+    classify_lineage_replace_reconciliation, LineageReplaceReconciliationDecision,
+    LineageReplaceReconciliationFacts,
+};
 use proto::lineage_replace_recovery::LineageReplaceRecoveryFacts;
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum PairResult {
-    SuccessorReady,
-    PredecessorReady,
-    ReconciliationRequired,
-    ContinuityBroken,
-    SuccessorDivergence,
-}
 
 fn attempt(name: &str) -> LineageReplaceAttemptDecision {
     let mut facts = LineageReplaceAttemptFacts {
@@ -79,54 +74,15 @@ fn durable_state(kind: &str, generation: u64, high_water: u64) -> LineageReplace
     )
 }
 
-fn classify_pair(
-    local_attempt: LineageReplaceAttemptDecision,
-    local_state: LineageReplaceState,
-    peer_attempt: LineageReplaceAttemptDecision,
-    peer_state: LineageReplaceState,
-    same_successor: bool,
-) -> PairResult {
-    if local_state == LineageReplaceState::ContinuityBroken
-        || peer_state == LineageReplaceState::ContinuityBroken
-    {
-        return PairResult::ContinuityBroken;
-    }
-
-    let local_successor = local_state == LineageReplaceState::ActiveSuccessorPredecessorRetired;
-    let peer_successor = peer_state == LineageReplaceState::ActiveSuccessorPredecessorRetired;
-
-    if local_successor && peer_successor {
-        if !same_successor {
-            return PairResult::SuccessorDivergence;
-        }
-        if local_attempt == LineageReplaceAttemptDecision::Converged
-            && peer_attempt == LineageReplaceAttemptDecision::Converged
-        {
-            return PairResult::SuccessorReady;
-        }
-        return PairResult::ReconciliationRequired;
-    }
-
-    if !local_successor
-        && !peer_successor
-        && local_state == LineageReplaceState::ActivePredecessor
-        && peer_state == LineageReplaceState::ActivePredecessor
-        && local_attempt != LineageReplaceAttemptDecision::Converged
-        && peer_attempt != LineageReplaceAttemptDecision::Converged
-    {
-        return PairResult::PredecessorReady;
-    }
-
-    PairResult::ReconciliationRequired
-}
-
-fn expected(name: &str) -> PairResult {
+fn expected(name: &str) -> LineageReplaceReconciliationDecision {
     match name {
-        "PAIR_SUCCESSOR_READY" => PairResult::SuccessorReady,
-        "PAIR_PREDECESSOR_READY" => PairResult::PredecessorReady,
-        "RECONCILIATION_REQUIRED" => PairResult::ReconciliationRequired,
-        "CONTINUITY_BROKEN" => PairResult::ContinuityBroken,
-        "SUCCESSOR_DIVERGENCE" => PairResult::SuccessorDivergence,
+        "PAIR_SUCCESSOR_READY" => LineageReplaceReconciliationDecision::PairSuccessorReady,
+        "PAIR_PREDECESSOR_READY" => LineageReplaceReconciliationDecision::PairPredecessorReady,
+        "RECONCILIATION_REQUIRED" => {
+            LineageReplaceReconciliationDecision::ReconciliationRequired
+        }
+        "CONTINUITY_BROKEN" => LineageReplaceReconciliationDecision::PairContinuityBroken,
+        "SUCCESSOR_DIVERGENCE" => LineageReplaceReconciliationDecision::SuccessorDivergence,
         _ => panic!("unknown pair result"),
     }
 }
@@ -152,14 +108,19 @@ fn asymmetric_durable_corpus() {
             _ => panic!("invalid same-successor bit"),
         };
 
-        let result = classify_pair(
-            attempt(fields[1]),
-            durable_state(fields[4], local_generation, local_high_water),
-            attempt(fields[5]),
-            durable_state(fields[8], peer_generation, peer_high_water),
+        let result = classify_lineage_replace_reconciliation(&LineageReplaceReconciliationFacts {
+            local_attempt: attempt(fields[1]),
+            local_state: durable_state(fields[4], local_generation, local_high_water),
+            peer_attempt: attempt(fields[5]),
+            peer_state: durable_state(fields[8], peer_generation, peer_high_water),
             same_successor,
+        });
+        assert_eq!(
+            result,
+            expected(fields[10]),
+            "asymmetric durable case {}",
+            fields[0]
         );
-        assert_eq!(result, expected(fields[10]), "asymmetric durable case {}", fields[0]);
         count += 1;
     }
 

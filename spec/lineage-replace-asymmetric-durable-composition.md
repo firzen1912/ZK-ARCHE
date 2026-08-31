@@ -18,6 +18,20 @@ A pair is `SUCCESSOR_DIVERGENCE` when both peers recover stable successor state 
 
 If either peer's freshness/recovery classifier returns `CONTINUITY_BROKEN`, the pair outcome is `CONTINUITY_BROKEN`.
 
+## Shared implementation contract
+
+Rust and C expose the pair decision as `lineage_replace_reconciliation`. The classifier consumes only already-normalized replacement-attempt decisions, already-normalized durable recovery state, and the explicit `same_successor` comparison result. It must not parse transport metadata, infer protocol identity from an address, reconstruct lost confirmation from storage, or mutate trust.
+
+The ordering of decisions is intentional:
+
+1. any local or peer `CONTINUITY_BROKEN` state dominates every availability outcome;
+2. two stable successors with different successor bindings produce `SUCCESSOR_DIVERGENCE` and never an implicit winner;
+3. the same stable successor is pair-ready only when both attempt decisions are `CONVERGED`;
+4. two stable predecessors are pair-ready only when neither side claims a converged replacement;
+5. every other non-broken combination remains `RECONCILIATION_REQUIRED`.
+
+A null/absent reconciliation fact set in C maps to `CONTINUITY_BROKEN`; callers must not treat missing pair evidence as permission to continue.
+
 ## Invariants
 
 - Stable local storage is not sufficient for pair-level successor readiness.
@@ -31,6 +45,8 @@ If either peer's freshness/recovery classifier returns `CONTINUITY_BROKEN`, the 
 ## Canonical corpus
 
 `rust/test-vectors/replay/lineage-replace-asymmetric-durable-v1.txt` is consumed independently by Rust and C tests. It includes local durable successor / peer predecessor asymmetry, stale old-successor replay after a later high-water generation, peer predecessor rollback, partial durable state, confirmation loss, successor divergence, and clean converged endpoints.
+
+The corpus tests the shared Rust/C reconciliation classifier directly. Test-local copies of the pair decision logic are not authoritative.
 
 ## Evidence boundary
 
