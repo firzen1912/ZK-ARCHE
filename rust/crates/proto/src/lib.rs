@@ -21,6 +21,7 @@
 //! | `lineage_replace`         | Wire-neutral lifecycle replacement decisions     |
 //! | `lineage_replace_auth_context` | Concrete `iot-core` lifecycle authorization binding |
 //! | `lineage_replace_session_binding` | AUTH-v3 lifecycle session/context binding       |
+//! | `lineage_replace_bound_auth_context` | Composed session-bound `iot-core` replacement authorization |
 //! | `lineage_replace_recovery` | Storage-neutral replacement restart classifier  |
 //! | `lineage_replace_faults`  | Deterministic logical storage write-cut model    |
 //! | `lineage_replace_freshness` | Durable-generation freshness decision model    |
@@ -59,6 +60,7 @@ pub mod lineage_replace;
 pub mod lineage_replace_attempt;
 pub mod lineage_replace_attempt_evidence;
 pub mod lineage_replace_auth_context;
+pub mod lineage_replace_bound_auth_context;
 pub mod lineage_replace_convergence;
 pub mod lineage_replace_faults;
 pub mod lineage_replace_freshness;
