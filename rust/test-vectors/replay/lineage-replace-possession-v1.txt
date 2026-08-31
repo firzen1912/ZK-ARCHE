@@ -1,0 +1,12 @@
+version=1
+# case=id|current_present|current_verified|current_session_match|current_reference_match|successor_present|successor_verified|successor_session_match|successor_reference_match|expected
+case=LP-01|1|1|1|1|1|1|1|1|VERIFIED
+case=LP-02|0|1|1|1|1|1|1|1|REJECT_CURRENT_CREDENTIAL_CONTROL
+case=LP-03|1|0|1|1|1|1|1|1|REJECT_CURRENT_CREDENTIAL_CONTROL
+case=LP-04|1|1|0|1|1|1|1|1|REJECT_CURRENT_CREDENTIAL_CONTROL
+case=LP-05|1|1|1|0|1|1|1|1|REJECT_CURRENT_CREDENTIAL_CONTROL
+case=LP-06|1|1|1|1|0|1|1|1|REJECT_SUCCESSOR_KEY_CONTROL
+case=LP-07|1|1|1|1|1|0|1|1|REJECT_SUCCESSOR_KEY_CONTROL
+case=LP-08|1|1|1|1|1|1|0|1|REJECT_SUCCESSOR_KEY_CONTROL
+case=LP-09|1|1|1|1|1|1|1|0|REJECT_SUCCESSOR_KEY_CONTROL
+case=LP-10|1|0|0|0|1|0|0|0|REJECT_CURRENT_CREDENTIAL_CONTROL
