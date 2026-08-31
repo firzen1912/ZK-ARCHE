@@ -1,0 +1,12 @@
+version=1
+# case|durable|power_loss|integrity|replay_protection|freshness_anchor|freshness_integrity|freshness_binding|expected
+case=SC-01|1|1|1|1|1|1|1|QUALIFIED
+case=SC-02|0|1|1|1|1|1|1|REJECT_DURABILITY
+case=SC-03|1|0|1|1|1|1|1|REJECT_POWER_LOSS_RECOVERY
+case=SC-04|1|1|0|1|1|1|1|REJECT_RECORD_INTEGRITY
+case=SC-05|1|1|1|0|1|1|1|REJECT_REPLAY_PROTECTION
+case=SC-06|1|1|1|1|0|1|1|REJECT_FRESHNESS_ANCHOR
+case=SC-07|1|1|1|1|1|0|1|REJECT_FRESHNESS_INTEGRITY
+case=SC-08|1|1|1|1|1|1|0|REJECT_FRESHNESS_BINDING
+case=SC-09|0|1|1|0|1|1|0|REJECT_DURABILITY
+case=SC-10|1|0|0|0|0|0|0|REJECT_POWER_LOSS_RECOVERY
