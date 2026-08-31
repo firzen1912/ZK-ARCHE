@@ -24,6 +24,16 @@ lineage_replace_decision_t lineage_replace_evaluate(const lineage_replace_facts_
     return LINEAGE_REPLACE_ACCEPT_SUCCESSOR;
 }
 
+lineage_replace_decision_t lineage_replace_evaluate_authorized(
+    lineage_replace_authorization_decision_t authorization,
+    const lineage_replace_facts_t *facts) {
+    lineage_replace_facts_t normalized;
+    if (facts == NULL) return LINEAGE_REPLACE_REJECT_STORAGE;
+    normalized = *facts;
+    normalized.authority_valid = authorization == LINEAGE_REPLACE_AUTHORIZED_REPLACEMENT;
+    return lineage_replace_evaluate(&normalized);
+}
+
 bool lineage_replace_plan(lineage_replace_decision_t decision, lineage_replace_plan_t *out_plan) {
     if (out_plan == NULL) return false;
 

@@ -2,6 +2,7 @@
 #define AUTH_LINEAGE_REPLACE_H
 
 #include <stdbool.h>
+#include "auth/lineage_replace_authorization.h"
 
 typedef enum {
     LINEAGE_REPLACE_TRIGGER_LIFECYCLE = 0,
@@ -61,7 +62,13 @@ typedef enum {
     LINEAGE_REPLACE_EVENT_INTERRUPT
 } lineage_replace_event_t;
 
+/* Normalized predicate retained for decision-corpus compatibility. Lifecycle
+ * request handlers MUST derive authority through lineage_replace_classify_authorization()
+ * and enter through lineage_replace_evaluate_authorized(). */
 lineage_replace_decision_t lineage_replace_evaluate(const lineage_replace_facts_t *facts);
+lineage_replace_decision_t lineage_replace_evaluate_authorized(
+    lineage_replace_authorization_decision_t authorization,
+    const lineage_replace_facts_t *facts);
 bool lineage_replace_plan(lineage_replace_decision_t decision, lineage_replace_plan_t *out_plan);
 bool lineage_replace_advance(lineage_replace_state_t *state, lineage_replace_event_t event,
                              const lineage_replace_plan_t *plan);
