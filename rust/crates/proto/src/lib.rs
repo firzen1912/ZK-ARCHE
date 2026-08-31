@@ -25,6 +25,7 @@
 //! | `lineage_replace_convergence` | Distributed replacement convergence model    |
 //! | `lineage_replace_attempt` | Replacement attempt/confirmation binding model  |
 //! | `lineage_replace_reconciliation` | Pair reconciliation over durable outcomes |
+//! | `lineage_replace_reconciliation_transition` | Guarded exit from reconciliation      |
 //! | `wire`                    | Packet header, framing, TLV codec                |
 //! | `transport`               | Transport abstraction (UDP, TCP, ...)            |
 //! | `store`                   | Credential / registry / replay-cache traits      |
@@ -57,6 +58,7 @@ pub mod lineage_replace_convergence;
 pub mod lineage_replace_faults;
 pub mod lineage_replace_freshness;
 pub mod lineage_replace_reconciliation;
+pub mod lineage_replace_reconciliation_transition;
 pub mod lineage_replace_recovery;
 pub mod profile;
 pub mod proto;
