@@ -173,6 +173,7 @@ The historical 2026-08-15 through 2026-08-25 reports remain valid provenance. Fu
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-08-31 | [Daily research](daily/2026-08-31.md) | target storage-service semantics for lineage durability/freshness: PSA/TF-M replay protection, ESP32-S3 NVS/eFuse boundaries, STM32H5 EPOCH anti-rollback mapping | benchmark / investigate; explicit review required |
 | 2026-08-30 | [Daily research](daily/2026-08-30.md) | distributed LINEAGE_REPLACE convergence/key-confirmation boundary, rollback-freshness anchor for stable persisted lineage state | reproduce / investigate; explicit review required |
 | 2026-08-29 | [Daily research](daily/2026-08-29.md) | non-redundant UKS/misbinding identity attribution, dynamic-corruption and compositional formal-analysis boundaries | reproduce / investigate; explicit review required |
 | 2026-08-28 | [Daily research](daily/2026-08-28.md) | hostile-count parser resource bounds, authorization authority namespace, authenticated fresh replay-epoch recovery | reproduce; explicit review required |
