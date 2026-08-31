@@ -1,0 +1,110 @@
+(* ZK-ARCHE lineage-replacement commit-order symbolic model.
+   Scope: existing verified authorization -> accepted replacement plan -> ordered
+   storage transaction semantics. This model is non-normative and does not model
+   cryptographic proof verification, filesystem/flash atomicity, power-loss
+   physics, rollback-resistant freshness anchors, or storage implementation
+   correctness. It establishes only the abstract authorization-before-mutation
+   and transaction-order correspondences already owned by spec/code. *)
+
+free c: channel.
+free cmd_authorize: bitstring.
+free cmd_continue: bitstring.
+free cmd_fail: bitstring.
+
+type domain.
+
+free authorized_state: channel [private].
+free pending_state: channel [private].
+free successor_state: channel [private].
+free predecessor_state: channel [private].
+free invalidated_state: channel [private].
+free committed_state: channel [private].
+
+event ReplacementAuthorized(domain).
+event PendingPersisted(domain).
+event SuccessorActivated(domain).
+event PredecessorRetired(domain).
+event DependentStateInvalidated(domain).
+event PendingCleared(domain).
+event StorageFailureAfterPending(domain).
+event StorageFailureAfterSuccessor(domain).
+event StorageFailureAfterPredecessor(domain).
+event StorageFailureAfterInvalidation(domain).
+
+(* Authorization MUST precede the first durable mutation. *)
+query d:domain;
+  event(PendingPersisted(d)) ==> event(ReplacementAuthorized(d)).
+
+(* The logical durable transaction order is monotonic and fail closed. *)
+query d:domain;
+  event(SuccessorActivated(d)) ==> event(PendingPersisted(d)).
+
+query d:domain;
+  event(PredecessorRetired(d)) ==> event(SuccessorActivated(d)).
+
+query d:domain;
+  event(DependentStateInvalidated(d)) ==> event(PredecessorRetired(d)).
+
+query d:domain;
+  event(PendingCleared(d)) ==> event(DependentStateInvalidated(d)).
+
+query d:domain;
+  event(PendingCleared(d)) ==> event(ReplacementAuthorized(d)).
+
+let AuthorizationDispatcher(d:domain) =
+  in(c, command:bitstring);
+  if command = cmd_authorize then
+    event ReplacementAuthorized(d);
+    out(authorized_state, d).
+
+let AuthorizedDispatcher(d:domain) =
+  in(authorized_state, =d);
+  in(c, command:bitstring);
+  if command = cmd_continue then
+    event PendingPersisted(d);
+    out(pending_state, d).
+
+let PendingDispatcher(d:domain) =
+  in(pending_state, =d);
+  in(c, command:bitstring);
+  if command = cmd_continue then
+    event SuccessorActivated(d);
+    out(successor_state, d)
+  else if command = cmd_fail then
+    event StorageFailureAfterPending(d).
+
+let SuccessorDispatcher(d:domain) =
+  in(successor_state, =d);
+  in(c, command:bitstring);
+  if command = cmd_continue then
+    event PredecessorRetired(d);
+    out(predecessor_state, d)
+  else if command = cmd_fail then
+    event StorageFailureAfterSuccessor(d).
+
+let PredecessorDispatcher(d:domain) =
+  in(predecessor_state, =d);
+  in(c, command:bitstring);
+  if command = cmd_continue then
+    event DependentStateInvalidated(d);
+    out(invalidated_state, d)
+  else if command = cmd_fail then
+    event StorageFailureAfterPredecessor(d).
+
+let InvalidatedDispatcher(d:domain) =
+  in(invalidated_state, =d);
+  in(c, command:bitstring);
+  if command = cmd_continue then
+    event PendingCleared(d);
+    out(committed_state, d)
+  else if command = cmd_fail then
+    event StorageFailureAfterInvalidation(d).
+
+process
+  new d:domain;
+  ((!AuthorizationDispatcher(d)) |
+   (!AuthorizedDispatcher(d)) |
+   (!PendingDispatcher(d)) |
+   (!SuccessorDispatcher(d)) |
+   (!PredecessorDispatcher(d)) |
+   (!InvalidatedDispatcher(d)))
