@@ -1,71 +1,86 @@
 /*
- * test_error_code_normalization.c — cross-language ERROR-code decode parity.
+ * Shared Rust/C ERROR-code normalization corpus consumer.
  *
- * Rust maps every unregistered u16 ERROR code to UNSPECIFIED. The C decoder
- * must do the same so callers cannot observe language-dependent semantics for
- * the same wire bytes. Local-only C API errors are not wire allocations.
+ * The canonical corpus lives under rust/test-vectors/ and enumerates every
+ * registered wire ERROR code plus representative unassigned/local-only values.
  */
 
 #include "auth/auth_wire.h"
 
+#include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-static int failures = 0;
+#define VECTOR_PATH "../rust/test-vectors/wire/error-code-normalization-v1.txt"
 
-#define CHECK(expr, msg) do { \
-    if (!(expr)) { \
-        fprintf(stderr, "FAIL: %s\n", msg); \
-        failures++; \
-    } \
-} while (0)
-
-static void check_code(const uint8_t *payload, size_t payload_len,
-                       auth_err_t expected, const char *label)
+static uint16_t parse_hex_u16(const char *value)
 {
-    auth_err_t code = AUTH_OK;
-    const char *msg = NULL;
-    size_t msg_len = 0;
-    auth_err_t err = auth_packet_parse_error(
-        payload, payload_len, &code, &msg, &msg_len);
-
-    CHECK(err == AUTH_OK, label);
-    CHECK(code == expected, label);
-    if (payload_len >= 2) {
-        CHECK(msg == (const char *)(payload + 2), label);
-        CHECK(msg_len == payload_len - 2, label);
-    }
+    char *end = NULL;
+    unsigned long parsed = strtoul(value, &end, 16);
+    assert(end != value && *end == '\0' && parsed <= 0xfffful);
+    return (uint16_t)parsed;
 }
 
 int main(void)
 {
-    const uint8_t known_replay[] = { 0x03, 0x04, 'r' };
-    const uint8_t known_unspecified[] = { 0xff, 0x7f };
-    const uint8_t unknown_in_registered_range[] = { 0x04, 0x01, 'x' };
-    const uint8_t unknown_category[] = { 0x34, 0x12, 'y', 'z' };
-    const uint8_t local_only_code[] = { 0x01, 0x00 };
-    const uint8_t short_payload[] = { 0x03 };
+    FILE *fp = fopen(VECTOR_PATH, "r");
+    char line[256];
+    unsigned cases = 0u;
+    int version = 0;
 
-    check_code(known_replay, sizeof known_replay,
-               AUTH_ERR_REPLAY_DETECTED, "known code preserved");
-    check_code(known_unspecified, sizeof known_unspecified,
-               AUTH_ERR_UNSPECIFIED, "UNSPECIFIED preserved");
-    check_code(unknown_in_registered_range, sizeof unknown_in_registered_range,
-               AUTH_ERR_UNSPECIFIED, "unknown registered-range code normalized");
-    check_code(unknown_category, sizeof unknown_category,
-               AUTH_ERR_UNSPECIFIED, "unknown category code normalized");
-    check_code(local_only_code, sizeof local_only_code,
-               AUTH_ERR_UNSPECIFIED, "local-only code rejected as wire allocation");
+    assert(fp != NULL);
+    while (fgets(line, sizeof(line), fp) != NULL) {
+        char *fields[3] = {0};
+        char *part;
+        unsigned i = 0u;
+        uint16_t received;
+        uint16_t expected;
+        uint8_t payload[3];
+        auth_err_t code = AUTH_OK;
+        const char *message = NULL;
+        size_t message_len = 0u;
 
-    auth_err_t code = AUTH_OK;
-    CHECK(auth_packet_parse_error(short_payload, sizeof short_payload,
-                                  &code, NULL, NULL) == AUTH_ERR_MALFORMED_PACKET,
-          "short ERROR payload rejected");
+        line[strcspn(line, "\r\n")] = '\0';
+        if (strcmp(line, "version=1") == 0) {
+            version = 1;
+            continue;
+        }
+        if (strncmp(line, "case=", 5u) != 0) {
+            continue;
+        }
 
-    if (failures) {
-        fprintf(stderr, "FAIL: %d failure(s)\n", failures);
-        return 1;
+        part = strtok(line + 5u, "|");
+        while (part != NULL && i < 3u) {
+            fields[i++] = part;
+            part = strtok(NULL, "|");
+        }
+        assert(i == 3u && part == NULL);
+
+        received = parse_hex_u16(fields[1]);
+        expected = parse_hex_u16(fields[2]);
+        payload[0] = (uint8_t)(received & 0xffu);
+        payload[1] = (uint8_t)(received >> 8);
+        payload[2] = (uint8_t)'x';
+
+        assert(auth_packet_parse_error(payload, sizeof(payload), &code,
+                                       &message, &message_len) == AUTH_OK);
+        assert((uint16_t)code == expected);
+        assert(message == (const char *)(payload + 2));
+        assert(message_len == 1u && message[0] == 'x');
+        cases += 1u;
     }
-    printf("PASS: error-code normalization\n");
-    return 0;
+    fclose(fp);
+
+    assert(version == 1 && cases == 35u);
+
+    {
+        const uint8_t short_payload[] = {0x03};
+        auth_err_t code = AUTH_OK;
+        assert(auth_packet_parse_error(short_payload, sizeof(short_payload),
+                                       &code, NULL, NULL) == AUTH_ERR_MALFORMED_PACKET);
+    }
+
+    puts("error-code normalization corpus: ok");
+    return EXIT_SUCCESS;
 }
