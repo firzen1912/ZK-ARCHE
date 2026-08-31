@@ -1,0 +1,11 @@
+# ZK-ARCHE lineage replacement AUTH-v3 session binding corpus v1
+# case|completion|version|suite|profile|session|authz|channel|expected
+SB-01|1|match|match|match|match|match|match|BOUND
+SB-02|0|match|match|match|match|match|match|REJECT_COMPLETION
+SB-03|1|mismatch|match|match|match|match|match|REJECT_VERSION
+SB-04|1|match|mismatch|match|match|match|match|REJECT_SUITE
+SB-05|1|match|match|mismatch|match|match|match|REJECT_PROFILE
+SB-06|1|match|match|match|mismatch|match|match|REJECT_SESSION_ID
+SB-07|1|match|match|match|match|mismatch|match|REJECT_AUTHZ_CONTEXT
+SB-08|1|match|match|match|match|match|mismatch|REJECT_CHANNEL_BINDING
+SB-09|null|match|match|match|match|match|match|REJECT_COMPLETION
