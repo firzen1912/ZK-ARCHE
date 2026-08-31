@@ -24,6 +24,7 @@
 //! | `lineage_replace_possession` | Session-bound lifecycle possession proof-result classifier |
 //! | `lineage_replace_bound_auth_context` | Composed possession/session-bound `iot-core` replacement authorization |
 //! | `lineage_replace_storage_transaction` | Ordered storage-neutral replacement commit executor |
+//! | `lineage_replace_verified_commit` | Verified lifecycle authorization-to-storage composition |
 //! | `lineage_replace_recovery` | Storage-neutral replacement restart classifier  |
 //! | `lineage_replace_faults`  | Deterministic logical storage write-cut model    |
 //! | `lineage_replace_freshness` | Durable-generation freshness decision model    |
@@ -72,6 +73,7 @@ pub mod lineage_replace_reconciliation_transition;
 pub mod lineage_replace_recovery;
 pub mod lineage_replace_session_binding;
 pub mod lineage_replace_storage_transaction;
+pub mod lineage_replace_verified_commit;
 pub mod profile;
 pub mod proto;
 pub mod replay_continuity;
