@@ -51,17 +51,8 @@ run_step_in() {
   if command -v gcc >/dev/null 2>&1; then echo "gcc=$(command -v gcc)"; fi
   if command -v clang >/dev/null 2>&1; then echo "clang=$(command -v clang)"; fi
 
-  run_step "formal model mirror synchronization" \
-    bash "$ROOT/scripts/sync-formal-models.sh" --check
-
-  if command -v proverif >/dev/null 2>&1; then
-    run_step "ProVerif synchronized AUTH model" \
-      proverif "$ROOT/rust/models/proverif/zk_arche_auth_skeleton.pv"
-  else
-    echo
-    echo "== ProVerif synchronized AUTH model =="
-    echo "SKIP: proverif is not installed; no formal-result claim is made."
-  fi
+  run_step "formal qualification" \
+    bash "$ROOT/scripts/ci-formal.sh"
 
   run_step "Rust lane" bash "$ROOT/scripts/ci-rust.sh"
   run_step "C lane" bash "$ROOT/scripts/ci-c.sh"
