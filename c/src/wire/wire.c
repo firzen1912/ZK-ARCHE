@@ -11,6 +11,44 @@ static uint16_t load_u16_le(const uint8_t *p)
     return (uint16_t)((uint16_t)p[0] | (uint16_t)((uint16_t)p[1] << 8));
 }
 
+static auth_err_t normalize_wire_error_code(uint16_t code)
+{
+    switch ((auth_err_t)code) {
+    case AUTH_ERR_UNSUPPORTED_VERSION:
+    case AUTH_ERR_UNSUPPORTED_SUITE:
+    case AUTH_ERR_CAP_MISMATCH:
+    case AUTH_ERR_MALFORMED_PACKET:
+    case AUTH_ERR_UNKNOWN_PKT_TYPE:
+    case AUTH_ERR_PAYLOAD_TOO_LARGE:
+    case AUTH_ERR_PAYLOAD_TOO_SHORT:
+    case AUTH_ERR_INVALID_ENCODING:
+    case AUTH_ERR_INVALID_POINT:
+    case AUTH_ERR_NONCANONICAL_SCALAR:
+    case AUTH_ERR_IDENTITY_POINT:
+    case AUTH_ERR_PROOF_VERIFY:
+    case AUTH_ERR_KEY_CONFIRM:
+    case AUTH_ERR_PEER_KEY_MISMATCH:
+    case AUTH_ERR_UNKNOWN_SESSION:
+    case AUTH_ERR_SESSION_EXPIRED:
+    case AUTH_ERR_REPLAY_DETECTED:
+    case AUTH_ERR_SEQ_OUT_OF_ORDER:
+    case AUTH_ERR_UNKNOWN_DEVICE:
+    case AUTH_ERR_DEVICE_NOT_ENROLLED:
+    case AUTH_ERR_ROLE_NOT_PERMITTED:
+    case AUTH_ERR_PAIRING_TOKEN_BAD:
+    case AUTH_ERR_RATE_LIMITED:
+    case AUTH_ERR_SERVER_BUSY:
+    case AUTH_ERR_TOO_MANY_ACTIVE:
+    case AUTH_ERR_STORAGE_FAILURE:
+    case AUTH_ERR_CREDENTIAL_MISSING:
+    case AUTH_ERR_REGISTRY_CORRUPT:
+    case AUTH_ERR_UNSPECIFIED:
+        return (auth_err_t)code;
+    default:
+        return AUTH_ERR_UNSPECIFIED;
+    }
+}
+
 /* ---- Header ---- */
 
 auth_err_t auth_header_encode(
@@ -115,7 +153,7 @@ auth_err_t auth_packet_parse_error(
 {
     if (!payload || payload_len < 2) return AUTH_ERR_MALFORMED_PACKET;
     uint16_t code = load_u16_le(payload);
-    if (code_out)    *code_out    = (auth_err_t)code;
+    if (code_out)    *code_out    = normalize_wire_error_code(code);
     if (msg_out)     *msg_out     = (const char *)(payload + 2);
     if (msg_len_out) *msg_len_out = payload_len - 2;
     return AUTH_OK;
