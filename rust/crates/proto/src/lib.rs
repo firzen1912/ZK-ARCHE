@@ -9,6 +9,7 @@
 //!
 //! | Module                    | Responsibility                                   |
 //! |---------------------------|--------------------------------------------------|
+//! | `association_admission`    | Fail-closed CORE/LINK secure-association postcondition |
 //! | `caps`                    | Protocol version, suite IDs, capability bits     |
 //! | `error`                   | Structured errors + wire error codes             |
 //! | `transcript`              | Canonical transcript builder + domain separators |
@@ -55,6 +56,7 @@
 //!
 //! See `spec/iot-auth-wire-spec.docx` for the full specification.
 
+pub mod association_admission;
 pub mod auth_v3;
 pub mod auth_v3_context;
 pub mod auth_v3_context_parser;
