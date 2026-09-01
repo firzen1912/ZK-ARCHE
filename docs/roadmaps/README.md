@@ -9,12 +9,12 @@ The two documents are complementary. The improvement roadmap owns the canonical 
 
 ## Roadmap progress
 
-> **Current evidence-based completion: 35.98%**  
-> **Remaining to full roadmap: 64.02%**  
-> Progress snapshot reviewed: **2026-08-29**  
-> Evidence basis: `dev` through `c7b2c647549d0410f70281c39acdb9b1f8188a2f`
+> **Current evidence-based completion: 36.59%**  
+> **Remaining to full roadmap: 63.41%**  
+> Progress snapshot reviewed: **2026-08-31**  
+> Evidence basis: exact `dev` through `e36f720f8a38dc48b770c151b511418bd67d96ce`; the current P2P qualification packet does not cross a phase-score boundary.
 
-`35.98%` is a roadmap-tracking metric, **not** a claim that ZK-ARCHE is 35.98% secure, production-ready, RFC-standardized, externally reviewed, or deployment-qualified.
+`36.59%` is a roadmap-tracking metric, **not** a claim that ZK-ARCHE is 36.59% secure, production-ready, RFC-standardized, externally reviewed, or deployment-qualified.
 
 The score is the arithmetic mean of the evidence-completion scores for canonical phases `zk201`–`zk241`. Each phase is evaluated only against its declared exit evidence.
 
@@ -22,12 +22,12 @@ The score is the arithmetic mean of the evidence-completion scores for canonical
 |---|---:|---:|
 | Baseline / reproducible truth | `zk201`–`zk205` | **85.00%** |
 | Assurance / review / claim gate | `zk206`–`zk210` | **55.00%** |
-| Enrollment / authorization / lifecycle | `zk211`–`zk215` | **15.00%** |
+| Enrollment / authorization / lifecycle | `zk211`–`zk215` | **20.00%** |
 | AUTH hardening / IoT profiles | `zk216`–`zk224` | **33.33%** |
 | Interop / RFC / transport / decomposition | `zk225`–`zk230` | **45.83%** |
 | Data sovereignty | `zk231`–`zk238` | **6.25%** |
 | Infrastructure-independent P2P Common Contract | `zk239`–`zk241` | **25.00%** |
-| **Overall** | `zk201`–`zk241` | **35.98%** |
+| **Overall** | `zk201`–`zk241` | **36.59%** |
 
 ### Scoring rubric
 
@@ -58,7 +58,7 @@ ZK-ARCHE deliberately keeps maturity states separate. Evidence for one state mus
 | `MEASURED` | Available software/environment evidence exists, but required physical STM32/ESP32-S3-class evidence remains incomplete under TD-002. |
 | `EXTERNALLY REVIEWED` | **Not complete.** TD-001 independent cryptographic review remains an external evidence blocker. |
 | `RFC-CLASS DOCUMENTED` | **Not complete.** TD-004 and the RFC-class evidence gate remain open. |
-| `COMMON-CONFORMANT` | **Not complete.** The complete constrained Common Contract and P2P qualification matrix remain unfinished. |
+| `COMMON-CONFORMANT` | **Not complete.** The complete constrained Common Contract and executable P2P qualification matrix remain unfinished. |
 | `DEPLOYMENT-QUALIFIED` | **Not claimed.** Protocol conformance is intentionally distinct from field/product readiness. |
 
 ## Principal blockers
@@ -77,19 +77,14 @@ The main evidence ceilings remain:
 4. **TD-004 — RFC-class normative specification**  
    The normative grammar, complete state machines, registries, requirement language, Security/Privacy Considerations, annotated traces, conformance/change-control package, and independent-implementation evidence remain incomplete.
 
+5. **P2P Common Contract qualification**  
+   `p2p-iot-core` remains draft/non-selectable. The repository now owns a fail-closed cross-class qualification corpus, but executable constrained↔constrained and constrained↔higher-capability evidence, bounded stale-authorization semantics, target budgets, and no-infrastructure runtime evidence remain unfinished.
+
 ## Current execution priority
 
-Subject to the exact-current `dev` GitHub Actions green gate, roadmap work should continue in this order:
+Roadmap execution uses the repository's balanced lane rotation. Every run first establishes exact-current `dev` health using executable repository-owned validation available in the environment. Hosted GitHub Actions are intentionally absent from `dev` and are not a development qualification authority.
 
-1. Preserve reproducible Rust/C truth and deterministic/negative conformance evidence.
-2. Finish TD-003 formal property coverage and model→spec→code traceability.
-3. Advance TD-004 toward independently implementable RFC-class normative documentation.
-4. Build TD-002 constrained Common Contract measurement/scaffolding and collect only real environment/target evidence.
-5. Complete AUTH/TRUST/LINK lifecycle semantics: authentication ≠ authorization ≠ trust mutation, NO-LEARNING AUTH, transcript/context binding, replay, retry, rekey, revocation convergence, authorization-aware resumption, and downgrade resistance.
-6. Qualify the infrastructure-independent `p2p-iot-core` Common Contract across constrained and higher-capability peers with the same mandatory authentication assurance floor.
-7. Advance transport/interface adapters and bindings only when their shared security prerequisites are stable.
-8. Advance data-sovereignty work after shared AUTH/TRUST/LINK prerequisites are sufficiently specified and tested.
-9. Keep BBS/PQ, large trust graphs, attestation, and private lookup optional/research-only unless explicitly promoted and dependency-ready.
+Within the designated dependency-ready lane, preserve the bottom-up Common Contract and evidence rules: do not promote a draft profile, invent hardware/formal/external-review evidence, or weaken mandatory security to obtain a green result.
 
 ## Bottom-up Common Contract
 
@@ -105,10 +100,10 @@ Trust is local and non-transitive by default. Delegation is explicit, bounded, r
 
 When roadmap progress is recalculated:
 
-1. Resolve the exact current `dev` HEAD and require exact-head CI to be green before ordinary roadmap publication.
+1. Resolve exact current `dev` HEAD and establish development health using repository-owned validation executable in the available environment; unavailable lanes remain explicitly unavailable.
 2. Re-evaluate every canonical phase `zk201`–`zk241` against its declared exit criteria using the 0/25/50/75/100 rubric above.
 3. Reconcile phase scores with the RFC-class exit requirements in [`rfc-evolution-plan.md`](./rfc-evolution-plan.md).
-4. Update the overall arithmetic mean, grouped percentages, evidence-basis commit, blockers, and evidence posture in this README.
+4. Update the overall arithmetic mean, grouped percentages, evidence-basis commit, blockers, and evidence posture in this README when those materially change.
 5. Record score decreases when newer evidence invalidates an older claim; do not preserve a percentage merely for monotonic appearance.
 6. If useful work occurs inside a phase without crossing a 25-point threshold, record that progress in the run report without inflating this completion score.
 

@@ -1,0 +1,12 @@
+# ZKP2PQUAL/1
+case_id|peer_a|peer_b|infrastructure|trust_precondition|stimulus|required_outcome|evidence_state
+P2P-001|mcu-core|mcu-core|none|local-authorized|normal-auth|mutual-auth-local-decision|required-unexecuted
+P2P-002|mcu-core|linux-edge|none|local-authorized|normal-auth|mutual-auth-local-decision|required-unexecuted
+P2P-003|linux-edge|mcu-core|none|local-authorized|normal-auth|mutual-auth-local-decision|required-unexecuted
+P2P-004|any|any|none|unauthorized|normal-auth|fail-closed|required-unexecuted
+P2P-005|peer-a|peer-c|none|transitive-only|normal-auth|fail-closed-without-explicit-bounded-delegation|required-unexecuted
+P2P-006|any|any|infrastructure-loss|local-authorized|normal-auth|remains-possible-with-sufficient-local-state|required-unexecuted
+P2P-007|mcu-core|linux-edge|none|local-authorized|extra-optional-capabilities|select-common-floor-or-fail-closed|required-unexecuted
+P2P-008|any|any|none|local-authorized|transport-address-change|transport-address-not-protocol-identity|required-unexecuted
+P2P-009|any|any|none|stale-beyond-permitted-freshness|normal-auth|fail-closed-or-restricted-per-profile|blocked-normative
+P2P-010|any|any|none|local-authorized|incompatible-mandatory-floor|fail-closed|required-unexecuted
