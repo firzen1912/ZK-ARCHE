@@ -108,6 +108,9 @@ run_step_in() {
   run_step "P2P Common Contract qualification corpus" \
     python3 "$ROOT/scripts/check-p2p-common-contract-qualification.py"
 
+  run_step "P2P cross-class decision composition" \
+    python3 "$ROOT/scripts/check-p2p-common-contract-decision.py"
+
   run_step "Rust lane" bash "$ROOT/scripts/ci-rust.sh"
   run_step "C lane" bash "$ROOT/scripts/ci-c.sh"
 

@@ -8,5 +8,5 @@ P2P-005|peer-a|peer-c|none|transitive-only|normal-auth|fail-closed-without-expli
 P2P-006|any|any|infrastructure-loss|local-authorized|normal-auth|remains-possible-with-sufficient-local-state|required-unexecuted
 P2P-007|mcu-core|linux-edge|none|local-authorized|extra-optional-capabilities|select-common-floor-or-fail-closed|required-unexecuted
 P2P-008|any|any|none|local-authorized|transport-address-change|transport-address-not-protocol-identity|required-unexecuted
-P2P-009|any|any|none|stale-beyond-permitted-freshness|normal-auth|fail-closed-or-restricted-per-profile|blocked-normative
+P2P-009|any|any|none|stale-beyond-permitted-freshness|normal-auth|fail-closed-or-restricted-per-profile|required-unexecuted
 P2P-010|any|any|none|local-authorized|incompatible-mandatory-floor|fail-closed|required-unexecuted

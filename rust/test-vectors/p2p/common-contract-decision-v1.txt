@@ -1,0 +1,14 @@
+# ZKP2PDECISION/1
+case_id|peer_a|peer_b|infrastructure_available|auth_valid|authorization_fresh|revocation_fresh|holder_revoked|lineage_current|mandatory_floor_compatible|binding_required|binding_valid|expected
+XCL-001|mcu-core|mcu-core|false|true|true|true|false|true|true|false|false|MUTUAL_AUTH_LOCAL_DECISION
+XCL-002|mcu-core|linux-edge|false|true|true|true|false|true|true|false|false|MUTUAL_AUTH_LOCAL_DECISION
+XCL-003|linux-edge|mcu-core|false|true|true|true|false|true|true|false|false|MUTUAL_AUTH_LOCAL_DECISION
+XCL-004|mcu-core|linux-edge|true|false|true|true|false|true|true|false|false|FAIL_CLOSED
+XCL-005|mcu-core|linux-edge|false|true|false|true|false|true|true|false|false|FAIL_CLOSED
+XCL-006|mcu-core|linux-edge|false|true|true|false|false|true|true|false|false|FAIL_CLOSED
+XCL-007|mcu-core|linux-edge|false|true|true|true|true|true|true|false|false|FAIL_CLOSED
+XCL-008|mcu-core|linux-edge|false|true|true|true|false|false|true|false|false|FAIL_CLOSED
+XCL-009|mcu-core|linux-edge|false|true|true|true|false|true|false|false|false|FAIL_CLOSED
+XCL-010|mcu-core|linux-edge|false|true|true|true|false|true|true|true|false|FAIL_CLOSED
+XCL-011|mcu-core|linux-edge|false|true|true|true|false|true|true|true|true|MUTUAL_AUTH_LOCAL_DECISION
+XCL-012|linux-edge|mcu-core|false|true|true|true|false|true|true|true|true|MUTUAL_AUTH_LOCAL_DECISION
