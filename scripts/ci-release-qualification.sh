@@ -36,7 +36,7 @@ run_step_in() {
 
   echo
   echo "== tool inventory =="
-  for tool in cargo rustc make pkg-config cppcheck proverif; do
+  for tool in cargo rustc make pkg-config cppcheck proverif python3; do
     if command -v "$tool" >/dev/null 2>&1; then
       echo "$tool=$(command -v "$tool")"
     else
@@ -53,6 +53,9 @@ run_step_in() {
 
   run_step "formal qualification" \
     bash "$ROOT/scripts/ci-formal.sh"
+
+  run_step "wire error registry/corpus parity" \
+    python3 "$ROOT/scripts/check-error-registry-parity.py"
 
   run_step "Rust lane" bash "$ROOT/scripts/ci-rust.sh"
   run_step "C lane" bash "$ROOT/scripts/ci-c.sh"
