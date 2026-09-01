@@ -47,6 +47,22 @@ def classify(
     return SUCCESS
 
 
+def classify_context(
+    peer_a: str,
+    peer_b: str,
+    infrastructure_available: bool,
+    security_state: tuple[bool, ...],
+) -> str:
+    if peer_a not in PEER_CLASSES or peer_b not in PEER_CLASSES:
+        fail(f"unknown peer context {peer_a}->{peer_b}")
+    if not isinstance(infrastructure_available, bool):
+        fail("infrastructure availability must be Boolean")
+    # Peer class and optional infrastructure are intentionally validated as
+    # context but excluded from protocol authority. The mandatory decision is
+    # determined solely by the local security evidence tuple.
+    return classify(*security_state)
+
+
 def parse_bool(case_id: str, field: str, value: str) -> bool:
     if value == "true":
         return True
@@ -88,7 +104,12 @@ def validate_canonical(rows: list[dict[str, str]]) -> None:
                 "lineage_current", "mandatory_floor_compatible", "binding_required", "binding_valid",
             )
         )
-        actual = classify(*values)
+        infrastructure_available = parse_bool(
+            cid, "infrastructure_available", row["infrastructure_available"]
+        )
+        actual = classify_context(
+            row["peer_a"], row["peer_b"], infrastructure_available, values
+        )
         if row["expected"] != actual:
             fail(f"{cid}: expected={row['expected']} computed={actual}")
 
@@ -102,13 +123,14 @@ def main() -> None:
     failure_count = 0
 
     # Exhaust the complete Boolean decision surface for both infrastructure
-    # states and every constrained/edge peer pairing. Infrastructure and peer
-    # class are deliberately not inputs to classify(): they may affect
-    # availability or resource use, but cannot become protocol authority.
-    for peer_a, peer_b in itertools.product(PEER_CLASSES, repeat=2):
+    # states and every constrained/edge peer pairing. Peer class and optional
+    # infrastructure are valid context, but neither may become protocol
+    # authority for an otherwise identical local security-evidence tuple.
+    peer_pairs = tuple(itertools.product(PEER_CLASSES, repeat=2))
+    for peer_a, peer_b in peer_pairs:
         for security_state in itertools.product((False, True), repeat=8):
-            offline = classify(*security_state)
-            online = classify(*security_state)
+            offline = classify_context(peer_a, peer_b, False, security_state)
+            online = classify_context(peer_a, peer_b, True, security_state)
             if offline != online:
                 fail(
                     "infrastructure availability changed authority decision "
@@ -116,8 +138,10 @@ def main() -> None:
                 )
 
             # Peer class/order must not create a weaker authentication model.
-            for other_a, other_b in itertools.product(PEER_CLASSES, repeat=2):
-                if classify(*security_state) != classify(*security_state):
+            baseline = offline
+            for other_a, other_b in peer_pairs:
+                other = classify_context(other_a, other_b, False, security_state)
+                if baseline != other:
                     fail(
                         "peer class changed mandatory-floor decision "
                         f"{peer_a}->{peer_b} versus {other_a}->{other_b} state={security_state}"
