@@ -1,9 +1,11 @@
 {
-  "schema": "ZKARCHE-CONSTRAINED-LIFECYCLE-STORAGE/1",
+  "schema": "ZKARCHE-CONSTRAINED-LIFECYCLE-STORAGE/2",
   "evidence_status": "unmeasured",
   "physical_target_executed": false,
   "restart_test_executed": false,
   "rollback_test_executed": false,
+  "entropy_path_exercised": false,
+  "key_storage_path_exercised": false,
   "target": {
     "family": "",
     "board": "",
@@ -13,6 +15,32 @@
     "commit_sha": "",
     "lane": ""
   },
+  "toolchain": {
+    "compiler": "",
+    "compiler_version": "",
+    "build_profile": ""
+  },
+  "crypto_execution": {
+    "library": "",
+    "library_version": "",
+    "accelerator_path": "",
+    "software_fallback": ""
+  },
+  "entropy": {
+    "source": "",
+    "health_test_posture": "",
+    "drbg": "",
+    "reseed_policy": ""
+  },
+  "key_storage": {
+    "representation": "",
+    "location": "",
+    "zeroization_posture": ""
+  },
+  "boot_debug": {
+    "secure_boot_state": "",
+    "debug_state": ""
+  },
   "storage": {
     "backend": "",
     "persistence_medium": "",
@@ -21,13 +49,24 @@
     "rollback_detection": "",
     "power_loss_model": ""
   },
+  "transport": {
+    "kind": "",
+    "mtu_bytes": null,
+    "reliability": ""
+  },
   "observations": {
+    "wire_bytes_auth_exchange": null,
+    "stack_high_water_bytes": null,
+    "heap_peak_bytes": null,
+    "static_ram_bytes": null,
+    "flash_text_rodata_bytes": null,
     "persistent_state_bytes": null,
     "revocation_view_bytes": null,
     "authorization_view_bytes": null,
+    "auth_latency_us": null,
     "update_latency_us": null,
     "restart_recovery_us": null,
     "bytes_written_per_update": null
   },
-  "notes": "Template only; no physical-target lifecycle-storage evidence is claimed."
+  "notes": "Template only; no physical-target measurement, restart/rollback result, entropy-path evidence, or key-storage evidence is claimed."
 }
