@@ -7,8 +7,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CORPUS = ROOT / "rust/test-vectors/p2p/common-contract-qualification-v1.txt"
+DELEGATION_CORPUS = ROOT / "rust/test-vectors/p2p/local-trust-delegation-v1.txt"
 ROADMAP = ROOT / "docs/roadmaps/improvement-roadmap.md"
 REGISTRY = ROOT / "spec/registries.md"
+DELEGATION_SPEC = ROOT / "spec/p2p-local-trust-and-delegation.md"
 
 EXPECTED = {
     "P2P-001": ("mcu-core", "mcu-core", "none", "local-authorized", "normal-auth", "mutual-auth-local-decision", "required-unexecuted"),
@@ -24,6 +26,18 @@ EXPECTED = {
 }
 FIELDS = ["case_id", "peer_a", "peer_b", "infrastructure", "trust_precondition", "stimulus", "required_outcome", "evidence_state"]
 
+DELEGATION_EXPECTED = {
+    "DLG-001": ("direct-local-trust", "none", "direct-auth", "accept-if-other-authz-checks-pass", "required-unexecuted"),
+    "DLG-002": ("transitive-only", "none", "normal-auth", "reject", "required-unexecuted"),
+    "DLG-003": ("explicit-delegation", "scope-mismatch", "normal-auth", "reject", "blocked-implementation"),
+    "DLG-004": ("explicit-delegation", "audience-mismatch", "normal-auth", "reject", "blocked-implementation"),
+    "DLG-005": ("explicit-delegation", "expired-or-epoch-stale", "normal-auth", "reject", "blocked-normative"),
+    "DLG-006": ("explicit-delegation", "depth-exceeded", "normal-auth", "reject", "blocked-implementation"),
+    "DLG-007": ("explicit-delegation", "revoked", "normal-auth", "reject", "blocked-normative"),
+    "DLG-008": ("explicit-delegation", "all-bounds-valid", "normal-auth", "eligible-for-authz-evaluation-not-automatic-trust", "blocked-implementation"),
+}
+DELEGATION_FIELDS = ["case_id", "trust_basis", "bound_condition", "stimulus", "required_outcome", "evidence_state"]
+
 
 def fail(message: str) -> None:
     print(f"p2p-common-contract-qualification: FAIL: {message}", file=sys.stderr)
@@ -37,29 +51,29 @@ def read_text(path: Path) -> str:
         fail(f"cannot read {path.relative_to(ROOT)}: {exc}")
 
 
-def load_corpus() -> dict[str, tuple[str, ...]]:
-    text = read_text(CORPUS)
+def load_table(path: Path, marker: str, fields: list[str], expected: dict[str, tuple[str, ...]]) -> dict[str, tuple[str, ...]]:
+    text = read_text(path)
     lines = text.splitlines()
-    if not lines or lines[0] != "# ZKP2PQUAL/1":
-        fail("missing exact ZKP2PQUAL/1 corpus marker")
+    if not lines or lines[0] != marker:
+        fail(f"missing exact {marker[2:]} corpus marker in {path.relative_to(ROOT)}")
     data_lines = [line for line in lines[1:] if line and not line.startswith("#")]
     reader = csv.DictReader(data_lines, delimiter="|")
-    if reader.fieldnames != FIELDS:
-        fail(f"unexpected corpus fields: {reader.fieldnames}")
+    if reader.fieldnames != fields:
+        fail(f"unexpected corpus fields in {path.relative_to(ROOT)}: {reader.fieldnames}")
     found: dict[str, tuple[str, ...]] = {}
     for row in reader:
         case_id = row["case_id"]
         if case_id in found:
             fail(f"duplicate case_id {case_id}")
-        values = tuple(row[field] for field in FIELDS[1:])
+        values = tuple(row[field] for field in fields[1:])
         if any(value is None or value == "" for value in values):
             fail(f"empty field in {case_id}")
         found[case_id] = values
-    if found != EXPECTED:
-        missing = sorted(set(EXPECTED) - set(found))
-        extra = sorted(set(found) - set(EXPECTED))
-        changed = sorted(case_id for case_id in set(found) & set(EXPECTED) if found[case_id] != EXPECTED[case_id])
-        fail(f"corpus drift missing={missing} extra={extra} changed={changed}")
+    if found != expected:
+        missing = sorted(set(expected) - set(found))
+        extra = sorted(set(found) - set(expected))
+        changed = sorted(case_id for case_id in set(found) & set(expected) if found[case_id] != expected[case_id])
+        fail(f"corpus drift in {path.relative_to(ROOT)} missing={missing} extra={extra} changed={changed}")
     if any(values[-1] == "passed" for values in found.values()):
         fail("static corpus must not self-declare runtime PASS")
     return found
@@ -68,6 +82,7 @@ def load_corpus() -> dict[str, tuple[str, ...]]:
 def require_owned_text() -> None:
     roadmap = read_text(ROADMAP)
     registry = read_text(REGISTRY)
+    delegation = read_text(DELEGATION_SPEC)
     required_roadmap = [
         "Trust is local and non-transitive by default.",
         "Basic P2P authentication between already-authorized peers must not require:",
@@ -83,14 +98,31 @@ def require_owned_text() -> None:
         fail("p2p-iot-core must remain an explicitly draft registry allocation")
     if "All currently named protocol/security profiles remain `draft`; none of the numeric profile IDs above is production-selectable" not in registry:
         fail("registry no longer preserves non-selectable draft-profile boundary")
+    required_delegation = [
+        "Trust is local and non-transitive by default.",
+        "A trust decision MUST NOT become transitive merely because an accepted peer trusts another peer.",
+        "Delegation MUST be explicit, scoped, audience-bound, depth-bounded, validity-bounded, issuer-bound, epoch-bound, and revocable.",
+        "A valid delegation MAY make a subject eligible for local authorization evaluation; it MUST NOT create automatic persistent trust.",
+        "Normal AUTH remains NO-LEARNING.",
+        "The current mandatory Common Contract does not yet claim executable delegation support.",
+    ]
+    for needle in required_delegation:
+        if needle not in delegation:
+            fail(f"delegation contract text missing: {needle}")
 
 
 def main() -> None:
-    cases = load_corpus()
+    cases = load_table(CORPUS, "# ZKP2PQUAL/1", FIELDS, EXPECTED)
+    delegation_cases = load_table(DELEGATION_CORPUS, "# ZKP2PDELEG/1", DELEGATION_FIELDS, DELEGATION_EXPECTED)
     require_owned_text()
-    blocked = sum(1 for values in cases.values() if values[-1] == "blocked-normative")
+    blocked = sum(1 for values in cases.values() if values[-1].startswith("blocked-"))
     unexecuted = sum(1 for values in cases.values() if values[-1] == "required-unexecuted")
-    print(f"p2p-common-contract-qualification: PASS cases={len(cases)} required_unexecuted={unexecuted} blocked_normative={blocked}")
+    delegation_blocked = sum(1 for values in delegation_cases.values() if values[-1].startswith("blocked-"))
+    print(
+        "p2p-common-contract-qualification: PASS "
+        f"cases={len(cases)} required_unexecuted={unexecuted} blocked={blocked} "
+        f"delegation_cases={len(delegation_cases)} delegation_blocked={delegation_blocked}"
+    )
 
 
 if __name__ == "__main__":

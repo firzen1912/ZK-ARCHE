@@ -1,0 +1,10 @@
+# ZKP2PDELEG/1
+case_id|trust_basis|bound_condition|stimulus|required_outcome|evidence_state
+DLG-001|direct-local-trust|none|direct-auth|accept-if-other-authz-checks-pass|required-unexecuted
+DLG-002|transitive-only|none|normal-auth|reject|required-unexecuted
+DLG-003|explicit-delegation|scope-mismatch|normal-auth|reject|blocked-implementation
+DLG-004|explicit-delegation|audience-mismatch|normal-auth|reject|blocked-implementation
+DLG-005|explicit-delegation|expired-or-epoch-stale|normal-auth|reject|blocked-normative
+DLG-006|explicit-delegation|depth-exceeded|normal-auth|reject|blocked-implementation
+DLG-007|explicit-delegation|revoked|normal-auth|reject|blocked-normative
+DLG-008|explicit-delegation|all-bounds-valid|normal-auth|eligible-for-authz-evaluation-not-automatic-trust|blocked-implementation
