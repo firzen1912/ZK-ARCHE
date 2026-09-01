@@ -21,10 +21,24 @@ if ! REPO_HEAD="$(git -C "$ROOT" rev-parse --verify HEAD 2>/dev/null)"; then
 fi
 REPO_SHORT="${REPO_HEAD:0:12}"
 
-if ! PROVERIF_VERSION="$(proverif -version 2>&1 | head -n 1)" || [ -z "$PROVERIF_VERSION" ]; then
+if ! PROVERIF_HELP="$(proverif -help 2>&1)"; then
+  echo "formal qualification: UNAVAILABLE (cannot query ProVerif help/version banner)" >&2
+  exit 125
+fi
+PROVERIF_VERSION="$(printf '%s\n' "$PROVERIF_HELP" | sed -n '1p')"
+if [ -z "$PROVERIF_VERSION" ]; then
   echo "formal qualification: UNAVAILABLE (cannot resolve ProVerif version)" >&2
   exit 125
 fi
+
+PROVERIF_REQUIRED_VERSION="${PROVERIF_REQUIRED_VERSION:-2.05}"
+case "$PROVERIF_VERSION" in
+  *"$PROVERIF_REQUIRED_VERSION"*) ;;
+  *)
+    echo "formal qualification: UNAVAILABLE (requires ProVerif $PROVERIF_REQUIRED_VERSION; found $PROVERIF_VERSION)" >&2
+    exit 125
+    ;;
+esac
 
 bash "$ROOT/scripts/sync-formal-models.sh" --check
 
@@ -117,7 +131,7 @@ run_model() {
 run_model \
   "auth-v3" \
   "$ROOT/rust/models/proverif/zk_arche_auth_v3_draft.pv" \
-  9
+  10
 
 run_model \
   "replay-continuity" \

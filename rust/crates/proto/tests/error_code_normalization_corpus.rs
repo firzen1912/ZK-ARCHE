@@ -1,7 +1,6 @@
 use proto::{ErrorCode, ProtoError};
 
-const CORPUS: &str =
-    include_str!("../../../test-vectors/wire/error-code-normalization-v1.txt");
+const CORPUS: &str = include_str!("../../../test-vectors/wire/error-code-normalization-v1.txt");
 
 fn parse_hex_u16(value: &str) -> u16 {
     u16::from_str_radix(value, 16).unwrap_or_else(|_| panic!("bad u16 hex {value}"))
@@ -18,7 +17,12 @@ fn shared_error_code_normalization_corpus_is_enforced() {
 
         let received = parse_hex_u16(fields[1]);
         let expected = parse_hex_u16(fields[2]);
-        assert_eq!(ErrorCode::from_u16(received).as_u16(), expected, "{}", fields[0]);
+        assert_eq!(
+            ErrorCode::from_u16(received).as_u16(),
+            expected,
+            "{}",
+            fields[0]
+        );
 
         let bytes = received.to_le_bytes();
         let payload = [bytes[0], bytes[1], b'x'];

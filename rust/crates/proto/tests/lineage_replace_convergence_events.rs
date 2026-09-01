@@ -108,7 +108,12 @@ fn shared_convergence_event_corpus() {
         for event in fields[1].split(',') {
             apply(&mut state, event);
         }
-        assert_eq!(decision(&state), expected(fields[2]), "event case {}", fields[0]);
+        assert_eq!(
+            decision(&state),
+            expected(fields[2]),
+            "event case {}",
+            fields[0]
+        );
         cases += 1;
     }
     assert!(saw_version);

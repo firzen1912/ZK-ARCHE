@@ -1,8 +1,7 @@
 use proto::lineage_replace_attempt_evidence::LineageReplaceAttemptEvidenceDecision;
 use proto::lineage_replace_reconciliation::LineageReplaceReconciliationDecision;
 use proto::lineage_replace_reconciliation_transition::{
-    classify_lineage_replace_reconciliation_transition,
-    LineageReplaceReconciliationTransition,
+    classify_lineage_replace_reconciliation_transition, LineageReplaceReconciliationTransition,
     LineageReplaceReconciliationTransitionFacts,
 };
 
@@ -10,9 +9,7 @@ fn pair(name: &str) -> LineageReplaceReconciliationDecision {
     match name {
         "PAIR_SUCCESSOR_READY" => LineageReplaceReconciliationDecision::PairSuccessorReady,
         "PAIR_PREDECESSOR_READY" => LineageReplaceReconciliationDecision::PairPredecessorReady,
-        "RECONCILIATION_REQUIRED" => {
-            LineageReplaceReconciliationDecision::ReconciliationRequired
-        }
+        "RECONCILIATION_REQUIRED" => LineageReplaceReconciliationDecision::ReconciliationRequired,
         "PAIR_CONTINUITY_BROKEN" => LineageReplaceReconciliationDecision::PairContinuityBroken,
         "SUCCESSOR_DIVERGENCE" => LineageReplaceReconciliationDecision::SuccessorDivergence,
         _ => panic!("unknown pair result"),

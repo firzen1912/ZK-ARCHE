@@ -8,6 +8,18 @@ EVIDENCE="evidence/release-qualification"
 LOG="$EVIDENCE/release-qualification.log"
 mkdir -p "$EVIDENCE"
 
+export REQUIRE_CARGO_AUDIT="${REQUIRE_CARGO_AUDIT:-1}"
+export REQUIRE_SANITIZERS="${REQUIRE_SANITIZERS:-1}"
+
+if ! git -C "$ROOT" diff --quiet --ignore-submodules --; then
+  echo "release qualification: FAIL (tracked working-tree changes must be committed first)" >&2
+  exit 1
+fi
+if ! git -C "$ROOT" diff --cached --quiet --ignore-submodules --; then
+  echo "release qualification: FAIL (staged changes must be committed first)" >&2
+  exit 1
+fi
+
 run_step() {
   local name="$1"
   shift
@@ -15,16 +27,6 @@ run_step() {
   echo "== $name =="
   echo "+ $*"
   "$@"
-}
-
-run_step_in() {
-  local name="$1"
-  local dir="$2"
-  shift 2
-  echo
-  echo "== $name =="
-  echo "+ (cd $dir && $*)"
-  (cd "$dir" && "$@")
 }
 
 {
@@ -54,19 +56,10 @@ run_step_in() {
   run_step "formal qualification" \
     bash "$ROOT/scripts/ci-formal.sh"
 
-  run_step "wire error registry/corpus parity" \
-    python3 "$ROOT/scripts/check-error-registry-parity.py"
-
   run_step "Rust lane" bash "$ROOT/scripts/ci-rust.sh"
   run_step "C lane" bash "$ROOT/scripts/ci-c.sh"
-
-  run_step_in "C harness against Rust vectors" "$ROOT/c" \
-    ./build/tests/test_vectors ../rust/test-vectors/0x0001
-
-  run_step_in "Rust vector regeneration" "$ROOT/rust" \
-    cargo run --example gen_test_vectors --features test-vectors
-  run_step "generated vector drift check" \
-    "$GIT_BIN" -C "$ROOT" diff --exit-code -- rust/test-vectors/0x0001
+  run_step "cross-language conformance" \
+    bash "$ROOT/scripts/ci-conformance.sh"
 
   echo
   echo "release qualification: PASS"

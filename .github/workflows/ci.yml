@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -11,55 +12,61 @@ permissions:
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: "1"
 
 jobs:
   rust:
-    name: Rust lane — fmt, check, test, clippy, audit
-    runs-on: ubuntu-latest
+    name: Rust reference — fmt, check, test, clippy, audit
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
+    env:
+      REQUIRE_CARGO_AUDIT: "1"
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out exact revision
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.0.2
         with:
           persist-credentials: false
 
-      - name: Install Rust toolchain
+      - name: Install pinned Rust toolchain
         working-directory: rust
         run: |
           rustup show
           rustup component add rustfmt clippy
 
-      - name: Cache cargo build
-        uses: Swatinem/rust-cache@v2
+      - name: Cache Cargo build
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           workspaces: rust
 
-      - name: Install Rust security tooling
-        run: cargo install cargo-audit --locked
+      - name: Install pinned Rust security tooling
+        run: cargo install cargo-audit --locked --version 0.22.2
 
-      - name: Run Rust CI
+      - name: Run Rust qualification
         run: bash ./scripts/ci-rust.sh
 
       - name: Upload Rust evidence
-        if: always()
-        uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: rust-ci-log
+          name: rust-reference-evidence
           path: rust/evidence/rust-ci.log
           if-no-files-found: ignore
+          retention-days: 30
 
   c:
-    name: C lane — build, tests, static analysis, sanitizers
-    runs-on: ubuntu-latest
+    name: Constrained C — build, tests, analysis, sanitizers
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
       CC: gcc
       REQUIRE_SANITIZERS: "1"
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out exact revision
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.0.2
         with:
           persist-credentials: false
 
@@ -68,82 +75,112 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential clang cppcheck pkg-config libsodium-dev
 
-      - name: Run C CI
+      - name: Run constrained C qualification
         run: bash ./scripts/ci-c.sh
 
-      - name: Upload C evidence
-        if: always()
-        uses: actions/upload-artifact@v4
+      - name: Upload constrained C evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: c-ci-log
+          name: constrained-c-evidence
           path: c/evidence/c-ci.log
           if-no-files-found: ignore
+          retention-days: 30
 
-  release-qualification:
-    name: Release qualification — Rust/C interop & security gate
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    needs: [rust, c]
-    if: always()
-    env:
-      CC: gcc
-      REQUIRE_SANITIZERS: "1"
+  formal:
+    name: Formal assurance — ProVerif 2.05 exact-head gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out exact revision
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.0.2
         with:
           persist-credentials: false
 
-      - name: Install Rust toolchain
-        working-directory: rust
+      - name: Install ProVerif build dependency
         run: |
-          rustup show
-          rustup component add rustfmt clippy
+          sudo apt-get update
+          sudo apt-get install -y ocaml-nox
 
-      - name: Cache cargo build
-        uses: Swatinem/rust-cache@v2
+      - name: Build checksum-pinned ProVerif CLI
+        run: |
+          bash ./scripts/install-proverif.sh "$RUNNER_TEMP/proverif-2.05"
+          echo "$RUNNER_TEMP/proverif-2.05/bin" >> "$GITHUB_PATH"
+
+      - name: Run exact-head formal qualification
+        run: bash ./scripts/ci-formal.sh
+
+      - name: Upload formal evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: formal-proverif-evidence
+          path: evidence/formal/**
+          if-no-files-found: ignore
+          retention-days: 90
+
+  conformance:
+    name: Cross-language conformance — contracts and vectors
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    needs: [rust, c]
+    env:
+      CC: gcc
+    steps:
+      - name: Check out exact revision
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Install pinned Rust toolchain
+        working-directory: rust
+        run: rustup show
+
+      - name: Cache Cargo build
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           workspaces: rust
 
-      - name: Install Rust security tooling
-        run: cargo install cargo-audit --locked
-
-      - name: Install C build and analysis dependencies
+      - name: Install C conformance dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential clang cppcheck pkg-config libsodium-dev
+          sudo apt-get install -y build-essential pkg-config libsodium-dev
 
-      - name: Run release qualification
-        run: bash ./scripts/ci-release-qualification.sh
+      - name: Run cross-language conformance
+        run: bash ./scripts/ci-conformance.sh
 
-      - name: Upload release qualification evidence
-        if: always()
-        uses: actions/upload-artifact@v4
+      - name: Upload conformance evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: release-qualification-evidence
-          path: |
-            evidence/release-qualification/**
-            rust/evidence/**
-            c/evidence/**
+          name: cross-language-conformance-evidence
+          path: evidence/conformance/**
           if-no-files-found: ignore
+          retention-days: 30
 
   ci-complete:
-    name: CI complete — required-lane gate
-    runs-on: ubuntu-latest
-    needs: [rust, c, release-qualification]
-    if: always()
+    name: CI complete — required capability gate
+    runs-on: ubuntu-24.04
+    needs: [rust, c, formal, conformance]
+    if: ${{ always() }}
     steps:
-      - name: Check required jobs
+      - name: Check required capability jobs
+        env:
+          RUST_RESULT: ${{ needs.rust.result }}
+          C_RESULT: ${{ needs.c.result }}
+          FORMAL_RESULT: ${{ needs.formal.result }}
+          CONFORMANCE_RESULT: ${{ needs.conformance.result }}
         run: |
-          if [ "${{ needs.rust.result }}" != "success" ]; then
-            echo "Rust CI failed: ${{ needs.rust.result }}" >&2
-            exit 1
+          status=0
+          for lane in RUST C FORMAL CONFORMANCE; do
+            result_var="${lane}_RESULT"
+            result="${!result_var}"
+            if [ "$result" != "success" ]; then
+              echo "${lane,,} capability failed: $result" >&2
+              status=1
+            fi
+          done
+          if [ "$status" -ne 0 ]; then
+            exit "$status"
           fi
-          if [ "${{ needs.c.result }}" != "success" ]; then
-            echo "C CI failed: ${{ needs.c.result }}" >&2
-            exit 1
-          fi
-          if [ "${{ needs.release-qualification.result }}" != "success" ]; then
-            echo "Release qualification failed: ${{ needs.release-qualification.result }}" >&2
-            exit 1
-          fi
-          echo "All CI lanes and release qualification passed."
+          echo "All required ZK-ARCHE capability lanes passed."

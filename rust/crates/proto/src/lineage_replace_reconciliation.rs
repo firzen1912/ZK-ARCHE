@@ -36,8 +36,7 @@ pub fn classify_lineage_replace_reconciliation(
 
     let local_successor =
         facts.local_state == LineageReplaceState::ActiveSuccessorPredecessorRetired;
-    let peer_successor =
-        facts.peer_state == LineageReplaceState::ActiveSuccessorPredecessorRetired;
+    let peer_successor = facts.peer_state == LineageReplaceState::ActiveSuccessorPredecessorRetired;
 
     if local_successor && peer_successor {
         if !facts.same_successor {

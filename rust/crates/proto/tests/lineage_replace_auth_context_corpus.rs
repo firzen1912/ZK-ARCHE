@@ -1,6 +1,5 @@
 use proto::auth_v3_iot_core_authz::{
-    IotCoreAttributionRecordV1, IotCoreAuthorizationContextV1,
-    IOT_CORE_SCOPE_SECURE_ASSOCIATION,
+    IotCoreAttributionRecordV1, IotCoreAuthorizationContextV1, IOT_CORE_SCOPE_SECURE_ASSOCIATION,
 };
 use proto::lineage_replace::LineageReplaceAuthorizationDecision;
 use proto::lineage_replace_auth_context::{

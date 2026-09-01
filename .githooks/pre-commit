@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
+
+echo "== ZK-ARCHE pre-commit gate =="
+git diff --cached --check
+
+echo "== Rust formatting =="
+(cd rust && cargo fmt --all -- --check)
+
+echo "== Wire error registry/corpus parity =="
+python3 ./scripts/check-error-registry-parity.py
+
+echo "== Formal model mirror synchronization =="
+bash ./scripts/sync-formal-models.sh --check
+
+echo "pre-commit gate: PASS"

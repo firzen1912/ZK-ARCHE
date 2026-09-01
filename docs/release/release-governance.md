@@ -56,6 +56,16 @@ At minimum, release qualification should preserve current Rust and C CI, determi
 
 A green CI run demonstrates only the checks it actually executes.
 
+### Stable-branch enforcement
+
+`main` is the stable/front-page branch. Pull requests targeting `main` and pushes to `main` run four required capability lanes: Rust reference behavior, constrained C behavior, exact-head ProVerif assurance, and Rust/C contract-vector conformance. The aggregate branch-protection check is:
+
+```text
+CI complete — required capability gate
+```
+
+Repository settings should require that check and a pull request before `main` can advance. Local hooks provide earlier feedback but are not an authorization boundary and can be bypassed; hosted branch protection remains the stable-branch authority. `dev` remains the rapid integration branch and does not trigger hosted CI on push.
+
 ## Research and roadmap boundary
 
 - `docs/research/` may recommend or reject ideas.

@@ -1,6 +1,5 @@
 use crate::auth_v3_iot_core_authz::{
-    IotCoreAttributionRecordV1, IotCoreAuthorizationContextV1,
-    IOT_CORE_SCOPE_SECURE_ASSOCIATION,
+    IotCoreAttributionRecordV1, IotCoreAuthorizationContextV1, IOT_CORE_SCOPE_SECURE_ASSOCIATION,
 };
 use crate::lineage_replace::{
     classify_lineage_replace_authorization, LineageReplaceAuthorizationDecision,

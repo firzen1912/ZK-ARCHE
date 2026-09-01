@@ -18,6 +18,9 @@ mkdir -p evidence
   echo "== rust dependency audit =="
   if command -v cargo-audit >/dev/null 2>&1; then
     cargo audit
+  elif [ "${REQUIRE_CARGO_AUDIT:-0}" = "1" ]; then
+    echo "cargo-audit is required but not installed" >&2
+    exit 1
   else
     echo "cargo-audit not installed; skipping dependency advisory audit"
   fi

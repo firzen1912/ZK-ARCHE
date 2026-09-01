@@ -158,6 +158,16 @@ Full release qualification:
 ./scripts/ci-release-qualification.sh
 ```
 
+Enable the tracked local quality gates once per clone:
+
+```bash
+make hooks
+```
+
+The pre-commit hook runs fast formatting and contract-consistency checks. The pre-push hook runs Rust/C/conformance qualification for pushes to `dev`, and the complete fail-closed release qualification (including ProVerif 2.05 and `cargo-audit`) for pushes to `main`. Installation copies the hooks into the clone's Git directory so they remain active when switching between `dev`, `main`, and topic branches; rerun `make hooks` after hook updates.
+
+The hosted formal lane builds the CLI-only ProVerif 2.05 release from its checksum-pinned official source archive. A local machine with OCaml installed can create the same verifier under a temporary directory with `./scripts/install-proverif.sh <destination>` and add `<destination>/bin` to `PATH` before main qualification.
+
 The formal lane intentionally fails closed when required tooling or exact-head provenance is unavailable. An unavailable or synthetic run is not a formal PASS.
 
 ## Cross-language vectors and corpora
@@ -184,6 +194,7 @@ make
 - GitHub Actions workflows are intentionally absent from `dev` to conserve Actions usage during rapid prototyping.
 - Local validation and evidence scripts remain available on `dev` and should be used before promoting stable work.
 - `main` is the stable branch and retains the GitHub Actions CI/release-qualification workflow.
+- Pull requests targeting `main` and pushes to `main` must pass the aggregate `CI complete — required capability gate` check before merge/release.
 
 The absence of a GitHub Actions run on `dev` is therefore **not** a qualification failure by itself. Stable promotion to `main` is expected to restore/run the main-branch CI gates.
 

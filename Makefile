@@ -1,7 +1,10 @@
-.PHONY: ci release-qualification release-qual rust-ci c-ci c-vectors clean
+.PHONY: ci conformance release-qualification release-qual rust-ci c-ci c-vectors hooks test-hooks clean
 
 ci:
 	bash ./scripts/ci-all.sh
+
+conformance:
+	bash ./scripts/ci-conformance.sh
 
 release-qualification:
 	bash ./scripts/ci-release-qualification.sh
@@ -16,6 +19,12 @@ c-ci:
 
 c-vectors:
 	cd c && ./build/tests/test_vectors ../rust/test-vectors/0x0001
+
+hooks:
+	bash ./scripts/install-git-hooks.sh
+
+test-hooks:
+	bash ./scripts/tests/test-git-hooks.sh
 
 clean:
 	cd rust && cargo clean || true

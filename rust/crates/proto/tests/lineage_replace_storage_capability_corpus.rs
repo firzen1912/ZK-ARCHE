@@ -18,15 +18,11 @@ fn expected(value: &str) -> LineageReplaceStorageCapabilityDecision {
         "REJECT_POWER_LOSS_RECOVERY" => {
             LineageReplaceStorageCapabilityDecision::RejectPowerLossRecovery
         }
-        "REJECT_RECORD_INTEGRITY" => {
-            LineageReplaceStorageCapabilityDecision::RejectRecordIntegrity
-        }
+        "REJECT_RECORD_INTEGRITY" => LineageReplaceStorageCapabilityDecision::RejectRecordIntegrity,
         "REJECT_REPLAY_PROTECTION" => {
             LineageReplaceStorageCapabilityDecision::RejectReplayProtection
         }
-        "REJECT_FRESHNESS_ANCHOR" => {
-            LineageReplaceStorageCapabilityDecision::RejectFreshnessAnchor
-        }
+        "REJECT_FRESHNESS_ANCHOR" => LineageReplaceStorageCapabilityDecision::RejectFreshnessAnchor,
         "REJECT_FRESHNESS_INTEGRITY" => {
             LineageReplaceStorageCapabilityDecision::RejectFreshnessIntegrity
         }
@@ -39,9 +35,8 @@ fn expected(value: &str) -> LineageReplaceStorageCapabilityDecision {
 
 #[test]
 fn canonical_lineage_replace_storage_capability_corpus() {
-    let corpus = include_str!(
-        "../../../test-vectors/replay/lineage-replace-storage-capability-v1.txt"
-    );
+    let corpus =
+        include_str!("../../../test-vectors/replay/lineage-replace-storage-capability-v1.txt");
     let mut cases = 0usize;
 
     for line in corpus.lines() {

@@ -103,5 +103,10 @@ where
         }
         _ => LineageReplaceVerifiedCommitPhase::StorageFailed,
     };
-    LineageReplaceVerifiedCommitResult { phase, authorization, decision, storage_result }
+    LineageReplaceVerifiedCommitResult {
+        phase,
+        authorization,
+        decision,
+        storage_result,
+    }
 }

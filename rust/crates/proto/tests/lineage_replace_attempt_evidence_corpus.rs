@@ -3,9 +3,8 @@ use proto::lineage_replace_attempt_evidence::{
     LineageReplaceAttemptEvidenceFacts,
 };
 
-const CORPUS: &str = include_str!(
-    "../../../test-vectors/replay/lineage-replace-attempt-evidence-v1.txt"
-);
+const CORPUS: &str =
+    include_str!("../../../test-vectors/replay/lineage-replace-attempt-evidence-v1.txt");
 
 fn id(value: &str) -> Option<u32> {
     let value = value.parse::<u32>().expect("valid attempt id");

@@ -14,12 +14,6 @@ LOG="$ROOT/evidence/ci-all.log"
   echo "== c lane =="
   bash "$ROOT/scripts/ci-c.sh"
   echo
-  echo "== c vector harness against rust vectors =="
-  cd "$ROOT/c"
-  if [ -x ./build/tests/test_vectors ]; then
-    ./build/tests/test_vectors ../rust/test-vectors/0x0001
-  else
-    echo "C vector test binary not found after C CI; run make in c/ and retry." >&2
-    exit 1
-  fi
+  echo "== cross-language conformance lane =="
+  bash "$ROOT/scripts/ci-conformance.sh"
 } 2>&1 | tee "$LOG"

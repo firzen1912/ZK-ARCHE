@@ -78,9 +78,7 @@ fn expected(name: &str) -> LineageReplaceReconciliationDecision {
     match name {
         "PAIR_SUCCESSOR_READY" => LineageReplaceReconciliationDecision::PairSuccessorReady,
         "PAIR_PREDECESSOR_READY" => LineageReplaceReconciliationDecision::PairPredecessorReady,
-        "RECONCILIATION_REQUIRED" => {
-            LineageReplaceReconciliationDecision::ReconciliationRequired
-        }
+        "RECONCILIATION_REQUIRED" => LineageReplaceReconciliationDecision::ReconciliationRequired,
         "CONTINUITY_BROKEN" => LineageReplaceReconciliationDecision::PairContinuityBroken,
         "SUCCESSOR_DIVERGENCE" => LineageReplaceReconciliationDecision::SuccessorDivergence,
         _ => panic!("unknown pair result"),
@@ -89,9 +87,8 @@ fn expected(name: &str) -> LineageReplaceReconciliationDecision {
 
 #[test]
 fn asymmetric_durable_corpus() {
-    let corpus = include_str!(
-        "../../../test-vectors/replay/lineage-replace-asymmetric-durable-v1.txt"
-    );
+    let corpus =
+        include_str!("../../../test-vectors/replay/lineage-replace-asymmetric-durable-v1.txt");
     let mut count = 0usize;
 
     for line in corpus.lines().filter(|line| line.starts_with("case=")) {
