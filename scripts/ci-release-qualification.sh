@@ -47,9 +47,44 @@ run_step_in() {
     echo "git=$(command -v "$GIT_BIN")"
   else
     echo "git=missing"
+    exit 1
   fi
   if command -v gcc >/dev/null 2>&1; then echo "gcc=$(command -v gcc)"; fi
   if command -v clang >/dev/null 2>&1; then echo "clang=$(command -v clang)"; fi
+
+  QUALIFICATION_HEAD="$("$GIT_BIN" -C "$ROOT" rev-parse --verify HEAD)"
+  echo "qualification_head=$QUALIFICATION_HEAD"
+
+  exact_head_gate() {
+    local phase="$1"
+    local current_head current_tree current_branch status manifest
+    current_head="$("$GIT_BIN" -C "$ROOT" rev-parse --verify HEAD)"
+    current_tree="$("$GIT_BIN" -C "$ROOT" rev-parse 'HEAD^{tree}')"
+    current_branch="$("$GIT_BIN" -C "$ROOT" symbolic-ref --quiet --short HEAD 2>/dev/null || printf 'DETACHED')"
+
+    if [[ "$current_head" != "$QUALIFICATION_HEAD" ]]; then
+      echo "exact-head-provenance: FAIL: HEAD moved expected=$QUALIFICATION_HEAD observed=$current_head" >&2
+      return 1
+    fi
+    if "$GIT_BIN" -C "$ROOT" rev-parse --verify MERGE_HEAD >/dev/null 2>&1; then
+      echo "exact-head-provenance: FAIL: merge in progress" >&2
+      return 1
+    fi
+    status="$("$GIT_BIN" -C "$ROOT" status --porcelain=v1 --untracked-files=all)"
+    if [[ -n "$status" ]]; then
+      echo "exact-head-provenance: FAIL: working tree is not clean" >&2
+      printf '%s\n' "$status" >&2
+      return 1
+    fi
+
+    manifest="$EVIDENCE/exact-head-${phase}.tsv"
+    printf 'schema\thead\ttree\tbranch\tclean\n' > "$manifest"
+    printf 'ZKARCHE-EXACT-HEAD/1\t%s\t%s\t%s\ttrue\n' \
+      "$current_head" "$current_tree" "$current_branch" >> "$manifest"
+    echo "exact-head-provenance: PASS phase=$phase head=$current_head tree=$current_tree branch=$current_branch clean=true"
+  }
+
+  run_step "exact-head clean preflight" exact_head_gate preflight
 
   run_step "formal qualification" \
     bash "$ROOT/scripts/ci-formal.sh"
@@ -73,6 +108,8 @@ run_step_in() {
     cargo run --example gen_test_vectors --features test-vectors
   run_step "generated vector drift check" \
     "$GIT_BIN" -C "$ROOT" diff --exit-code -- rust/test-vectors/0x0001
+
+  run_step "exact-head clean postflight" exact_head_gate postflight
 
   echo
   echo "release qualification: PASS"
