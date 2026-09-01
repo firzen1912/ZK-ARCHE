@@ -57,12 +57,7 @@ struct ServerArgs {
 
 fn usage(prog: &str) {
     eprintln!(
-        "Usage:
-  {0} --bind 0.0.0.0:4000 [--transport udp|tcp|both] \\
-      [--state-dir ./server-state] \\
-      [--require-pairing-token TOKEN]
-
-  The --bind address is used for both UDP and TCP when --transport=both.",
+        "Usage:\n  {0} --bind 0.0.0.0:4000 [--transport udp|tcp|both] \\\n      [--state-dir ./server-state] \\\n      [--require-pairing-token TOKEN]\n\n  The --bind address is used for both UDP and TCP when --transport=both.",
         prog
     );
 }
@@ -187,6 +182,20 @@ struct ServerState {
     last_gc: Instant,
 }
 
+/// Remove and return a terminal-flight pending session before verification.
+///
+/// AUTH_3 is terminal for its pending AUTH state: once a receiver accepts a
+/// framed AUTH_3 for an existing session into terminal verification, success
+/// and failure both consume that pending state. A failed terminal flight must
+/// restart from AUTH_1 under a fresh session identifier rather than retrying
+/// against partially retained verification state.
+fn take_terminal_session<T>(
+    sessions: &mut HashMap<[u8; SESSION_ID_LEN], T>,
+    session_id: &[u8; SESSION_ID_LEN],
+) -> Option<T> {
+    sessions.remove(session_id)
+}
+
 /// Dispatch one already-received packet. Returns the response bytes to send
 /// back to the peer. This is the single entry point shared by the UDP and
 /// TCP drivers — proof that Layer A (state machines) and Layer B (framing)
@@ -263,18 +272,12 @@ fn dispatch_packet(state: &mut ServerState, peer: SocketAddr, bytes: &[u8]) -> O
             })
         }
 
-        PKT_AUTH_3 => match state.auth_sessions.get(&hdr.session_id) {
+        PKT_AUTH_3 => match take_terminal_session(&mut state.auth_sessions, &hdr.session_id) {
             None => Err(ProtoError::wire(
                 ErrorCode::UnknownSession,
                 "no auth session for AUTH_3",
             )),
-            Some(pending) => {
-                let r = handle_auth_3(pending, hdr.session_id, hdr.seq, payload);
-                if r.is_ok() {
-                    state.auth_sessions.remove(&hdr.session_id);
-                }
-                r
-            }
+            Some(pending) => handle_auth_3(&pending, hdr.session_id, hdr.seq, payload),
         },
 
         other => Err(ProtoError::wire(
@@ -495,4 +498,21 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::take_terminal_session;
+    use std::collections::HashMap;
+
+    #[test]
+    fn terminal_auth_flight_consumes_pending_state_before_verification() {
+        let sid = [0xA5; 16];
+        let mut sessions = HashMap::new();
+        sessions.insert(sid, 7_u8);
+
+        assert_eq!(take_terminal_session(&mut sessions, &sid), Some(7));
+        assert!(!sessions.contains_key(&sid));
+        assert_eq!(take_terminal_session(&mut sessions, &sid), None);
+    }
 }
