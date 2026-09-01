@@ -44,6 +44,19 @@
 //! | `store`                   | Credential / registry / replay-cache traits      |
 //! | `profile`                 | Timing + resource profiles                       |
 //! | `proto`                   | Layer-A state machines (setup, auth)             |
+//!
+//! ## Protocol summary
+//!
+//! * **Setup** (enrollment): client proves knowledge of `x` such that
+//!   `device_pub = g^x`, server proves knowledge of its static secret. The
+//!   client pins the server's raw public key.
+//! * **Auth**: every session derives `pid = H(device_pub || nonce_c || eph_c
+//!   || server_pub)` and binds every transcript to `pid` (not `device_id`).
+//!   The client additionally re-randomizes its role commitment and produces
+//!   a CDS-OR set-membership proof that the committed role lies in the
+//!   allowed set. Both sides run key confirmation.
+//!
+//! See `spec/iot-auth-wire-spec.docx` for the full specification.
 
 pub mod association_admission;
 pub mod auth_v3;
@@ -81,6 +94,11 @@ pub mod transcript;
 pub mod transport;
 pub mod wire;
 
+// Convenience re-exports.
 pub use error::{ErrorCode, ProtoError, Result};
 pub use profile::{Profile, ProfileKind};
+
+/// Default list of allowed role codes for the CDS role-set proof. Both peers
+/// MUST agree on this list; the online proof reveals only that the committed
+/// role lies in this set, not which one.
 pub const DEFAULT_ALLOWED_ROLES: &[u64] = &[1u64, 2u64];
