@@ -1,0 +1,33 @@
+{
+  "schema": "ZKARCHE-CONSTRAINED-LIFECYCLE-STORAGE/1",
+  "evidence_status": "unmeasured",
+  "physical_target_executed": false,
+  "restart_test_executed": false,
+  "rollback_test_executed": false,
+  "target": {
+    "family": "",
+    "board": "",
+    "board_revision": ""
+  },
+  "implementation": {
+    "commit_sha": "",
+    "lane": ""
+  },
+  "storage": {
+    "backend": "",
+    "persistence_medium": "",
+    "atomic_update_strategy": "",
+    "monotonic_freshness_source": "",
+    "rollback_detection": "",
+    "power_loss_model": ""
+  },
+  "observations": {
+    "persistent_state_bytes": null,
+    "revocation_view_bytes": null,
+    "authorization_view_bytes": null,
+    "update_latency_us": null,
+    "restart_recovery_us": null,
+    "bytes_written_per_update": null
+  },
+  "notes": "Template only; no physical-target lifecycle-storage evidence is claimed."
+}

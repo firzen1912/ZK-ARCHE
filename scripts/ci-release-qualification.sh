@@ -101,6 +101,10 @@ run_step_in() {
   run_step "revocation convergence/stale-authorization contract" \
     python3 "$ROOT/scripts/check-revocation-freshness-contract.py"
 
+  run_step "constrained lifecycle-storage evidence honesty" \
+    python3 "$ROOT/scripts/check-constrained-lifecycle-storage.py" \
+      "$ROOT/evidence/constrained-target/lifecycle-storage-template.json"
+
   run_step "P2P Common Contract qualification corpus" \
     python3 "$ROOT/scripts/check-p2p-common-contract-qualification.py"
 
