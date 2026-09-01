@@ -129,6 +129,11 @@ run_model \
   "$ROOT/rust/models/proverif/zk_arche_lineage_replace_commit_draft.pv" \
   6
 
+run_model \
+  "association-admission" \
+  "$ROOT/rust/models/proverif/zk_arche_association_admission_draft.pv" \
+  12
+
 echo
 echo "formal evidence manifest: $MANIFEST"
 echo "formal qualification: PASS"

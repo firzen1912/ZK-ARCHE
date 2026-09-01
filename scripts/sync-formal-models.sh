@@ -7,6 +7,7 @@ PAIRS=(
   "rust/models/proverif/zk_arche_auth_v3_draft.pv:c/models/proverif/zk_arche_auth_v3_draft.pv"
   "rust/models/proverif/zk_arche_replay_continuity_draft.pv:c/models/proverif/zk_arche_replay_continuity_draft.pv"
   "rust/models/proverif/zk_arche_lineage_replace_commit_draft.pv:c/models/proverif/zk_arche_lineage_replace_commit_draft.pv"
+  "rust/models/proverif/zk_arche_association_admission_draft.pv:c/models/proverif/zk_arche_association_admission_draft.pv"
 )
 
 mode="${1:---check}"
