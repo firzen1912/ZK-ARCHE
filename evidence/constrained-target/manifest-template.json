@@ -1,0 +1,44 @@
+{
+  "schema": "ZKARCHE-CONSTRAINED-TARGET/1",
+  "evidence_status": "unmeasured",
+  "physical_target_executed": false,
+  "target": {
+    "family": "",
+    "board": "",
+    "board_revision": "",
+    "architecture": "",
+    "execution_environment": ""
+  },
+  "implementation": {
+    "commit_sha": "",
+    "lane": "",
+    "toolchain": "",
+    "build_profile": ""
+  },
+  "crypto_context": {
+    "backend": "",
+    "accelerator_used": false,
+    "entropy_source": "",
+    "drbg_reseed_posture": "",
+    "key_generation_mode": "",
+    "key_storage_location": "",
+    "secure_boot_state": "",
+    "debug_state": ""
+  },
+  "lifecycle_assumptions": {
+    "restart": "",
+    "rollback": "",
+    "clone": "",
+    "reprovision": ""
+  },
+  "measurements": {
+    "wire_bytes": null,
+    "static_ram_bytes": null,
+    "peak_stack_bytes": null,
+    "peak_heap_bytes": null,
+    "flash_bytes": null,
+    "latency_us": null,
+    "cpu_cycles": null
+  },
+  "notes": "Template only; no physical-target evidence is claimed."
+}
