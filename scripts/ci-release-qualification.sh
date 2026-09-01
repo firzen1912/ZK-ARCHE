@@ -98,6 +98,9 @@ run_step_in() {
   run_step "AUTH no-learning/trust-mutation boundary" \
     python3 "$ROOT/scripts/check-auth-trust-boundary.py"
 
+  run_step "revocation convergence/stale-authorization contract" \
+    python3 "$ROOT/scripts/check-revocation-freshness-contract.py"
+
   run_step "P2P Common Contract qualification corpus" \
     python3 "$ROOT/scripts/check-p2p-common-contract-qualification.py"
 

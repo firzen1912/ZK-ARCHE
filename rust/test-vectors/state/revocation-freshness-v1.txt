@@ -1,0 +1,10 @@
+# ZKREVFRESH/1
+# id|view_integrity_valid|view_epoch|required_min_epoch|age|max_staleness|holder_revoked|lineage_current|scope_authorized|expected
+current-authorized|true|7|7|10|60|false|true|true|AUTHORIZED
+offline-within-bound|true|12|11|59|60|false|true|true|AUTHORIZED
+explicit-revocation|true|8|8|5|60|true|true|true|REVOKED
+stale-view|true|9|9|61|60|false|true|true|STALE_VIEW
+old-epoch|true|10|11|1|60|false|true|true|ROLLBACK_OR_OLD_EPOCH
+invalid-view|false|11|11|1|60|false|true|true|INVALID_VIEW
+stale-lineage|true|12|12|1|60|false|false|true|STALE_LINEAGE
+scope-denied|true|13|13|1|60|false|true|false|SCOPE_DENIED
