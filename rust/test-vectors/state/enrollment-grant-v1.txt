@@ -1,0 +1,18 @@
+# ZKENROLLGRANT/1 name explicit_enroll normal_auth commissioner_authenticated commissioner_authorized commissioner_not_revoked subject_possession authority_within_scope scope_bounded audience_bound deployment_bound validity_bounded epoch_current revocation_current lineage_current depth_within_limit rollback action reason
+valid 1 0 1 1 1 1 1 1 1 1 1 1 1 1 1 0 ISSUE CURRENT
+normal_auth 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 DENY NORMAL_AUTH_FORBIDDEN
+no_enroll 0 0 1 1 1 1 1 1 1 1 1 1 1 1 1 0 DENY EXPLICIT_ENROLL_REQUIRED
+commissioner_unauth 1 0 0 1 1 1 1 1 1 1 1 1 1 1 1 0 DENY COMMISSIONER_UNAUTHENTICATED
+commissioner_unauthz 1 0 1 0 1 1 1 1 1 1 1 1 1 1 1 0 DENY COMMISSIONER_UNAUTHORIZED
+commissioner_revoked 1 0 1 1 0 1 1 1 1 1 1 1 1 1 1 0 DENY COMMISSIONER_REVOKED
+no_possession 1 0 1 1 1 0 1 1 1 1 1 1 1 1 1 0 DENY SUBJECT_POSSESSION_MISSING
+escalation 1 0 1 1 1 1 0 1 1 1 1 1 1 1 1 0 DENY AUTHORITY_ESCALATION
+scope_unbounded 1 0 1 1 1 1 1 0 1 1 1 1 1 1 1 0 DENY SCOPE_UNBOUNDED
+audience_unbound 1 0 1 1 1 1 1 1 0 1 1 1 1 1 1 0 DENY AUDIENCE_UNBOUND
+deployment_unbound 1 0 1 1 1 1 1 1 1 0 1 1 1 1 1 0 DENY DEPLOYMENT_UNBOUND
+validity_unbounded 1 0 1 1 1 1 1 1 1 1 0 1 1 1 1 0 DENY VALIDITY_UNBOUNDED
+epoch_stale 1 0 1 1 1 1 1 1 1 1 1 0 1 1 1 0 DENY EPOCH_STALE
+revocation_stale 1 0 1 1 1 1 1 1 1 1 1 1 0 1 1 0 DENY REVOCATION_STALE
+lineage_stale 1 0 1 1 1 1 1 1 1 1 1 1 1 0 1 0 DENY LINEAGE_STALE
+depth_exceeded 1 0 1 1 1 1 1 1 1 1 1 1 1 1 0 0 DENY DELEGATION_DEPTH_EXCEEDED
+rollback 1 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 DENY ROLLBACK_SUSPECTED
