@@ -18,6 +18,7 @@
 //! | `auth_v3_context_parser`  | Strict raw AUTH-v3 subcontext parser             |
 //! | `auth_v3_iot_core_authz`  | Draft `iot-core` authorization-context schema    |
 //! | `replay_continuity`       | Draft fail-closed replay restart state           |
+//! | `resumption_authorization` | Wire-neutral authorization-aware resumption classifier |
 //! | `lineage_replace`         | Wire-neutral lifecycle replacement decisions     |
 //! | `lineage_replace_auth_context` | Concrete `iot-core` lifecycle authorization binding |
 //! | `lineage_replace_session_binding` | AUTH-v3 lifecycle session/context binding       |
@@ -79,6 +80,7 @@ pub mod lineage_replace_verified_commit;
 pub mod profile;
 pub mod proto;
 pub mod replay_continuity;
+pub mod resumption_authorization;
 pub mod store;
 pub mod transcript;
 pub mod transport;
