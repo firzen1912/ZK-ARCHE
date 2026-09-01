@@ -1,0 +1,19 @@
+version=1
+# case|issuer_trusted|holder_authenticated|grant_present|grant_integrity_valid|scope_match|audience_match|deployment_match|validity_current|epoch_current|revocation_current|explicitly_revoked|lineage_current|depth_within_limit|redelegation_permitted|redelegation_requested|rollback_suspected|action|reason
+case=DEL-001|1|1|1|1|1|1|1|1|1|1|0|1|1|0|0|0|ACCEPT|CURRENT
+case=DEL-002|0|1|1|1|1|1|1|1|1|1|0|1|1|0|0|0|DENY|ISSUER_UNTRUSTED
+case=DEL-003|1|0|1|1|1|1|1|1|1|1|0|1|1|0|0|0|DENY|HOLDER_UNAUTHENTICATED
+case=DEL-004|1|1|0|1|1|1|1|1|1|1|0|1|1|0|0|0|DENY|GRANT_MISSING
+case=DEL-005|1|1|1|0|1|1|1|1|1|1|0|1|1|0|0|0|DENY|GRANT_INVALID
+case=DEL-006|1|1|1|1|0|1|1|1|1|1|0|1|1|0|0|0|DENY|SCOPE_MISMATCH
+case=DEL-007|1|1|1|1|1|0|1|1|1|1|0|1|1|0|0|0|DENY|AUDIENCE_MISMATCH
+case=DEL-008|1|1|1|1|1|1|0|1|1|1|0|1|1|0|0|0|DENY|DEPLOYMENT_MISMATCH
+case=DEL-009|1|1|1|1|1|1|1|0|1|1|0|1|1|0|0|0|DENY|EXPIRED_OR_NOT_YET_VALID
+case=DEL-010|1|1|1|1|1|1|1|1|0|1|0|1|1|0|0|0|DENY|EPOCH_STALE
+case=DEL-011|1|1|1|1|1|1|1|1|1|0|0|1|1|0|0|0|DENY|REVOCATION_STALE
+case=DEL-012|1|1|1|1|1|1|1|1|1|1|1|1|1|0|0|0|DENY|REVOKED
+case=DEL-013|1|1|1|1|1|1|1|1|1|1|0|0|1|0|0|0|DENY|LINEAGE_STALE
+case=DEL-014|1|1|1|1|1|1|1|1|1|1|0|1|0|1|1|0|DENY|DEPTH_EXCEEDED
+case=DEL-015|1|1|1|1|1|1|1|1|1|1|0|1|1|0|1|0|DENY|REDELEGATION_FORBIDDEN
+case=DEL-016|1|1|1|1|1|1|1|1|1|1|0|1|1|1|1|0|ACCEPT|CURRENT
+case=DEL-017|1|1|1|1|1|1|1|1|1|1|0|1|1|0|0|1|DENY|ROLLBACK_SUSPECTED

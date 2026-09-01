@@ -10,6 +10,7 @@
 //! | Module                    | Responsibility                                   |
 //! |---------------------------|--------------------------------------------------|
 //! | `association_admission`    | Fail-closed CORE/LINK secure-association postcondition |
+//! | `p2p_delegation`           | Local/non-transitive bounded P2P delegation decision |
 //! | `caps`                    | Protocol version, suite IDs, capability bits     |
 //! | `error`                   | Structured errors + wire error codes             |
 //! | `transcript`              | Canonical transcript builder + domain separators |
@@ -81,6 +82,7 @@ pub mod lineage_replace_session_binding;
 pub mod lineage_replace_storage_capability;
 pub mod lineage_replace_storage_transaction;
 pub mod lineage_replace_verified_commit;
+pub mod p2p_delegation;
 pub mod profile;
 pub mod proto;
 pub mod replay_continuity;

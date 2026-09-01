@@ -1,0 +1,10 @@
+#include "auth/p2p_delegation.h"
+#include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#define VECTOR_PATH "../rust/test-vectors/p2p/bounded-delegation-v1.txt"
+static bool bit(const char *v){assert(v);if(strcmp(v,"0")==0)return false;assert(strcmp(v,"1")==0);return true;}
+static p2p_delegation_action_t action(const char *v){if(strcmp(v,"ACCEPT")==0)return P2P_DELEGATION_ACCEPT;assert(strcmp(v,"DENY")==0);return P2P_DELEGATION_DENY;}
+static p2p_delegation_reason_t reason(const char *v){static const char *const n[]={"CURRENT","INVALID_FACTS","ROLLBACK_SUSPECTED","ISSUER_UNTRUSTED","HOLDER_UNAUTHENTICATED","GRANT_MISSING","GRANT_INVALID","SCOPE_MISMATCH","AUDIENCE_MISMATCH","DEPLOYMENT_MISMATCH","EXPIRED_OR_NOT_YET_VALID","EPOCH_STALE","REVOCATION_STALE","REVOKED","LINEAGE_STALE","DEPTH_EXCEEDED","REDELEGATION_FORBIDDEN"};size_t i;for(i=0;i<sizeof(n)/sizeof(n[0]);++i)if(strcmp(v,n[i])==0)return(p2p_delegation_reason_t)i;assert(!"unknown reason");return P2P_DELEGATION_REASON_INVALID_FACTS;}
+int main(void){FILE *fp=fopen(VECTOR_PATH,"r");char line[1024];unsigned cases=0u;int saw_version=0;assert(fp!=NULL);while(fgets(line,sizeof(line),fp)!=NULL){char *f[19];size_t i;p2p_delegation_facts_t facts;p2p_delegation_decision_t got;line[strcspn(line,"\r\n")]='\0';if(strcmp(line,"version=1")==0){saw_version=1;continue;}if(strncmp(line,"case=",5u)!=0)continue;f[0]=strtok(line+5u,"|");for(i=1u;i<19u;++i)f[i]=strtok(NULL,"|");assert(f[18]!=NULL&&strtok(NULL,"|")==NULL);facts=(p2p_delegation_facts_t){bit(f[1]),bit(f[2]),bit(f[3]),bit(f[4]),bit(f[5]),bit(f[6]),bit(f[7]),bit(f[8]),bit(f[9]),bit(f[10]),bit(f[11]),bit(f[12]),bit(f[13]),bit(f[14]),bit(f[15]),bit(f[16])};got=p2p_delegation_classify(&facts);assert(got.action==action(f[17]));assert(got.reason==reason(f[18]));cases+=1u;}fclose(fp);assert(saw_version==1);assert(cases==17u);{p2p_delegation_decision_t got=p2p_delegation_classify(NULL);assert(got.action==P2P_DELEGATION_DENY);assert(got.reason==P2P_DELEGATION_REASON_INVALID_FACTS);}puts("p2p bounded delegation corpus: ok");return EXIT_SUCCESS;}
