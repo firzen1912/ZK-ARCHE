@@ -1,0 +1,7 @@
+# AUTH terminal-flight state corpus v1
+# case | terminal_result | pending_after | followup | note
+success_consumes | success | absent | fresh_auth1 | successful AUTH_3 is terminal
+failure_consumes | verification_failure | absent | fresh_auth1 | failed AUTH_3 is terminal
+same_session_after_failure | prior_failure | absent | unknown_session | non-cached continuation cannot reuse consumed state
+exact_cached_duplicate | prior_success_or_failure | absent | cached_response | exact cache replay does not recreate pending state
+fresh_session_restart | prior_failure | new | auth1_normal_checks | retry begins with fresh session_id and normal AUTH_1 checks

@@ -57,6 +57,9 @@ run_step_in() {
   run_step "wire error registry/corpus parity" \
     python3 "$ROOT/scripts/check-error-registry-parity.py"
 
+  run_step "AUTH terminal-flight contract/corpus parity" \
+    python3 "$ROOT/scripts/check-auth-terminal-flight-contract.py"
+
   run_step "Rust lane" bash "$ROOT/scripts/ci-rust.sh"
   run_step "C lane" bash "$ROOT/scripts/ci-c.sh"
 
