@@ -1,0 +1,7 @@
+# AUTH no-learning / trust-mutation boundary corpus v1
+# case | phase | trust_effect | required_followup | note
+auth1_accept | auth | unchanged | explicit_trust_operation | accepted AUTH_1 may create pending session state but not persistent trust
+auth1_reject | auth | unchanged | none | rejected AUTH_1 does not learn or repair trust
+auth3_accept | auth | unchanged | explicit_trust_operation | successful AUTH completion does not enroll or mutate trust
+auth3_reject | auth | unchanged | fresh_auth1_or_none | terminal failure changes only ephemeral AUTH state
+setup3_accept | setup | explicit_mutation | registry_persist | SETUP_3 is the current explicit enrollment mutation control case

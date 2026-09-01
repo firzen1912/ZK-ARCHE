@@ -95,6 +95,9 @@ run_step_in() {
   run_step "AUTH terminal-flight contract/corpus parity" \
     python3 "$ROOT/scripts/check-auth-terminal-flight-contract.py"
 
+  run_step "AUTH no-learning/trust-mutation boundary" \
+    python3 "$ROOT/scripts/check-auth-trust-boundary.py"
+
   run_step "P2P Common Contract qualification corpus" \
     python3 "$ROOT/scripts/check-p2p-common-contract-qualification.py"
 
