@@ -17,6 +17,10 @@
 //! 4. Errors caused by the underlying medium (connection reset, timeout, ...)
 //!    return `ProtoError::Transport`. Use `ProtoError::Wire` only for
 //!    framing-level problems the peer can act on.
+//! 5. `Addr` is a routing handle only. It MUST NOT be promoted to protocol
+//!    identity, authorization, trust, enrollment, or revocation authority.
+//!    Adapter/channel context that needs cryptographic binding is normalized
+//!    through `transport::binding`.
 //!
 //! Reliability (ack / retransmit / dedup) is *not* part of this trait. The
 //! request/response state machines handle it by talking to this interface
@@ -29,9 +33,10 @@ use crate::error::Result;
 
 /// A bidirectional, message-oriented transport between two protocol peers.
 ///
-/// `Addr` identifies the other endpoint. For a client, this is typically a
-/// socket address (UDP/TCP) or a URI (CoAP). For a server, it identifies the
-/// particular client that sent the last received packet.
+/// `Addr` identifies where to route bytes for the other endpoint. It is not a
+/// ZK-ARCHE peer identity. For a client, this is typically a socket address
+/// (UDP/TCP) or a URI (CoAP). For a server, it identifies the source routing
+/// handle associated with the last received packet.
 pub trait Transport {
     type Addr: Clone + Eq + std::hash::Hash + std::fmt::Debug + Send;
 
@@ -61,7 +66,7 @@ pub trait Transport {
 }
 
 /// Convenience: a client-side transport that is pre-bound to one peer, so
-/// callers can `.send(&packet)` without repeating the address.
+/// callers can `.send(&packet)` without repeating the routing handle.
 pub trait ClientTransport {
     fn send(&mut self, packet: &[u8]) -> Result<()>;
     fn recv(&mut self, timeout: Duration) -> Result<Vec<u8>>;
@@ -72,6 +77,8 @@ pub trait ClientTransport {
         false
     }
 }
+
+pub mod binding;
 
 #[cfg(feature = "udp-transport")]
 pub mod udp;

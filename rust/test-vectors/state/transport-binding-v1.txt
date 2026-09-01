@@ -1,0 +1,14 @@
+ZKBIND/1
+# case=id|requires|present|integrity|fresh|auth_instance|peer_context|profile_context|address_as_identity|metadata_as_authority|disposition|reason
+case=unbound_optional|0|0|0|0|0|0|0|0|0|UNBOUND_ALLOWED|BINDING_NOT_REQUIRED
+case=required_missing|1|0|0|0|0|0|0|0|0|REJECT|BINDING_MISSING
+case=optional_current|0|1|1|1|1|1|1|0|0|BOUND|CURRENT
+case=required_current|1|1|1|1|1|1|1|0|0|BOUND|CURRENT
+case=invalid_binding|1|1|0|1|1|1|1|0|0|REJECT|BINDING_INVALID
+case=stale_binding|1|1|1|0|1|1|1|0|0|REJECT|BINDING_STALE
+case=wrong_auth_instance|1|1|1|1|0|1|1|0|0|REJECT|AUTH_INSTANCE_MISMATCH
+case=wrong_peer_context|1|1|1|1|1|0|1|0|0|REJECT|PEER_CONTEXT_MISMATCH
+case=wrong_profile_context|1|1|1|1|1|1|0|0|0|REJECT|PROFILE_CONTEXT_MISMATCH
+case=address_as_identity|0|0|0|0|0|0|0|1|0|REJECT|TRANSPORT_ADDRESS_AS_IDENTITY
+case=metadata_as_authority|0|0|0|0|0|0|0|0|1|REJECT|TRANSPORT_METADATA_AS_AUTHORITY
+case=address_changed_current_binding|1|1|1|1|1|1|1|0|0|BOUND|CURRENT
