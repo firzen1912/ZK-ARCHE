@@ -117,7 +117,7 @@ run_model() {
 run_model \
   "auth-v3" \
   "$ROOT/rust/models/proverif/zk_arche_auth_v3_draft.pv" \
-  9
+  10
 
 run_model \
   "replay-continuity" \
