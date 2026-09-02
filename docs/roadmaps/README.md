@@ -12,7 +12,7 @@ The two documents are complementary. The improvement roadmap owns the canonical 
 > **Current evidence-based completion: 42.07%**<br>
 > **Remaining to full roadmap: 57.93%**<br>
 > Progress snapshot reviewed: **2026-09-02**<br>
-> Evidence basis: exact `dev` at `fa0a1770969e8deb341a1bffd69d11eff9d3a813`, which passed repository release qualification with the local ProVerif 2.05 lane.
+> Evidence basis: clean exact-head `dev` release qualification on 2026-09-02, using the local ProVerif 2.05 lane.
 
 `42.07%` is a roadmap-tracking metric, **not** a claim that ZK-ARCHE is 42.07% secure, production-ready, RFC-standardized, externally reviewed, or deployment-qualified.
 
@@ -63,7 +63,7 @@ The 2026-09-01 decision checkpoints justify the threshold increases for lifecycl
 
 ### Exact-current validation status
 
-At `fa0a177` on 2026-09-02, `scripts/ci-release-qualification.sh` passed its clean exact-head preflight and postflight. The run covered Rust formatting, check, tests, Clippy, dependency audit; C normal, ASan, and UBSan builds/tests; vector regeneration/drift; contract/corpus checks; and all scoped ProVerif models (37 true queries across AUTH-v3, replay continuity, lineage replacement, and association admission).
+On 2026-09-02, `scripts/ci-release-qualification.sh` passed its clean exact-head preflight and postflight. The run covered Rust formatting, check, tests, Clippy, dependency audit; C normal, ASan, and UBSan builds/tests; vector regeneration/drift; contract/corpus checks; and all scoped ProVerif models (37 true queries across AUTH-v3, replay continuity, lineage replacement, and association admission).
 
 This restores `zk202` to 100% and the baseline group to 85%. It does not close the roadmap's independent-review, constrained-target, comprehensive formal-traceability, or RFC-class evidence gaps.
 
