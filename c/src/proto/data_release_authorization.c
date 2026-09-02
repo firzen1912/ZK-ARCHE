@@ -4,6 +4,10 @@ data_release_decision_t data_release_authorization_classify(const data_release_f
     if (!f) return RET(DATA_RELEASE_ACTION_DENY, DATA_RELEASE_REASON_AUTHORIZATION_MISSING);
     if (f->rollback_suspected) return RET(DATA_RELEASE_ACTION_DENY, DATA_RELEASE_REASON_ROLLBACK_SUSPECTED);
     if (!f->authenticated) return RET(DATA_RELEASE_ACTION_FRESH_AUTH_REQUIRED, DATA_RELEASE_REASON_UNAUTHENTICATED);
+    if (!f->device_release_authority_present) return RET(DATA_RELEASE_ACTION_DENY, DATA_RELEASE_REASON_DEVICE_RELEASE_AUTHORITY_MISSING);
+    if (!f->device_release_authority_current) return RET(DATA_RELEASE_ACTION_DENY, DATA_RELEASE_REASON_DEVICE_RELEASE_AUTHORITY_STALE);
+    if (!f->protected_data_encrypted) return RET(DATA_RELEASE_ACTION_DENY, DATA_RELEASE_REASON_PROTECTED_DATA_NOT_ENCRYPTED);
+    if (!f->release_key_scope_match) return RET(DATA_RELEASE_ACTION_DENY, DATA_RELEASE_REASON_RELEASE_KEY_SCOPE_MISMATCH);
     if (!f->authorization_present) return RET(DATA_RELEASE_ACTION_DENY, DATA_RELEASE_REASON_AUTHORIZATION_MISSING);
     if (!f->authorization_fresh) return RET(DATA_RELEASE_ACTION_DENY, DATA_RELEASE_REASON_AUTHORIZATION_STALE);
     if (!f->revocation_current) return RET(DATA_RELEASE_ACTION_DENY, DATA_RELEASE_REASON_REVOCATION_STALE);
@@ -15,7 +19,6 @@ data_release_decision_t data_release_authorization_classify(const data_release_f
     if (!f->data_type_match) return RET(DATA_RELEASE_ACTION_DENY, DATA_RELEASE_REASON_DATA_TYPE_MISMATCH);
     if (!f->policy_match) return RET(DATA_RELEASE_ACTION_DENY, DATA_RELEASE_REASON_POLICY_MISMATCH);
     if (!f->epoch_match) return RET(DATA_RELEASE_ACTION_DENY, DATA_RELEASE_REASON_EPOCH_MISMATCH);
-    if (f->channel_binding_required && !f->channel_binding_valid)
-        return RET(DATA_RELEASE_ACTION_DENY, DATA_RELEASE_REASON_CHANNEL_BINDING_MISSING_OR_INVALID);
+    if (f->channel_binding_required && !f->channel_binding_valid) return RET(DATA_RELEASE_ACTION_DENY, DATA_RELEASE_REASON_CHANNEL_BINDING_MISSING_OR_INVALID);
     return RET(DATA_RELEASE_ACTION_RELEASE, DATA_RELEASE_REASON_CURRENT);
 }
