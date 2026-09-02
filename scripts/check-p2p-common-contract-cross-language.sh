@@ -16,6 +16,8 @@ cc -std=c11 -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Werror \
   "$BUILD_DIR/p2p-common-contract-c"
 )
 
+python3 "$ROOT/scripts/check-p2p-common-contract-mutations.py"
+
 if ! command -v cargo >/dev/null 2>&1; then
   echo "p2p-common-contract-cross-language: UNAVAILABLE: cargo not found" >&2
   exit 2
@@ -26,4 +28,4 @@ fi
   cargo test -p proto --test p2p_common_contract_lifecycle -- --exact canonical_p2p_common_contract_lifecycle_corpus
 )
 
-echo "p2p-common-contract-cross-language: PASS corpus=common-contract-lifecycle-v2 C=pass Rust=pass"
+echo "p2p-common-contract-cross-language: PASS corpus=common-contract-lifecycle-v2 mutations=pass C=pass Rust=pass"
