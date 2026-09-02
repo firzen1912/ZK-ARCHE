@@ -16,6 +16,9 @@ typedef struct {
     bool revocation_current;
     bool explicitly_revoked;
     bool lineage_current;
+    bool restart_continuity_current;
+    bool credential_epoch_current;
+    bool session_invalidated;
     bool peer_match;
     bool deployment_match;
     bool audience_match;
@@ -43,10 +46,13 @@ typedef enum {
     RESUMPTION_REASON_REVOCATION_STALE = 10,
     RESUMPTION_REASON_REVOKED = 11,
     RESUMPTION_REASON_LINEAGE_STALE = 12,
-    RESUMPTION_REASON_PEER_MISMATCH = 13,
-    RESUMPTION_REASON_DEPLOYMENT_MISMATCH = 14,
-    RESUMPTION_REASON_AUDIENCE_MISMATCH = 15,
-    RESUMPTION_REASON_PROFILE_MISMATCH = 16
+    RESUMPTION_REASON_RESTART_CONTINUITY_STALE = 13,
+    RESUMPTION_REASON_CREDENTIAL_EPOCH_STALE = 14,
+    RESUMPTION_REASON_SESSION_INVALIDATED = 15,
+    RESUMPTION_REASON_PEER_MISMATCH = 16,
+    RESUMPTION_REASON_DEPLOYMENT_MISMATCH = 17,
+    RESUMPTION_REASON_AUDIENCE_MISMATCH = 18,
+    RESUMPTION_REASON_PROFILE_MISMATCH = 19
 } resumption_reason_t;
 
 typedef struct {

@@ -14,6 +14,12 @@ resumption_authorization_decision_t resumption_authorization_classify(
         return decision(RESUMPTION_ACTION_REJECT, RESUMPTION_REASON_INVALID_FACTS);
     if (facts->rollback_suspected)
         return decision(RESUMPTION_ACTION_REJECT, RESUMPTION_REASON_ROLLBACK_SUSPECTED);
+    if (!facts->restart_continuity_current)
+        return decision(RESUMPTION_ACTION_REJECT, RESUMPTION_REASON_RESTART_CONTINUITY_STALE);
+    if (facts->session_invalidated)
+        return decision(RESUMPTION_ACTION_REJECT, RESUMPTION_REASON_SESSION_INVALIDATED);
+    if (!facts->credential_epoch_current)
+        return decision(RESUMPTION_ACTION_FULL_AUTH_REQUIRED, RESUMPTION_REASON_CREDENTIAL_EPOCH_STALE);
     if (!facts->credential_present)
         return decision(RESUMPTION_ACTION_FULL_AUTH_REQUIRED, RESUMPTION_REASON_CREDENTIAL_MISSING);
     if (!facts->credential_integrity_valid)
