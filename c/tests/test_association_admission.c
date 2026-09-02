@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define VECTOR_PATH "../rust/test-vectors/state/association-admission-v1.txt"
+#define VECTOR_PATH "../rust/test-vectors/state/association-admission-v2.txt"
 
 static bool bit(const char *value) {
     assert(value != NULL);
@@ -25,7 +25,8 @@ static association_admission_reason_t reason(const char *value) {
         "CURRENT", "INVALID_FACTS", "ROLLBACK_SUSPECTED", "TRUST_MUTATION_REQUESTED",
         "AUTH_INCOMPLETE", "TRUST_RECORD_MISSING", "AUTHORIZATION_MISSING",
         "AUTHORIZATION_STALE", "REVOCATION_STALE", "REVOKED", "LINEAGE_STALE",
-        "REPLAY_CONTINUITY_STALE", "BINDING_INVALID"};
+        "REPLAY_CONTINUITY_STALE", "BINDING_INVALID", "AUTHORIZATION_GENERATION_STALE",
+        "RESTART_CONTINUITY_STALE"};
     size_t i;
     for (i = 0u; i < sizeof(names) / sizeof(names[0]); ++i)
         if (strcmp(value, names[i]) == 0) return (association_admission_reason_t)i;
@@ -35,38 +36,39 @@ static association_admission_reason_t reason(const char *value) {
 
 int main(void) {
     FILE *fp = fopen(VECTOR_PATH, "r");
-    char line[768];
+    char line[896];
     unsigned cases = 0u;
     int saw_version = 0;
     assert(fp != NULL);
     while (fgets(line, sizeof(line), fp) != NULL) {
-        char *fields[15];
+        char *fields[17];
         size_t i;
         association_admission_facts_t facts;
         association_admission_decision_t got;
         line[strcspn(line, "\r\n")] = '\0';
-        if (strcmp(line, "version=1") == 0) { saw_version = 1; continue; }
+        if (strcmp(line, "version=2") == 0) { saw_version = 1; continue; }
         if (strncmp(line, "case=", 5u) != 0) continue;
         fields[0] = strtok(line + 5u, "|");
-        for (i = 1u; i < 15u; ++i) fields[i] = strtok(NULL, "|");
-        assert(fields[14] != NULL && strtok(NULL, "|") == NULL);
+        for (i = 1u; i < 17u; ++i) fields[i] = strtok(NULL, "|");
+        assert(fields[16] != NULL && strtok(NULL, "|") == NULL);
         facts = (association_admission_facts_t){
             bit(fields[1]), bit(fields[2]), bit(fields[3]), bit(fields[4]),
             bit(fields[5]), bit(fields[6]), bit(fields[7]), bit(fields[8]),
-            bit(fields[9]), bit(fields[10]), bit(fields[11]), bit(fields[12])};
+            bit(fields[9]), bit(fields[10]), bit(fields[11]), bit(fields[12]),
+            bit(fields[13]), bit(fields[14])};
         got = association_admission_classify(&facts);
-        assert(got.action == action(fields[13]));
-        assert(got.reason == reason(fields[14]));
+        assert(got.action == action(fields[15]));
+        assert(got.reason == reason(fields[16]));
         cases += 1u;
     }
     fclose(fp);
     assert(saw_version == 1);
-    assert(cases == 14u);
+    assert(cases == 16u);
     {
         association_admission_decision_t got = association_admission_classify(NULL);
         assert(got.action == ASSOCIATION_ADMISSION_FAIL_CLOSED);
         assert(got.reason == ASSOCIATION_ADMISSION_REASON_INVALID_FACTS);
     }
-    puts("association admission corpus: ok");
+    puts("association admission corpus v2: ok cases=16");
     return EXIT_SUCCESS;
 }

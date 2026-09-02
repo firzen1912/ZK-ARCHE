@@ -18,15 +18,21 @@ The association-admission decision consumes the following facts:
 | `preexisting_trust_record` | locally authoritative TRUST state |
 | `authorization_present` | TRUST authorization state |
 | `authorization_fresh` | authorization freshness/policy state |
+| `authorization_generation_current` | current local authorization-generation state |
 | `revocation_current` | current local revocation view |
 | `explicitly_revoked` | current local revocation view |
 | `lineage_current` | TRUST lineage/replacement state |
-| `replay_continuity_current` | LINK replay/restart continuity state |
+| `replay_continuity_current` | LINK replay continuity state |
+| `restart_continuity_current` | persistent LINK/lifecycle restart continuity state |
 | `binding_required` / `binding_valid` | selected profile plus BIND decision |
 | `rollback_suspected` | persistent lifecycle-state integrity/recovery state |
 | `trust_mutation_requested` | caller intent at the normal AUTH boundary |
 
 Callers MUST derive these facts from the corresponding owning subsystem. They MUST NOT manufacture a successful fact merely to retain an association.
+
+`authorization_fresh` and `authorization_generation_current` are distinct. The former expresses whether the authorization is within its permitted freshness/policy bound. The latter expresses whether the association is bound to the current local authorization generation. Advancing local authorization state MUST invalidate an older association even if its traffic keys and time-bounded authorization would otherwise remain usable.
+
+`replay_continuity_current` and `restart_continuity_current` are also distinct. Replay state may be internally well-formed while persistent restart/recovery continuity is unknown or stale. An association MUST NOT survive that uncertainty merely because its cryptographic AUTH previously completed.
 
 ## 3. Decision
 
@@ -40,11 +46,13 @@ Association admission MUST fail closed, in precedence order, when:
 4. no pre-existing local trust record exists;
 5. scoped authorization is absent;
 6. authorization state is stale;
-7. the revocation view is stale;
-8. the holder is explicitly revoked;
-9. authorization/trust lineage is stale;
-10. replay/restart continuity is not current; or
-11. the selected profile requires a binding and the binding is not valid.
+7. the association's authorization generation is not current;
+8. the revocation view is stale;
+9. the holder is explicitly revoked;
+10. authorization/trust lineage is stale;
+11. replay continuity is not current;
+12. restart/recovery continuity is not current; or
+13. the selected profile requires a binding and the binding is not valid.
 
 Only when every mandatory condition is satisfied may the association be established or retained.
 
@@ -58,7 +66,9 @@ Trust mutation belongs to explicit ENROLL, commissioner/grant, reviewed rekey/re
 
 The same postcondition applies to retaining an existing association. When locally authoritative lifecycle state changes, implementations MUST re-evaluate the association before security-sensitive continued use when the profile requires that state to be current.
 
-In particular, an existing association MUST NOT remain security-authoritative merely because its traffic keys still exist when authorization becomes stale, the holder becomes revoked, lineage becomes stale, replay continuity is lost, rollback is suspected, or a required channel binding becomes invalid.
+In particular, an existing association MUST NOT remain security-authoritative merely because its traffic keys still exist when authorization becomes stale, the local authorization generation advances, the holder becomes revoked, lineage becomes stale, replay or restart continuity is lost, rollback is suspected, or a required channel binding becomes invalid.
+
+A successful reauthentication does not by itself restore authorization-generation or restart continuity. Those facts remain owned by the corresponding lifecycle authorities and MUST be current independently.
 
 This contract does not define key erasure timing or a wire alert. Those behaviors remain LINK/state-machine work and require separate specification and tests.
 
@@ -76,6 +86,8 @@ Infrastructure may synchronize policy or revocation state. If local state exceed
 
 ## 8. Canonical decision corpus
 
-`rust/test-vectors/state/association-admission-v1.txt` is the canonical Rust/C decision corpus for this postcondition. It covers successful admission plus negative cases for incomplete AUTH, missing trust, missing/stale authorization, stale revocation, explicit revocation, stale lineage, replay continuity loss, required-binding failure, rollback suspicion, and attempted trust mutation.
+`rust/test-vectors/state/association-admission-v2.txt` is the canonical Rust/C decision corpus for this postcondition. Version 1 is retained as historical evidence.
+
+Version 2 covers successful admission plus negative cases for incomplete AUTH, missing trust, missing/stale authorization, stale authorization generation, stale revocation, explicit revocation, stale lineage, replay-continuity loss, restart-continuity loss, required-binding failure, rollback suspicion, and attempted trust mutation.
 
 The corpus is decision-level evidence only. It is not byte-level handshake interoperability, physical constrained-target evidence, formal proof, or independent cryptographic review.

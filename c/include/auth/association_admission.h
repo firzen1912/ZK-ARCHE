@@ -8,10 +8,12 @@ typedef struct {
     bool preexisting_trust_record;
     bool authorization_present;
     bool authorization_fresh;
+    bool authorization_generation_current;
     bool revocation_current;
     bool explicitly_revoked;
     bool lineage_current;
     bool replay_continuity_current;
+    bool restart_continuity_current;
     bool binding_required;
     bool binding_valid;
     bool rollback_suspected;
@@ -36,7 +38,9 @@ typedef enum {
     ASSOCIATION_ADMISSION_REASON_REVOKED = 9,
     ASSOCIATION_ADMISSION_REASON_LINEAGE_STALE = 10,
     ASSOCIATION_ADMISSION_REASON_REPLAY_CONTINUITY_STALE = 11,
-    ASSOCIATION_ADMISSION_REASON_BINDING_INVALID = 12
+    ASSOCIATION_ADMISSION_REASON_BINDING_INVALID = 12,
+    ASSOCIATION_ADMISSION_REASON_AUTHORIZATION_GENERATION_STALE = 13,
+    ASSOCIATION_ADMISSION_REASON_RESTART_CONTINUITY_STALE = 14
 } association_admission_reason_t;
 
 typedef struct {

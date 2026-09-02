@@ -11,10 +11,12 @@ pub struct AssociationAdmissionFacts {
     pub preexisting_trust_record: bool,
     pub authorization_present: bool,
     pub authorization_fresh: bool,
+    pub authorization_generation_current: bool,
     pub revocation_current: bool,
     pub explicitly_revoked: bool,
     pub lineage_current: bool,
     pub replay_continuity_current: bool,
+    pub restart_continuity_current: bool,
     pub binding_required: bool,
     pub binding_valid: bool,
     pub rollback_suspected: bool,
@@ -42,6 +44,8 @@ pub enum AssociationAdmissionReason {
     LineageStale,
     ReplayContinuityStale,
     BindingInvalid,
+    AuthorizationGenerationStale,
+    RestartContinuityStale,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -96,6 +100,12 @@ pub fn classify_association_admission(
             AssociationAdmissionReason::AuthorizationStale,
         );
     }
+    if !facts.authorization_generation_current {
+        return decision(
+            AssociationAdmissionAction::FailClosed,
+            AssociationAdmissionReason::AuthorizationGenerationStale,
+        );
+    }
     if !facts.revocation_current {
         return decision(
             AssociationAdmissionAction::FailClosed,
@@ -118,6 +128,12 @@ pub fn classify_association_admission(
         return decision(
             AssociationAdmissionAction::FailClosed,
             AssociationAdmissionReason::ReplayContinuityStale,
+        );
+    }
+    if !facts.restart_continuity_current {
+        return decision(
+            AssociationAdmissionAction::FailClosed,
+            AssociationAdmissionReason::RestartContinuityStale,
         );
     }
     if facts.binding_required && !facts.binding_valid {
@@ -161,10 +177,14 @@ mod tests {
             "TRUST_RECORD_MISSING" => AssociationAdmissionReason::TrustRecordMissing,
             "AUTHORIZATION_MISSING" => AssociationAdmissionReason::AuthorizationMissing,
             "AUTHORIZATION_STALE" => AssociationAdmissionReason::AuthorizationStale,
+            "AUTHORIZATION_GENERATION_STALE" => {
+                AssociationAdmissionReason::AuthorizationGenerationStale
+            }
             "REVOCATION_STALE" => AssociationAdmissionReason::RevocationStale,
             "REVOKED" => AssociationAdmissionReason::Revoked,
             "LINEAGE_STALE" => AssociationAdmissionReason::LineageStale,
             "REPLAY_CONTINUITY_STALE" => AssociationAdmissionReason::ReplayContinuityStale,
+            "RESTART_CONTINUITY_STALE" => AssociationAdmissionReason::RestartContinuityStale,
             "BINDING_INVALID" => AssociationAdmissionReason::BindingInvalid,
             _ => panic!("invalid reason: {value}"),
         }
@@ -172,39 +192,41 @@ mod tests {
 
     #[test]
     fn canonical_corpus_matches_classifier() {
-        let corpus = include_str!("../../../test-vectors/state/association-admission-v1.txt");
+        let corpus = include_str!("../../../test-vectors/state/association-admission-v2.txt");
         let mut count = 0usize;
         for line in corpus.lines() {
             let Some(case) = line.strip_prefix("case=") else {
                 continue;
             };
             let fields: Vec<&str> = case.split('|').collect();
-            assert_eq!(fields.len(), 15);
+            assert_eq!(fields.len(), 17);
             let facts = AssociationAdmissionFacts {
                 auth_complete: bit(fields[1]),
                 preexisting_trust_record: bit(fields[2]),
                 authorization_present: bit(fields[3]),
                 authorization_fresh: bit(fields[4]),
-                revocation_current: bit(fields[5]),
-                explicitly_revoked: bit(fields[6]),
-                lineage_current: bit(fields[7]),
-                replay_continuity_current: bit(fields[8]),
-                binding_required: bit(fields[9]),
-                binding_valid: bit(fields[10]),
-                rollback_suspected: bit(fields[11]),
-                trust_mutation_requested: bit(fields[12]),
+                authorization_generation_current: bit(fields[5]),
+                revocation_current: bit(fields[6]),
+                explicitly_revoked: bit(fields[7]),
+                lineage_current: bit(fields[8]),
+                replay_continuity_current: bit(fields[9]),
+                restart_continuity_current: bit(fields[10]),
+                binding_required: bit(fields[11]),
+                binding_valid: bit(fields[12]),
+                rollback_suspected: bit(fields[13]),
+                trust_mutation_requested: bit(fields[14]),
             };
             assert_eq!(
                 classify_association_admission(&facts),
                 AssociationAdmissionDecision {
-                    action: action(fields[13]),
-                    reason: reason(fields[14]),
+                    action: action(fields[15]),
+                    reason: reason(fields[16]),
                 },
                 "case {}",
                 fields[0]
             );
             count += 1;
         }
-        assert_eq!(count, 14);
+        assert_eq!(count, 16);
     }
 }

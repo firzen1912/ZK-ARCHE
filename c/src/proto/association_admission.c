@@ -31,6 +31,9 @@ association_admission_decision_t association_admission_classify(
     if (!facts->authorization_fresh)
         return decision(ASSOCIATION_ADMISSION_FAIL_CLOSED,
                         ASSOCIATION_ADMISSION_REASON_AUTHORIZATION_STALE);
+    if (!facts->authorization_generation_current)
+        return decision(ASSOCIATION_ADMISSION_FAIL_CLOSED,
+                        ASSOCIATION_ADMISSION_REASON_AUTHORIZATION_GENERATION_STALE);
     if (!facts->revocation_current)
         return decision(ASSOCIATION_ADMISSION_FAIL_CLOSED,
                         ASSOCIATION_ADMISSION_REASON_REVOCATION_STALE);
@@ -43,6 +46,9 @@ association_admission_decision_t association_admission_classify(
     if (!facts->replay_continuity_current)
         return decision(ASSOCIATION_ADMISSION_FAIL_CLOSED,
                         ASSOCIATION_ADMISSION_REASON_REPLAY_CONTINUITY_STALE);
+    if (!facts->restart_continuity_current)
+        return decision(ASSOCIATION_ADMISSION_FAIL_CLOSED,
+                        ASSOCIATION_ADMISSION_REASON_RESTART_CONTINUITY_STALE);
     if (facts->binding_required && !facts->binding_valid)
         return decision(ASSOCIATION_ADMISSION_FAIL_CLOSED,
                         ASSOCIATION_ADMISSION_REASON_BINDING_INVALID);
