@@ -79,6 +79,7 @@ pub trait ClientTransport {
 }
 
 pub mod binding;
+pub mod continuation;
 
 #[cfg(feature = "udp-transport")]
 pub mod udp;
