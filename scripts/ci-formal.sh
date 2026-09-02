@@ -21,7 +21,7 @@ if ! REPO_HEAD="$(git -C "$ROOT" rev-parse --verify HEAD 2>/dev/null)"; then
 fi
 REPO_SHORT="${REPO_HEAD:0:12}"
 
-if ! PROVERIF_VERSION="$(proverif -version 2>&1 | head -n 1)" || [ -z "$PROVERIF_VERSION" ]; then
+if ! PROVERIF_VERSION="$(proverif -help 2>&1 | head -n 1)" || [ -z "$PROVERIF_VERSION" ]; then
   echo "formal qualification: UNAVAILABLE (cannot resolve ProVerif version)" >&2
   exit 125
 fi

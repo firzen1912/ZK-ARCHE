@@ -18,7 +18,10 @@ int main(void){ FILE *fp=fopen(VECTOR_PATH,"r"); char line[512]; unsigned cases=
   fill(session,sizeof(session),0x51u); fill(predecessor,sizeof(predecessor),0x33u); fill(successor_ref,sizeof(successor_ref),0x66u);
   current.verification_valid=bit(f[2]); memcpy(current.session_id,session,sizeof(session)); memcpy(current.subject_reference,predecessor,sizeof(predecessor));
   successor.verification_valid=bit(f[6]); memcpy(successor.session_id,session,sizeof(session)); memcpy(successor.subject_reference,successor_ref,sizeof(successor_ref));
-  if(!bit(f[3]))current.session_id[0]^=1u; if(!bit(f[4]))current.subject_reference[0]^=1u; if(!bit(f[7]))successor.session_id[0]^=1u; if(!bit(f[8]))successor.subject_reference[0]^=1u;
+  if (!bit(f[3])) current.session_id[0] ^= 1u;
+  if (!bit(f[4])) current.subject_reference[0] ^= 1u;
+  if (!bit(f[7])) successor.session_id[0] ^= 1u;
+  if (!bit(f[8])) successor.subject_reference[0] ^= 1u;
   assert(lineage_replace_classify_possession(bit(f[1])?&current:NULL,bit(f[5])?&successor:NULL,session,predecessor,successor_ref)==expected(f[9])); cases+=1u;
  }
  fclose(fp); assert(version==1&&cases==10u); puts("lineage-replace possession corpus: ok"); return EXIT_SUCCESS; }

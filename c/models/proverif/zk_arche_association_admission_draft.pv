@@ -14,6 +14,11 @@ free cmd_other_failure: bitstring.
 
 type evaluation.
 
+(* Preserve a single admission evaluation across mutually exclusive input
+   branches; without this precision annotation, the Horn-clause abstraction
+   may combine events from separate repetitions of the process. *)
+set preciseActions = true.
+
 event AuthComplete(evaluation).
 event PreexistingTrustRecord(evaluation).
 event AuthorizationPresent(evaluation).

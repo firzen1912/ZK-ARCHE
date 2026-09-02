@@ -118,7 +118,7 @@ def main() -> None:
 
     required_spec = [
         "MUST consume that pending AUTH session before terminal cryptographic/context verification is evaluated",
-        "MUST NOT be restored",
+        "**MUST NOT** be restored",
         "MUST begin a fresh AUTH exchange from `AUTH_1` using a fresh `session_id`",
     ]
     for marker in required_spec:
