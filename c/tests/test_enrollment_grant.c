@@ -1,25 +1,88 @@
 #include "auth/enrollment_grant.h"
+
+#include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-static const char *reason_name(zk_enrollment_grant_reason r) {
-    static const char *n[]={"CURRENT","ROLLBACK_SUSPECTED","NORMAL_AUTH_FORBIDDEN","EXPLICIT_ENROLL_REQUIRED","COMMISSIONER_UNAUTHENTICATED","COMMISSIONER_UNAUTHORIZED","COMMISSIONER_REVOKED","SUBJECT_POSSESSION_MISSING","AUTHORITY_ESCALATION","SCOPE_UNBOUNDED","AUDIENCE_UNBOUND","DEPLOYMENT_UNBOUND","VALIDITY_UNBOUNDED","EPOCH_STALE","REVOCATION_STALE","LINEAGE_STALE","DELEGATION_DEPTH_EXCEEDED"};
-    return n[(int)r];
+
+#define VECTOR_PATH "../rust/test-vectors/state/enrollment-grant-v2.txt"
+
+static bool bit(const char *v) {
+    assert(v != NULL);
+    if (strcmp(v, "0") == 0) return false;
+    assert(strcmp(v, "1") == 0);
+    return true;
 }
+
+static zk_enrollment_grant_action_t action(const char *v) {
+    if (strcmp(v, "ISSUE") == 0) return ZK_ENROLLMENT_GRANT_ISSUE;
+    assert(strcmp(v, "DENY") == 0);
+    return ZK_ENROLLMENT_GRANT_DENY;
+}
+
+static zk_enrollment_grant_reason_t reason(const char *v) {
+    static const char *const names[] = {
+        "CURRENT", "ROLLBACK_SUSPECTED", "NORMAL_AUTH_FORBIDDEN",
+        "EXPLICIT_ENROLL_REQUIRED", "COMMISSIONER_UNAUTHENTICATED",
+        "COMMISSIONER_UNAUTHORIZED", "COMMISSIONER_AUTHORIZATION_STALE",
+        "COMMISSIONER_REVOKED", "ENROLLMENT_REPLAY_DETECTED",
+        "SUBJECT_POSSESSION_MISSING", "AUTHORITY_ESCALATION",
+        "SCOPE_UNBOUNDED", "AUDIENCE_UNBOUND", "DEPLOYMENT_UNBOUND",
+        "VALIDITY_UNBOUNDED", "EPOCH_STALE", "REVOCATION_STALE",
+        "LINEAGE_STALE", "DELEGATION_DEPTH_EXCEEDED"
+    };
+    size_t i;
+    for (i = 0u; i < sizeof(names) / sizeof(names[0]); ++i)
+        if (strcmp(v, names[i]) == 0) return (zk_enrollment_grant_reason_t)i;
+    assert(!"unknown enrollment grant reason");
+    return ZK_ENROLLMENT_GRANT_REASON_EXPLICIT_ENROLL_REQUIRED;
+}
+
 int main(void) {
-    FILE *fp=fopen("../rust/test-vectors/state/enrollment-grant-v1.txt","r");
-    char line[1024], name[64], action[16], reason[64]; int v[16], count=0;
-    if (!fp) { perror("enrollment vector"); return 2; }
-    while (fgets(line,sizeof line,fp)) {
-        if (line[0]=='#' || line[0]=='\n') continue;
-        int n=sscanf(line,"%63s %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %15s %63s", name,&v[0],&v[1],&v[2],&v[3],&v[4],&v[5],&v[6],&v[7],&v[8],&v[9],&v[10],&v[11],&v[12],&v[13],&v[14],&v[15],action,reason);
-        if (n!=19) { fprintf(stderr,"bad vector line: %s",line); return 3; }
-        zk_enrollment_grant_facts f={v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8],v[9],v[10],v[11],v[12],v[13],v[14],v[15]};
-        zk_enrollment_grant_decision d=zk_classify_enrollment_grant(&f);
-        const char *got_action=d.action==ZK_ENROLLMENT_GRANT_ISSUE?"ISSUE":"DENY";
-        if (strcmp(got_action,action)||strcmp(reason_name(d.reason),reason)) { fprintf(stderr,"%s: mismatch\n",name); return 4; }
-        count++;
+    FILE *fp = fopen(VECTOR_PATH, "r");
+    char line[1024];
+    unsigned cases = 0u;
+    int saw_version = 0;
+    assert(fp != NULL);
+
+    while (fgets(line, sizeof(line), fp) != NULL) {
+        char *f[21];
+        size_t i;
+        zk_enrollment_grant_facts_t facts;
+        zk_enrollment_grant_decision_t got;
+
+        line[strcspn(line, "\r\n")] = '\0';
+        if (strcmp(line, "version=2") == 0) {
+            saw_version = 1;
+            continue;
+        }
+        if (strncmp(line, "case=", 5u) != 0) continue;
+
+        f[0] = strtok(line + 5u, "|");
+        for (i = 1u; i < 21u; ++i) f[i] = strtok(NULL, "|");
+        assert(f[20] != NULL && strtok(NULL, "|") == NULL);
+
+        facts = (zk_enrollment_grant_facts_t){
+            bit(f[1]), bit(f[2]), bit(f[3]), bit(f[4]), bit(f[5]), bit(f[6]),
+            bit(f[7]), bit(f[8]), bit(f[9]), bit(f[10]), bit(f[11]), bit(f[12]),
+            bit(f[13]), bit(f[14]), bit(f[15]), bit(f[16]), bit(f[17]), bit(f[18])
+        };
+
+        got = zk_enrollment_grant_classify(&facts);
+        assert(got.action == action(f[19]));
+        assert(got.reason == reason(f[20]));
+        cases += 1u;
     }
+
     fclose(fp);
-    printf("enrollment grant corpus: ok cases=%d\n",count);
-    return count==17?0:5;
+    assert(saw_version == 1);
+    assert(cases == 19u);
+
+    {
+        zk_enrollment_grant_decision_t got = zk_enrollment_grant_classify(NULL);
+        assert(got.action == ZK_ENROLLMENT_GRANT_DENY);
+    }
+
+    puts("enrollment grant corpus v2: ok cases=19");
+    return EXIT_SUCCESS;
 }
