@@ -26,6 +26,12 @@ transport_continuation_decision_t transport_continuation_classify(
     if (!facts->replay_continuity_current)
         return decision(TRANSPORT_CONTINUATION_REJECT,
                         TRANSPORT_CONTINUATION_REASON_REPLAY_CONTINUITY_STALE);
+    if (!facts->usage_counter_continuity_current)
+        return decision(TRANSPORT_CONTINUATION_REJECT,
+                        TRANSPORT_CONTINUATION_REASON_USAGE_COUNTER_CONTINUITY_STALE);
+    if (!facts->authorization_generation_current)
+        return decision(TRANSPORT_CONTINUATION_FULL_AUTH_REQUIRED,
+                        TRANSPORT_CONTINUATION_REASON_AUTHORIZATION_GENERATION_STALE);
     if (!facts->authenticated_peer_context_match)
         return decision(TRANSPORT_CONTINUATION_REJECT,
                         TRANSPORT_CONTINUATION_REASON_PEER_CONTEXT_MISMATCH);
