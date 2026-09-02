@@ -1,0 +1,22 @@
+# ZKP2PLIFECYCLE/2
+case_id|peer_a|peer_b|infrastructure_available|auth_complete|preexisting_trust|authorization_present|authorization_fresh|authorization_generation_current|revocation_current|revoked|lineage_current|replay_continuity_current|restart_continuity_current|mandatory_floor_compatible|binding_required|binding_valid|trust_mutation_requested|expected
+XC2-001|mcu-core|mcu-core|false|true|true|true|true|true|true|false|true|true|true|true|false|false|false|ESTABLISH
+XC2-002|mcu-core|linux-edge|false|true|true|true|true|true|true|false|true|true|true|true|false|false|false|ESTABLISH
+XC2-003|linux-edge|mcu-core|false|true|true|true|true|true|true|false|true|true|true|true|false|false|false|ESTABLISH
+XC2-004|mcu-core|linux-edge|true|true|true|true|true|true|true|false|true|true|true|true|false|false|false|ESTABLISH
+XC2-005|mcu-core|linux-edge|false|false|true|true|true|true|true|false|true|true|true|true|false|false|false|FAIL_CLOSED
+XC2-006|mcu-core|linux-edge|false|true|false|true|true|true|true|false|true|true|true|true|false|false|false|FAIL_CLOSED
+XC2-007|mcu-core|linux-edge|false|true|true|true|false|true|true|false|true|true|true|true|false|false|false|FAIL_CLOSED
+XC2-008|mcu-core|linux-edge|false|true|true|true|true|false|true|false|true|true|true|true|false|false|false|FAIL_CLOSED
+XC2-009|mcu-core|linux-edge|false|true|true|true|true|true|false|false|true|true|true|true|false|false|false|FAIL_CLOSED
+XC2-010|mcu-core|linux-edge|false|true|true|true|true|true|true|true|true|true|true|true|false|false|false|FAIL_CLOSED
+XC2-011|mcu-core|linux-edge|false|true|true|true|true|true|true|false|false|true|true|true|false|false|false|FAIL_CLOSED
+XC2-012|mcu-core|linux-edge|false|true|true|true|true|true|true|false|true|false|true|true|false|false|false|FAIL_CLOSED
+XC2-013|mcu-core|linux-edge|false|true|true|true|true|true|true|false|true|true|false|true|false|false|false|FAIL_CLOSED
+XC2-014|mcu-core|linux-edge|false|true|true|true|true|true|true|false|true|true|true|false|false|false|false|FAIL_CLOSED
+XC2-015|mcu-core|linux-edge|false|true|true|true|true|true|true|false|true|true|true|true|true|true|false|ESTABLISH
+XC2-016|mcu-core|linux-edge|false|true|true|true|true|true|true|false|true|true|true|true|true|false|false|FAIL_CLOSED
+XC2-017|mcu-core|mcu-core|false|true|true|true|true|true|true|false|true|true|true|true|false|false|true|FAIL_CLOSED
+XC2-018|linux-edge|mcu-core|false|true|true|true|true|false|true|false|true|true|true|true|false|false|false|FAIL_CLOSED
+XC2-019|mcu-core|mcu-core|false|true|true|true|true|true|true|false|true|true|false|true|false|false|false|FAIL_CLOSED
+XC2-020|linux-edge|mcu-core|false|true|true|true|true|true|true|false|true|true|true|true|true|true|false|ESTABLISH

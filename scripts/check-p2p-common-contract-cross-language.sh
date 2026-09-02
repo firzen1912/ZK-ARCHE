@@ -26,4 +26,4 @@ fi
   cargo test -p proto --test p2p_common_contract_lifecycle -- --exact canonical_p2p_common_contract_lifecycle_corpus
 )
 
-echo "p2p-common-contract-cross-language: PASS corpus=common-contract-lifecycle-v1 C=pass Rust=pass"
+echo "p2p-common-contract-cross-language: PASS corpus=common-contract-lifecycle-v2 C=pass Rust=pass"
