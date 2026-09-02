@@ -9,25 +9,25 @@ The two documents are complementary. The improvement roadmap owns the canonical 
 
 ## Roadmap progress
 
-> **Current evidence-based completion: 36.59%**  
-> **Remaining to full roadmap: 63.41%**  
-> Progress snapshot reviewed: **2026-08-31**  
-> Evidence basis: exact `dev` through `e36f720f8a38dc48b770c151b511418bd67d96ce`; the current P2P qualification packet does not cross a phase-score boundary.
+> **Current evidence-based completion: 40.85%**<br>
+> **Remaining to full roadmap: 59.15%**<br>
+> Progress snapshot reviewed: **2026-09-02**<br>
+> Evidence basis: exact `dev` at `cea2df6cd10e49adb991dfe2909fe8c4ab66590d`. The score recognizes new lifecycle, DATA-sovereignty, and local-P2P decision evidence, while retaining the exact-current validation failures and unavailable formal lane as evidence ceilings.
 
-`36.59%` is a roadmap-tracking metric, **not** a claim that ZK-ARCHE is 36.59% secure, production-ready, RFC-standardized, externally reviewed, or deployment-qualified.
+`40.85%` is a roadmap-tracking metric, **not** a claim that ZK-ARCHE is 40.85% secure, production-ready, RFC-standardized, externally reviewed, or deployment-qualified.
 
 The score is the arithmetic mean of the evidence-completion scores for canonical phases `zk201`–`zk241`. Each phase is evaluated only against its declared exit evidence.
 
 | Roadmap group | Phases | Completion |
 |---|---:|---:|
-| Baseline / reproducible truth | `zk201`–`zk205` | **85.00%** |
+| Baseline / reproducible truth | `zk201`–`zk205` | **75.00%** |
 | Assurance / review / claim gate | `zk206`–`zk210` | **55.00%** |
-| Enrollment / authorization / lifecycle | `zk211`–`zk215` | **20.00%** |
+| Enrollment / authorization / lifecycle | `zk211`–`zk215` | **35.00%** |
 | AUTH hardening / IoT profiles | `zk216`–`zk224` | **33.33%** |
 | Interop / RFC / transport / decomposition | `zk225`–`zk230` | **45.83%** |
-| Data sovereignty | `zk231`–`zk238` | **6.25%** |
-| Infrastructure-independent P2P Common Contract | `zk239`–`zk241` | **25.00%** |
-| **Overall** | `zk201`–`zk241` | **36.59%** |
+| Data sovereignty | `zk231`–`zk238` | **21.88%** |
+| Infrastructure-independent P2P Common Contract | `zk239`–`zk241` | **33.33%** |
+| **Overall** | `zk201`–`zk241` | **40.85%** |
 
 ### Scoring rubric
 
@@ -45,6 +45,33 @@ Scores are **not** based on commit count, lines of code, document count, elapsed
 
 Required independent review, physical-target measurements, formal results, interoperability evidence, RFC-class documentation, field evidence, or other declared exit artifacts must actually exist before the associated phase receives credit for them.
 
+### Phase scorecard
+
+This scorecard makes the grouped arithmetic reproducible. Each phase is scored against the declared exit evidence in [`improvement-roadmap.md`](./improvement-roadmap.md), not against implementation effort. The 41 phase scores sum to `1675`; `1675 / 41 = 40.85%`.
+
+| Roadmap group | Phase scores |
+|---|---|
+| Baseline / reproducible truth | `zk201=100`, `zk202=50`, `zk203=75`, `zk204=75`, `zk205=75` |
+| Assurance / review / claim gate | `zk206=75`, `zk207=50`, `zk208=25`, `zk209=25`, `zk210=100` |
+| Enrollment / authorization / lifecycle | `zk211=25`, `zk212=25`, `zk213=75`, `zk214=50`, `zk215=0` |
+| AUTH hardening / IoT profiles | `zk216=25`, `zk217=75`, `zk218=75`, `zk219=25`, `zk220=0`, `zk221=50`, `zk222=50`, `zk223=0`, `zk224=0` |
+| Interop / RFC / transport / decomposition | `zk225=75`, `zk226=50`, `zk227=25`, `zk228=50`, `zk229=25`, `zk230=50` |
+| Data sovereignty | `zk231=50`, `zk232=0`, `zk233=25`, `zk234=50`, `zk235=0`, `zk236=25`, `zk237=25`, `zk238=0` |
+| Infrastructure-independent P2P Common Contract | `zk239=50`, `zk240=25`, `zk241=25` |
+
+The 2026-09-01 decision checkpoints justify the threshold increases for lifecycle, DATA, and local P2P decision surfaces: they contain Rust/C classifiers and deterministic corpora, not full wire protocols, target evidence, or independent qualification. In particular, `p2p-iot-core` remains draft and the qualification corpus intentionally retains unexecuted/blocked cross-class cases; that evidence does not promote `zk240` or `zk241` beyond 25%.
+
+### Exact-current validation status
+
+The score above is not an exact-current release qualification. At `cea2df6` on 2026-09-02:
+
+- `scripts/ci-release-qualification.sh` correctly stopped with `formal qualification: UNAVAILABLE` because ProVerif is not installed in the available environment.
+- `scripts/ci-rust.sh` failed at `rustfmt --check` on existing formatting drift.
+- `scripts/ci-c.sh` failed to compile `c/src/proto/lineage_replace_storage_transaction.c` because it uses `NULL` without including `<stddef.h>`.
+- The standalone AUTH terminal-flight contract check failed because its expected C handler ordering no longer matches `c/bin/server.c`.
+
+Those failures keep the baseline at 75% rather than carrying forward the former 85% score. They also mean current `dev` must not be described as fully release-qualified until the affected lanes pass again.
+
 ## Current evidence posture
 
 ZK-ARCHE deliberately keeps maturity states separate. Evidence for one state must not be used to imply another.
@@ -52,7 +79,7 @@ ZK-ARCHE deliberately keeps maturity states separate. Evidence for one state mus
 | State | Current posture |
 |---|---|
 | `IMPLEMENTED` | Material Rust/C protocol implementation exists for the current baseline, but the full roadmap is not implemented. |
-| `TESTED` | Strong automated Rust/C, deterministic-vector, negative-path, and qualification coverage exists for implemented surfaces; future roadmap surfaces remain incomplete. |
+| `TESTED` | Extensive checked-in Rust/C, deterministic-vector, negative-path, and qualification coverage exists for implemented surfaces, but exact-current `dev` is not fully qualified: Rust formatting, C compilation, and the AUTH terminal-flight contract check currently fail, and the local ProVerif lane is unavailable. |
 | `INTEROPERABLE` | Rust/C interoperability evidence exists for shared implemented behavior; this does not cover every future profile, transport, lifecycle, or P2P requirement. |
 | `FORMALLY ANALYZED` | Scoped formal properties have retained evidence; TD-003 remains open because full property coverage and model-to-spec/code traceability are incomplete. |
 | `MEASURED` | Available software/environment evidence exists, but required physical STM32/ESP32-S3-class evidence remains incomplete under TD-002. |
