@@ -56,11 +56,21 @@ fn canonical_p2p_common_contract_lifecycle_corpus() {
 
         match fields[16] {
             "ESTABLISH" => {
-                assert_eq!(action, AssociationAdmissionAction::Establish, "{}", fields[0]);
+                assert_eq!(
+                    action,
+                    AssociationAdmissionAction::Establish,
+                    "{}",
+                    fields[0]
+                );
                 established += 1;
             }
             "FAIL_CLOSED" => {
-                assert_eq!(action, AssociationAdmissionAction::FailClosed, "{}", fields[0]);
+                assert_eq!(
+                    action,
+                    AssociationAdmissionAction::FailClosed,
+                    "{}",
+                    fields[0]
+                );
                 failed += 1;
             }
             other => panic!("invalid expected action: {other}"),

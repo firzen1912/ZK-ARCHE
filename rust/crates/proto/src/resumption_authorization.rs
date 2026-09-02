@@ -73,7 +73,6 @@ pub fn classify_resumption_authorization(
 ) -> ResumptionAuthorizationDecision {
     use ResumptionAction::*;
     use ResumptionReason::*;
-
     if f.rollback_suspected {
         return d(Reject, RollbackSuspected);
     }
@@ -134,7 +133,6 @@ pub fn classify_resumption_authorization(
 #[cfg(test)]
 mod tests {
     use super::*;
-
     fn b(v: &str) -> bool {
         match v {
             "0" => false,
@@ -142,7 +140,6 @@ mod tests {
             _ => panic!("bad bit"),
         }
     }
-
     fn a(v: &str) -> ResumptionAction {
         match v {
             "RESUME" => ResumptionAction::Resume,
@@ -151,10 +148,8 @@ mod tests {
             _ => panic!("bad action"),
         }
     }
-
     fn r(v: &str) -> ResumptionReason {
         use ResumptionReason::*;
-
         match v {
             "CURRENT" => Current,
             "ROLLBACK_SUSPECTED" => RollbackSuspected,
@@ -178,7 +173,6 @@ mod tests {
             _ => panic!("bad reason"),
         }
     }
-
     #[test]
     fn canonical_corpus() {
         let corpus = include_str!("../../../test-vectors/state/resumption-authorization-v2.txt");
@@ -211,7 +205,7 @@ mod tests {
                 classify_resumption_authorization(&f),
                 ResumptionAuthorizationDecision {
                     action: a(x[20]),
-                    reason: r(x[21]),
+                    reason: r(x[21])
                 },
                 "{}",
                 x[0]

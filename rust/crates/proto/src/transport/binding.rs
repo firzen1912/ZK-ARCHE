@@ -144,7 +144,9 @@ mod tests {
             "CURRENT" => TransportBindingReason::Current,
             "INVALID_FACTS" => TransportBindingReason::InvalidFacts,
             "TRANSPORT_ADDRESS_AS_IDENTITY" => TransportBindingReason::TransportAddressAsIdentity,
-            "TRANSPORT_METADATA_AS_AUTHORITY" => TransportBindingReason::TransportMetadataAsAuthority,
+            "TRANSPORT_METADATA_AS_AUTHORITY" => {
+                TransportBindingReason::TransportMetadataAsAuthority
+            }
             "BINDING_MISSING" => TransportBindingReason::BindingMissing,
             "BINDING_NOT_REQUIRED" => TransportBindingReason::BindingNotRequired,
             "BINDING_INVALID" => TransportBindingReason::BindingInvalid,

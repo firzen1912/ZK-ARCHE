@@ -26,8 +26,7 @@ pub fn classify_lineage_replace_attempt_evidence(
 ) -> LineageReplaceAttemptEvidenceDecision {
     use LineageReplaceAttemptEvidenceDecision::*;
 
-    let (Some(local_attempt), Some(peer_attempt)) =
-        (facts.local_attempt_id, facts.peer_attempt_id)
+    let (Some(local_attempt), Some(peer_attempt)) = (facts.local_attempt_id, facts.peer_attempt_id)
     else {
         return MissingCurrentAttempt;
     };

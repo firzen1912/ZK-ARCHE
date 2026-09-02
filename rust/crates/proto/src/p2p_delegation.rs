@@ -70,7 +70,10 @@ pub fn classify_p2p_delegation(f: &P2pDelegationFacts) -> P2pDelegationDecision 
         );
     }
     if !f.issuer_trusted {
-        return decision(P2pDelegationAction::Deny, P2pDelegationReason::IssuerUntrusted);
+        return decision(
+            P2pDelegationAction::Deny,
+            P2pDelegationReason::IssuerUntrusted,
+        );
     }
     if !f.holder_authenticated {
         return decision(
@@ -85,10 +88,16 @@ pub fn classify_p2p_delegation(f: &P2pDelegationFacts) -> P2pDelegationDecision 
         return decision(P2pDelegationAction::Deny, P2pDelegationReason::GrantInvalid);
     }
     if !f.scope_match {
-        return decision(P2pDelegationAction::Deny, P2pDelegationReason::ScopeMismatch);
+        return decision(
+            P2pDelegationAction::Deny,
+            P2pDelegationReason::ScopeMismatch,
+        );
     }
     if !f.audience_match {
-        return decision(P2pDelegationAction::Deny, P2pDelegationReason::AudienceMismatch);
+        return decision(
+            P2pDelegationAction::Deny,
+            P2pDelegationReason::AudienceMismatch,
+        );
     }
     if !f.deployment_match {
         return decision(
@@ -106,7 +115,10 @@ pub fn classify_p2p_delegation(f: &P2pDelegationFacts) -> P2pDelegationDecision 
         return decision(P2pDelegationAction::Deny, P2pDelegationReason::EpochStale);
     }
     if !f.revocation_current {
-        return decision(P2pDelegationAction::Deny, P2pDelegationReason::RevocationStale);
+        return decision(
+            P2pDelegationAction::Deny,
+            P2pDelegationReason::RevocationStale,
+        );
     }
     if f.explicitly_revoked {
         return decision(P2pDelegationAction::Deny, P2pDelegationReason::Revoked);
@@ -115,7 +127,10 @@ pub fn classify_p2p_delegation(f: &P2pDelegationFacts) -> P2pDelegationDecision 
         return decision(P2pDelegationAction::Deny, P2pDelegationReason::LineageStale);
     }
     if !f.depth_within_limit {
-        return decision(P2pDelegationAction::Deny, P2pDelegationReason::DepthExceeded);
+        return decision(
+            P2pDelegationAction::Deny,
+            P2pDelegationReason::DepthExceeded,
+        );
     }
     if f.redelegation_requested && !f.redelegation_permitted {
         return decision(

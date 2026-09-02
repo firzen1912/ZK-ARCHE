@@ -4,14 +4,12 @@ use proto::lineage_replace_attempt_evidence::{
 };
 use proto::lineage_replace_reconciliation::LineageReplaceReconciliationDecision;
 use proto::lineage_replace_reconciliation_transition::{
-    classify_lineage_replace_reconciliation_transition,
-    LineageReplaceReconciliationTransition,
+    classify_lineage_replace_reconciliation_transition, LineageReplaceReconciliationTransition,
     LineageReplaceReconciliationTransitionFacts,
 };
 
-const CORPUS: &str = include_str!(
-    "../../../test-vectors/replay/lineage-replace-reconciliation-provenance-v1.txt"
-);
+const CORPUS: &str =
+    include_str!("../../../test-vectors/replay/lineage-replace-reconciliation-provenance-v1.txt");
 
 #[derive(Default)]
 struct ProvenanceState {

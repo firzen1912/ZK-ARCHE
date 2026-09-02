@@ -166,11 +166,9 @@ pub fn classify_enrollment_grant(f: &EnrollmentGrantFacts) -> EnrollmentGrantDec
 #[cfg(test)]
 mod tests {
     use super::*;
-
     fn b(s: &str) -> bool {
         s == "1"
     }
-
     #[test]
     fn canonical_enrollment_grant_corpus() {
         let corpus = include_str!("../../../test-vectors/state/enrollment-grant-v1.txt");

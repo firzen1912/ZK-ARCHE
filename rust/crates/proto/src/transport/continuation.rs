@@ -150,8 +150,12 @@ mod tests {
     fn reason(value: &str) -> TransportContinuationReason {
         match value {
             "CURRENT" => TransportContinuationReason::Current,
-            "TRANSPORT_ADDRESS_AS_IDENTITY" => TransportContinuationReason::TransportAddressAsIdentity,
-            "TRANSPORT_METADATA_AS_AUTHORITY" => TransportContinuationReason::TransportMetadataAsAuthority,
+            "TRANSPORT_ADDRESS_AS_IDENTITY" => {
+                TransportContinuationReason::TransportAddressAsIdentity
+            }
+            "TRANSPORT_METADATA_AS_AUTHORITY" => {
+                TransportContinuationReason::TransportMetadataAsAuthority
+            }
             "ASSOCIATION_INVALIDATED" => TransportContinuationReason::AssociationInvalidated,
             "REPLAY_CONTINUITY_STALE" => TransportContinuationReason::ReplayContinuityStale,
             "PEER_CONTEXT_MISMATCH" => TransportContinuationReason::PeerContextMismatch,

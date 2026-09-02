@@ -73,7 +73,10 @@ fn decision(action: DataReleaseAction, reason: DataReleaseReason) -> DataRelease
 
 pub fn classify_data_release(f: &DataReleaseFacts) -> DataReleaseDecision {
     if f.rollback_suspected {
-        return decision(DataReleaseAction::Deny, DataReleaseReason::RollbackSuspected);
+        return decision(
+            DataReleaseAction::Deny,
+            DataReleaseReason::RollbackSuspected,
+        );
     }
     if !f.authenticated {
         return decision(
@@ -106,10 +109,16 @@ pub fn classify_data_release(f: &DataReleaseFacts) -> DataReleaseDecision {
         );
     }
     if !f.authorization_present {
-        return decision(DataReleaseAction::Deny, DataReleaseReason::AuthorizationMissing);
+        return decision(
+            DataReleaseAction::Deny,
+            DataReleaseReason::AuthorizationMissing,
+        );
     }
     if !f.authorization_fresh {
-        return decision(DataReleaseAction::Deny, DataReleaseReason::AuthorizationStale);
+        return decision(
+            DataReleaseAction::Deny,
+            DataReleaseReason::AuthorizationStale,
+        );
     }
     if !f.revocation_current {
         return decision(DataReleaseAction::Deny, DataReleaseReason::RevocationStale);
@@ -150,7 +159,6 @@ pub fn classify_data_release(f: &DataReleaseFacts) -> DataReleaseDecision {
 #[cfg(test)]
 mod tests {
     use super::*;
-
     fn bit(value: &str) -> bool {
         match value {
             "0" => false,
@@ -158,7 +166,6 @@ mod tests {
             _ => panic!("invalid bit: {value}"),
         }
     }
-
     fn action(value: &str) -> DataReleaseAction {
         match value {
             "RELEASE" => DataReleaseAction::Release,
@@ -167,7 +174,6 @@ mod tests {
             _ => panic!("invalid action: {value}"),
         }
     }
-
     fn reason(value: &str) -> DataReleaseReason {
         match value {
             "CURRENT" => DataReleaseReason::Current,
@@ -194,7 +200,6 @@ mod tests {
             _ => panic!("invalid reason: {value}"),
         }
     }
-
     #[test]
     fn canonical_v2_corpus_matches_classifier() {
         let corpus = include_str!("../../../test-vectors/state/data-release-authorization-v2.txt");
@@ -230,7 +235,7 @@ mod tests {
                 classify_data_release(&facts),
                 DataReleaseDecision {
                     action: action(fields[20]),
-                    reason: reason(fields[21]),
+                    reason: reason(fields[21])
                 },
                 "case {}",
                 fields[0]
