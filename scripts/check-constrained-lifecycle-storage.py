@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 from typing import Any, NoReturn
 
-SCHEMA = "ZKARCHE-CONSTRAINED-LIFECYCLE-STORAGE/2"
+SCHEMA = "ZKARCHE-CONSTRAINED-LIFECYCLE-STORAGE/3"
 
 OBSERVATION_KEYS = (
     "wire_bytes_auth_exchange",
@@ -20,9 +20,13 @@ OBSERVATION_KEYS = (
     "persistent_state_bytes",
     "revocation_view_bytes",
     "authorization_view_bytes",
+    "enrollment_replay_state_bytes",
+    "enrollment_replay_capacity_entries",
     "auth_latency_us",
     "update_latency_us",
     "restart_recovery_us",
+    "enrollment_consume_latency_us",
+    "enrollment_nonce_generation_us",
     "bytes_written_per_update",
 )
 
@@ -43,6 +47,8 @@ REQUIRED_CONTEXT = (
     ("entropy", "health_test_posture"),
     ("entropy", "drbg"),
     ("entropy", "reseed_policy"),
+    ("rng_adapter", "interface"),
+    ("rng_adapter", "max_request_bytes"),
     ("key_storage", "representation"),
     ("key_storage", "location"),
     ("key_storage", "zeroization_posture"),
@@ -54,10 +60,20 @@ REQUIRED_CONTEXT = (
     ("storage", "monotonic_freshness_source"),
     ("storage", "rollback_detection"),
     ("storage", "power_loss_model"),
+    ("storage", "enrollment_replay_record_format"),
+    ("storage", "enrollment_replay_scope"),
+    ("storage", "enrollment_replay_atomicity"),
+    ("storage", "enrollment_replay_restart_policy"),
+    ("storage", "enrollment_replay_rollback_policy"),
     ("transport", "kind"),
     ("transport", "mtu_bytes"),
     ("transport", "reliability"),
 )
+
+POSITIVE_INTEGER_CONTEXT = {
+    ("transport", "mtu_bytes"),
+    ("rng_adapter", "max_request_bytes"),
+}
 
 
 def fail(message: str) -> NoReturn:
@@ -75,9 +91,9 @@ def get_path(doc: dict[str, Any], path: tuple[str, str]) -> Any:
 def require_nonempty_context(doc: dict[str, Any]) -> None:
     for field_path in REQUIRED_CONTEXT:
         value = get_path(doc, field_path)
-        if field_path == ("transport", "mtu_bytes"):
+        if field_path in POSITIVE_INTEGER_CONTEXT:
             if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
-                fail("measured manifest requires positive integer transport.mtu_bytes")
+                fail("measured manifest requires positive integer " + ".".join(field_path))
             continue
         if not isinstance(value, str) or not value.strip():
             fail("measured manifest requires non-empty " + ".".join(field_path))
@@ -107,15 +123,19 @@ def main() -> None:
     status = doc.get("evidence_status")
     physical = doc.get("physical_target_executed")
 
+    execution_flags = (
+        "restart_test_executed",
+        "rollback_test_executed",
+        "entropy_path_exercised",
+        "key_storage_path_exercised",
+        "enrollment_replay_test_executed",
+        "enrollment_power_loss_test_executed",
+    )
+
     if status == "unmeasured":
         if physical is not False:
             fail("unmeasured manifest must set physical_target_executed=false")
-        for flag in (
-            "restart_test_executed",
-            "rollback_test_executed",
-            "entropy_path_exercised",
-            "key_storage_path_exercised",
-        ):
+        for flag in execution_flags:
             if doc.get(flag) is not False:
                 fail(f"unmeasured manifest must set {flag}=false")
         non_null = [key for key in OBSERVATION_KEYS if observations[key] is not None]
@@ -128,12 +148,7 @@ def main() -> None:
         fail("evidence_status must be 'unmeasured' or 'measured'")
     if physical is not True:
         fail("measured manifest requires physical_target_executed=true")
-    for flag in (
-        "restart_test_executed",
-        "rollback_test_executed",
-        "entropy_path_exercised",
-        "key_storage_path_exercised",
-    ):
+    for flag in execution_flags:
         if doc.get(flag) is not True:
             fail(f"measured manifest requires {flag}=true")
 
@@ -154,9 +169,13 @@ def main() -> None:
         "static_ram_bytes",
         "flash_text_rodata_bytes",
         "persistent_state_bytes",
+        "enrollment_replay_state_bytes",
+        "enrollment_replay_capacity_entries",
         "auth_latency_us",
         "update_latency_us",
         "restart_recovery_us",
+        "enrollment_consume_latency_us",
+        "enrollment_nonce_generation_us",
     ):
         if observations[key] <= 0:
             fail(f"observations.{key} must be greater than zero for measured evidence")

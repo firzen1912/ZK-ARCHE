@@ -1,11 +1,13 @@
 {
-  "schema": "ZKARCHE-CONSTRAINED-LIFECYCLE-STORAGE/2",
+  "schema": "ZKARCHE-CONSTRAINED-LIFECYCLE-STORAGE/3",
   "evidence_status": "unmeasured",
   "physical_target_executed": false,
   "restart_test_executed": false,
   "rollback_test_executed": false,
   "entropy_path_exercised": false,
   "key_storage_path_exercised": false,
+  "enrollment_replay_test_executed": false,
+  "enrollment_power_loss_test_executed": false,
   "target": {
     "family": "",
     "board": "",
@@ -32,6 +34,10 @@
     "drbg": "",
     "reseed_policy": ""
   },
+  "rng_adapter": {
+    "interface": "",
+    "max_request_bytes": null
+  },
   "key_storage": {
     "representation": "",
     "location": "",
@@ -47,7 +53,12 @@
     "atomic_update_strategy": "",
     "monotonic_freshness_source": "",
     "rollback_detection": "",
-    "power_loss_model": ""
+    "power_loss_model": "",
+    "enrollment_replay_record_format": "",
+    "enrollment_replay_scope": "",
+    "enrollment_replay_atomicity": "",
+    "enrollment_replay_restart_policy": "",
+    "enrollment_replay_rollback_policy": ""
   },
   "transport": {
     "kind": "",
@@ -63,10 +74,14 @@
     "persistent_state_bytes": null,
     "revocation_view_bytes": null,
     "authorization_view_bytes": null,
+    "enrollment_replay_state_bytes": null,
+    "enrollment_replay_capacity_entries": null,
     "auth_latency_us": null,
     "update_latency_us": null,
     "restart_recovery_us": null,
+    "enrollment_consume_latency_us": null,
+    "enrollment_nonce_generation_us": null,
     "bytes_written_per_update": null
   },
-  "notes": "Template only; no physical-target measurement, restart/rollback result, entropy-path evidence, or key-storage evidence is claimed."
+  "notes": "Template only; no physical-target measurement, restart/rollback result, enrollment replay/power-loss result, entropy-path evidence, or key-storage evidence is claimed."
 }
