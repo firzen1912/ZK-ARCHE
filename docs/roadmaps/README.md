@@ -9,25 +9,25 @@ The two documents are complementary. The improvement roadmap owns the canonical 
 
 ## Roadmap progress
 
-> **Current evidence-based completion: 40.85%**<br>
-> **Remaining to full roadmap: 59.15%**<br>
+> **Current evidence-based completion: 42.07%**<br>
+> **Remaining to full roadmap: 57.93%**<br>
 > Progress snapshot reviewed: **2026-09-02**<br>
-> Evidence basis: exact `dev` at `cea2df6cd10e49adb991dfe2909fe8c4ab66590d`. The score recognizes new lifecycle, DATA-sovereignty, and local-P2P decision evidence, while retaining the exact-current validation failures and unavailable formal lane as evidence ceilings.
+> Evidence basis: exact `dev` at `fa0a1770969e8deb341a1bffd69d11eff9d3a813`, which passed repository release qualification with the local ProVerif 2.05 lane.
 
-`40.85%` is a roadmap-tracking metric, **not** a claim that ZK-ARCHE is 40.85% secure, production-ready, RFC-standardized, externally reviewed, or deployment-qualified.
+`42.07%` is a roadmap-tracking metric, **not** a claim that ZK-ARCHE is 42.07% secure, production-ready, RFC-standardized, externally reviewed, or deployment-qualified.
 
 The score is the arithmetic mean of the evidence-completion scores for canonical phases `zk201`–`zk241`. Each phase is evaluated only against its declared exit evidence.
 
 | Roadmap group | Phases | Completion |
 |---|---:|---:|
-| Baseline / reproducible truth | `zk201`–`zk205` | **75.00%** |
+| Baseline / reproducible truth | `zk201`–`zk205` | **85.00%** |
 | Assurance / review / claim gate | `zk206`–`zk210` | **55.00%** |
 | Enrollment / authorization / lifecycle | `zk211`–`zk215` | **35.00%** |
 | AUTH hardening / IoT profiles | `zk216`–`zk224` | **33.33%** |
 | Interop / RFC / transport / decomposition | `zk225`–`zk230` | **45.83%** |
 | Data sovereignty | `zk231`–`zk238` | **21.88%** |
 | Infrastructure-independent P2P Common Contract | `zk239`–`zk241` | **33.33%** |
-| **Overall** | `zk201`–`zk241` | **40.85%** |
+| **Overall** | `zk201`–`zk241` | **42.07%** |
 
 ### Scoring rubric
 
@@ -47,11 +47,11 @@ Required independent review, physical-target measurements, formal results, inter
 
 ### Phase scorecard
 
-This scorecard makes the grouped arithmetic reproducible. Each phase is scored against the declared exit evidence in [`improvement-roadmap.md`](./improvement-roadmap.md), not against implementation effort. The 41 phase scores sum to `1675`; `1675 / 41 = 40.85%`.
+This scorecard makes the grouped arithmetic reproducible. Each phase is scored against the declared exit evidence in [`improvement-roadmap.md`](./improvement-roadmap.md), not against implementation effort. The 41 phase scores sum to `1725`; `1725 / 41 = 42.07%`.
 
 | Roadmap group | Phase scores |
 |---|---|
-| Baseline / reproducible truth | `zk201=100`, `zk202=50`, `zk203=75`, `zk204=75`, `zk205=75` |
+| Baseline / reproducible truth | `zk201=100`, `zk202=100`, `zk203=75`, `zk204=75`, `zk205=75` |
 | Assurance / review / claim gate | `zk206=75`, `zk207=50`, `zk208=25`, `zk209=25`, `zk210=100` |
 | Enrollment / authorization / lifecycle | `zk211=25`, `zk212=25`, `zk213=75`, `zk214=50`, `zk215=0` |
 | AUTH hardening / IoT profiles | `zk216=25`, `zk217=75`, `zk218=75`, `zk219=25`, `zk220=0`, `zk221=50`, `zk222=50`, `zk223=0`, `zk224=0` |
@@ -63,14 +63,9 @@ The 2026-09-01 decision checkpoints justify the threshold increases for lifecycl
 
 ### Exact-current validation status
 
-The score above is not an exact-current release qualification. At `cea2df6` on 2026-09-02:
+At `fa0a177` on 2026-09-02, `scripts/ci-release-qualification.sh` passed its clean exact-head preflight and postflight. The run covered Rust formatting, check, tests, Clippy, dependency audit; C normal, ASan, and UBSan builds/tests; vector regeneration/drift; contract/corpus checks; and all scoped ProVerif models (37 true queries across AUTH-v3, replay continuity, lineage replacement, and association admission).
 
-- `scripts/ci-release-qualification.sh` correctly stopped with `formal qualification: UNAVAILABLE` because ProVerif is not installed in the available environment.
-- `scripts/ci-rust.sh` failed at `rustfmt --check` on existing formatting drift.
-- `scripts/ci-c.sh` failed to compile `c/src/proto/lineage_replace_storage_transaction.c` because it uses `NULL` without including `<stddef.h>`.
-- The standalone AUTH terminal-flight contract check failed because its expected C handler ordering no longer matches `c/bin/server.c`.
-
-Those failures keep the baseline at 75% rather than carrying forward the former 85% score. They also mean current `dev` must not be described as fully release-qualified until the affected lanes pass again.
+This restores `zk202` to 100% and the baseline group to 85%. It does not close the roadmap's independent-review, constrained-target, comprehensive formal-traceability, or RFC-class evidence gaps.
 
 ## Current evidence posture
 
@@ -79,7 +74,7 @@ ZK-ARCHE deliberately keeps maturity states separate. Evidence for one state mus
 | State | Current posture |
 |---|---|
 | `IMPLEMENTED` | Material Rust/C protocol implementation exists for the current baseline, but the full roadmap is not implemented. |
-| `TESTED` | Extensive checked-in Rust/C, deterministic-vector, negative-path, and qualification coverage exists for implemented surfaces, but exact-current `dev` is not fully qualified: Rust formatting, C compilation, and the AUTH terminal-flight contract check currently fail, and the local ProVerif lane is unavailable. |
+| `TESTED` | Strong automated Rust/C, deterministic-vector, negative-path, formal-model, and qualification coverage exists for implemented surfaces; exact-current release qualification passed. Future roadmap surfaces remain incomplete. |
 | `INTEROPERABLE` | Rust/C interoperability evidence exists for shared implemented behavior; this does not cover every future profile, transport, lifecycle, or P2P requirement. |
 | `FORMALLY ANALYZED` | Scoped formal properties have retained evidence; TD-003 remains open because full property coverage and model-to-spec/code traceability are incomplete. |
 | `MEASURED` | Available software/environment evidence exists, but required physical STM32/ESP32-S3-class evidence remains incomplete under TD-002. |
