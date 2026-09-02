@@ -124,8 +124,8 @@ def main() -> None:
     require_text(
         BIND_SPEC,
         [
-            "Transport addresses are routing metadata, not protocol identity.",
-            "A valid binding does not authenticate, authorize, enroll, mutate trust, or approve resumption by itself.",
+            "MUST NOT be treated as protocol identity.",
+            "It is not sufficient authentication, authorization, trust mutation, or resumption authorization by itself.",
         ],
     )
     require_text(
