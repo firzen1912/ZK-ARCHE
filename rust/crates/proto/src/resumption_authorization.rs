@@ -12,8 +12,10 @@ pub struct ResumptionAuthorizationFacts {
     pub expired: bool,
     pub usage_count: u32,
     pub usage_limit: u32,
+    pub usage_counter_continuity_current: bool,
     pub authorization_context_present: bool,
     pub authorization_context_fresh: bool,
+    pub authorization_generation_current: bool,
     pub revocation_current: bool,
     pub explicitly_revoked: bool,
     pub lineage_current: bool,
@@ -39,6 +41,7 @@ pub enum ResumptionReason {
     Current,
     InvalidFacts,
     RollbackSuspected,
+    UsageCounterContinuityStale,
     CredentialMissing,
     CredentialInvalid,
     BindingMismatch,
@@ -46,6 +49,7 @@ pub enum ResumptionReason {
     ReuseLimitReached,
     AuthorizationContextMissing,
     AuthorizationStale,
+    AuthorizationGenerationStale,
     RevocationStale,
     Revoked,
     LineageStale,
@@ -79,6 +83,9 @@ pub fn classify_resumption_authorization(
     if !f.restart_continuity_current {
         return d(Reject, RestartContinuityStale);
     }
+    if !f.usage_counter_continuity_current {
+        return d(Reject, UsageCounterContinuityStale);
+    }
     if f.session_invalidated {
         return d(Reject, SessionInvalidated);
     }
@@ -105,6 +112,9 @@ pub fn classify_resumption_authorization(
     }
     if !f.authorization_context_fresh {
         return d(FullAuthRequired, AuthorizationStale);
+    }
+    if !f.authorization_generation_current {
+        return d(FullAuthRequired, AuthorizationGenerationStale);
     }
     if !f.revocation_current {
         return d(Reject, RevocationStale);
@@ -153,6 +163,7 @@ mod tests {
         match v {
             "CURRENT" => Current,
             "ROLLBACK_SUSPECTED" => RollbackSuspected,
+            "USAGE_COUNTER_CONTINUITY_STALE" => UsageCounterContinuityStale,
             "CREDENTIAL_MISSING" => CredentialMissing,
             "CREDENTIAL_INVALID" => CredentialInvalid,
             "BINDING_MISMATCH" => BindingMismatch,
@@ -160,6 +171,7 @@ mod tests {
             "REUSE_LIMIT_REACHED" => ReuseLimitReached,
             "AUTHORIZATION_CONTEXT_MISSING" => AuthorizationContextMissing,
             "AUTHORIZATION_STALE" => AuthorizationStale,
+            "AUTHORIZATION_GENERATION_STALE" => AuthorizationGenerationStale,
             "REVOCATION_STALE" => RevocationStale,
             "REVOKED" => Revoked,
             "LINEAGE_STALE" => LineageStale,
@@ -175,11 +187,11 @@ mod tests {
     }
     #[test]
     fn canonical_corpus() {
-        let corpus = include_str!("../../../test-vectors/state/resumption-authorization-v2.txt");
+        let corpus = include_str!("../../../test-vectors/state/resumption-authorization-v3.txt");
         let mut n = 0;
         for line in corpus.lines().filter(|l| l.starts_with("case=")) {
             let x: Vec<&str> = line[5..].split('|').collect();
-            assert_eq!(x.len(), 22);
+            assert_eq!(x.len(), 24);
             let f = ResumptionAuthorizationFacts {
                 credential_present: b(x[1]),
                 credential_integrity_valid: b(x[2]),
@@ -187,31 +199,33 @@ mod tests {
                 expired: b(x[4]),
                 usage_count: x[5].parse().unwrap(),
                 usage_limit: x[6].parse().unwrap(),
-                authorization_context_present: b(x[7]),
-                authorization_context_fresh: b(x[8]),
-                revocation_current: b(x[9]),
-                explicitly_revoked: b(x[10]),
-                lineage_current: b(x[11]),
-                restart_continuity_current: b(x[12]),
-                credential_epoch_current: b(x[13]),
-                session_invalidated: b(x[14]),
-                peer_match: b(x[15]),
-                deployment_match: b(x[16]),
-                audience_match: b(x[17]),
-                profile_match: b(x[18]),
-                rollback_suspected: b(x[19]),
+                usage_counter_continuity_current: b(x[7]),
+                authorization_context_present: b(x[8]),
+                authorization_context_fresh: b(x[9]),
+                authorization_generation_current: b(x[10]),
+                revocation_current: b(x[11]),
+                explicitly_revoked: b(x[12]),
+                lineage_current: b(x[13]),
+                restart_continuity_current: b(x[14]),
+                credential_epoch_current: b(x[15]),
+                session_invalidated: b(x[16]),
+                peer_match: b(x[17]),
+                deployment_match: b(x[18]),
+                audience_match: b(x[19]),
+                profile_match: b(x[20]),
+                rollback_suspected: b(x[21]),
             };
             assert_eq!(
                 classify_resumption_authorization(&f),
                 ResumptionAuthorizationDecision {
-                    action: a(x[20]),
-                    reason: r(x[21])
+                    action: a(x[22]),
+                    reason: r(x[23])
                 },
                 "{}",
                 x[0]
             );
             n += 1;
         }
-        assert_eq!(n, 19);
+        assert_eq!(n, 21);
     }
 }
