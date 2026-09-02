@@ -27,14 +27,29 @@ pub struct P2pDelegationFacts {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum P2pDelegationAction { Accept, Deny }
+pub enum P2pDelegationAction {
+    Accept,
+    Deny,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum P2pDelegationReason {
-    Current, RollbackSuspected, IssuerUntrusted, HolderUnauthenticated,
-    GrantMissing, GrantInvalid, ScopeMismatch, AudienceMismatch,
-    DeploymentMismatch, ExpiredOrNotYetValid, EpochStale, RevocationStale,
-    Revoked, LineageStale, DepthExceeded, RedelegationForbidden,
+    Current,
+    RollbackSuspected,
+    IssuerUntrusted,
+    HolderUnauthenticated,
+    GrantMissing,
+    GrantInvalid,
+    ScopeMismatch,
+    AudienceMismatch,
+    DeploymentMismatch,
+    ExpiredOrNotYetValid,
+    EpochStale,
+    RevocationStale,
+    Revoked,
+    LineageStale,
+    DepthExceeded,
+    RedelegationForbidden,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -48,22 +63,65 @@ fn decision(action: P2pDelegationAction, reason: P2pDelegationReason) -> P2pDele
 }
 
 pub fn classify_p2p_delegation(f: &P2pDelegationFacts) -> P2pDelegationDecision {
-    if f.rollback_suspected { return decision(P2pDelegationAction::Deny, P2pDelegationReason::RollbackSuspected); }
-    if !f.issuer_trusted { return decision(P2pDelegationAction::Deny, P2pDelegationReason::IssuerUntrusted); }
-    if !f.holder_authenticated { return decision(P2pDelegationAction::Deny, P2pDelegationReason::HolderUnauthenticated); }
-    if !f.grant_present { return decision(P2pDelegationAction::Deny, P2pDelegationReason::GrantMissing); }
-    if !f.grant_integrity_valid { return decision(P2pDelegationAction::Deny, P2pDelegationReason::GrantInvalid); }
-    if !f.scope_match { return decision(P2pDelegationAction::Deny, P2pDelegationReason::ScopeMismatch); }
-    if !f.audience_match { return decision(P2pDelegationAction::Deny, P2pDelegationReason::AudienceMismatch); }
-    if !f.deployment_match { return decision(P2pDelegationAction::Deny, P2pDelegationReason::DeploymentMismatch); }
-    if !f.validity_current { return decision(P2pDelegationAction::Deny, P2pDelegationReason::ExpiredOrNotYetValid); }
-    if !f.epoch_current { return decision(P2pDelegationAction::Deny, P2pDelegationReason::EpochStale); }
-    if !f.revocation_current { return decision(P2pDelegationAction::Deny, P2pDelegationReason::RevocationStale); }
-    if f.explicitly_revoked { return decision(P2pDelegationAction::Deny, P2pDelegationReason::Revoked); }
-    if !f.lineage_current { return decision(P2pDelegationAction::Deny, P2pDelegationReason::LineageStale); }
-    if !f.depth_within_limit { return decision(P2pDelegationAction::Deny, P2pDelegationReason::DepthExceeded); }
+    if f.rollback_suspected {
+        return decision(
+            P2pDelegationAction::Deny,
+            P2pDelegationReason::RollbackSuspected,
+        );
+    }
+    if !f.issuer_trusted {
+        return decision(P2pDelegationAction::Deny, P2pDelegationReason::IssuerUntrusted);
+    }
+    if !f.holder_authenticated {
+        return decision(
+            P2pDelegationAction::Deny,
+            P2pDelegationReason::HolderUnauthenticated,
+        );
+    }
+    if !f.grant_present {
+        return decision(P2pDelegationAction::Deny, P2pDelegationReason::GrantMissing);
+    }
+    if !f.grant_integrity_valid {
+        return decision(P2pDelegationAction::Deny, P2pDelegationReason::GrantInvalid);
+    }
+    if !f.scope_match {
+        return decision(P2pDelegationAction::Deny, P2pDelegationReason::ScopeMismatch);
+    }
+    if !f.audience_match {
+        return decision(P2pDelegationAction::Deny, P2pDelegationReason::AudienceMismatch);
+    }
+    if !f.deployment_match {
+        return decision(
+            P2pDelegationAction::Deny,
+            P2pDelegationReason::DeploymentMismatch,
+        );
+    }
+    if !f.validity_current {
+        return decision(
+            P2pDelegationAction::Deny,
+            P2pDelegationReason::ExpiredOrNotYetValid,
+        );
+    }
+    if !f.epoch_current {
+        return decision(P2pDelegationAction::Deny, P2pDelegationReason::EpochStale);
+    }
+    if !f.revocation_current {
+        return decision(P2pDelegationAction::Deny, P2pDelegationReason::RevocationStale);
+    }
+    if f.explicitly_revoked {
+        return decision(P2pDelegationAction::Deny, P2pDelegationReason::Revoked);
+    }
+    if !f.lineage_current {
+        return decision(P2pDelegationAction::Deny, P2pDelegationReason::LineageStale);
+    }
+    if !f.depth_within_limit {
+        return decision(P2pDelegationAction::Deny, P2pDelegationReason::DepthExceeded);
+    }
     if f.redelegation_requested && !f.redelegation_permitted {
-        return decision(P2pDelegationAction::Deny, P2pDelegationReason::RedelegationForbidden);
+        return decision(
+            P2pDelegationAction::Deny,
+            P2pDelegationReason::RedelegationForbidden,
+        );
     }
     decision(P2pDelegationAction::Accept, P2pDelegationReason::Current)
 }
