@@ -32,6 +32,10 @@ zk_enrollment_grant_decision_t zk_enrollment_grant_classify(
     if (!f->commissioner_authorization_fresh)
         return decision(ZK_ENROLLMENT_GRANT_DENY,
                         ZK_ENROLLMENT_GRANT_REASON_COMMISSIONER_AUTHORIZATION_STALE);
+    if (!f->commissioner_authorization_generation_current)
+        return decision(
+            ZK_ENROLLMENT_GRANT_DENY,
+            ZK_ENROLLMENT_GRANT_REASON_COMMISSIONER_AUTHORIZATION_GENERATION_STALE);
     if (!f->commissioner_not_revoked)
         return decision(ZK_ENROLLMENT_GRANT_DENY,
                         ZK_ENROLLMENT_GRANT_REASON_COMMISSIONER_REVOKED);

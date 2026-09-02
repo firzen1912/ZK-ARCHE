@@ -9,6 +9,7 @@ typedef struct {
     bool commissioner_authenticated;
     bool commissioner_authorized;
     bool commissioner_authorization_fresh;
+    bool commissioner_authorization_generation_current;
     bool commissioner_not_revoked;
     bool enrollment_nonce_unused;
     bool subject_possession_verified;
@@ -37,6 +38,7 @@ typedef enum {
     ZK_ENROLLMENT_GRANT_REASON_COMMISSIONER_UNAUTHENTICATED,
     ZK_ENROLLMENT_GRANT_REASON_COMMISSIONER_UNAUTHORIZED,
     ZK_ENROLLMENT_GRANT_REASON_COMMISSIONER_AUTHORIZATION_STALE,
+    ZK_ENROLLMENT_GRANT_REASON_COMMISSIONER_AUTHORIZATION_GENERATION_STALE,
     ZK_ENROLLMENT_GRANT_REASON_COMMISSIONER_REVOKED,
     ZK_ENROLLMENT_GRANT_REASON_ENROLLMENT_REPLAY_DETECTED,
     ZK_ENROLLMENT_GRANT_REASON_SUBJECT_POSSESSION_MISSING,

@@ -1,0 +1,22 @@
+version=3
+# case|explicit_enroll|normal_auth|commissioner_authenticated|commissioner_authorized|commissioner_authorization_fresh|commissioner_authorization_generation_current|commissioner_not_revoked|enrollment_nonce_unused|subject_possession|authority_within_scope|scope_bounded|audience_bound|deployment_bound|validity_bounded|epoch_current|revocation_current|lineage_current|depth_within_limit|rollback|action|reason
+case=ENR3-001|1|0|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|0|ISSUE|CURRENT
+case=ENR3-002|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|0|DENY|NORMAL_AUTH_FORBIDDEN
+case=ENR3-003|0|0|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|0|DENY|EXPLICIT_ENROLL_REQUIRED
+case=ENR3-004|1|0|0|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|0|DENY|COMMISSIONER_UNAUTHENTICATED
+case=ENR3-005|1|0|1|0|1|1|1|1|1|1|1|1|1|1|1|1|1|1|0|DENY|COMMISSIONER_UNAUTHORIZED
+case=ENR3-006|1|0|1|1|0|1|1|1|1|1|1|1|1|1|1|1|1|1|0|DENY|COMMISSIONER_AUTHORIZATION_STALE
+case=ENR3-007|1|0|1|1|1|1|0|1|1|1|1|1|1|1|1|1|1|1|0|DENY|COMMISSIONER_REVOKED
+case=ENR3-008|1|0|1|1|1|1|1|0|1|1|1|1|1|1|1|1|1|1|0|DENY|ENROLLMENT_REPLAY_DETECTED
+case=ENR3-009|1|0|1|1|1|1|1|1|0|1|1|1|1|1|1|1|1|1|0|DENY|SUBJECT_POSSESSION_MISSING
+case=ENR3-010|1|0|1|1|1|1|1|1|1|0|1|1|1|1|1|1|1|1|0|DENY|AUTHORITY_ESCALATION
+case=ENR3-011|1|0|1|1|1|1|1|1|1|1|0|1|1|1|1|1|1|1|0|DENY|SCOPE_UNBOUNDED
+case=ENR3-012|1|0|1|1|1|1|1|1|1|1|1|0|1|1|1|1|1|1|0|DENY|AUDIENCE_UNBOUND
+case=ENR3-013|1|0|1|1|1|1|1|1|1|1|1|1|0|1|1|1|1|1|0|DENY|DEPLOYMENT_UNBOUND
+case=ENR3-014|1|0|1|1|1|1|1|1|1|1|1|1|1|0|1|1|1|1|0|DENY|VALIDITY_UNBOUNDED
+case=ENR3-015|1|0|1|1|1|1|1|1|1|1|1|1|1|1|0|1|1|1|0|DENY|EPOCH_STALE
+case=ENR3-016|1|0|1|1|1|1|1|1|1|1|1|1|1|1|1|0|1|1|0|DENY|REVOCATION_STALE
+case=ENR3-017|1|0|1|1|1|1|1|1|1|1|1|1|1|1|1|1|0|1|0|DENY|LINEAGE_STALE
+case=ENR3-018|1|0|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|0|0|DENY|DELEGATION_DEPTH_EXCEEDED
+case=ENR3-019|1|0|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|DENY|ROLLBACK_SUSPECTED
+case=ENR3-020|1|0|1|1|1|0|1|1|1|1|1|1|1|1|1|1|1|1|0|DENY|COMMISSIONER_AUTHORIZATION_GENERATION_STALE

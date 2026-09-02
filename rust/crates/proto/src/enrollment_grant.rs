@@ -10,6 +10,7 @@ pub struct EnrollmentGrantFacts {
     pub commissioner_authenticated: bool,
     pub commissioner_authorized: bool,
     pub commissioner_authorization_fresh: bool,
+    pub commissioner_authorization_generation_current: bool,
     pub commissioner_not_revoked: bool,
     pub enrollment_nonce_unused: bool,
     pub subject_possession_verified: bool,
@@ -40,6 +41,7 @@ pub enum EnrollmentGrantReason {
     CommissionerUnauthenticated,
     CommissionerUnauthorized,
     CommissionerAuthorizationStale,
+    CommissionerAuthorizationGenerationStale,
     CommissionerRevoked,
     EnrollmentReplayDetected,
     SubjectPossessionMissing,
@@ -90,6 +92,12 @@ pub fn classify_enrollment_grant(f: &EnrollmentGrantFacts) -> EnrollmentGrantDec
         return decision(
             EnrollmentGrantAction::Deny,
             EnrollmentGrantReason::CommissionerAuthorizationStale,
+        );
+    }
+    if !f.commissioner_authorization_generation_current {
+        return decision(
+            EnrollmentGrantAction::Deny,
+            EnrollmentGrantReason::CommissionerAuthorizationGenerationStale,
         );
     }
     if !f.commissioner_not_revoked {
@@ -169,6 +177,9 @@ mod tests {
             "COMMISSIONER_UNAUTHENTICATED" => EnrollmentGrantReason::CommissionerUnauthenticated,
             "COMMISSIONER_UNAUTHORIZED" => EnrollmentGrantReason::CommissionerUnauthorized,
             "COMMISSIONER_AUTHORIZATION_STALE" => EnrollmentGrantReason::CommissionerAuthorizationStale,
+            "COMMISSIONER_AUTHORIZATION_GENERATION_STALE" => {
+                EnrollmentGrantReason::CommissionerAuthorizationGenerationStale
+            }
             "COMMISSIONER_REVOKED" => EnrollmentGrantReason::CommissionerRevoked,
             "ENROLLMENT_REPLAY_DETECTED" => EnrollmentGrantReason::EnrollmentReplayDetected,
             "SUBJECT_POSSESSION_MISSING" => EnrollmentGrantReason::SubjectPossessionMissing,
@@ -186,46 +197,47 @@ mod tests {
     }
 
     #[test]
-    fn canonical_v2_corpus_matches_classifier() {
-        let corpus = include_str!("../../../test-vectors/state/enrollment-grant-v2.txt");
+    fn canonical_v3_corpus_matches_classifier() {
+        let corpus = include_str!("../../../test-vectors/state/enrollment-grant-v3.txt");
         let mut count = 0usize;
         for line in corpus.lines() {
             let Some(case) = line.strip_prefix("case=") else {
                 continue;
             };
             let fields: Vec<&str> = case.split('|').collect();
-            assert_eq!(fields.len(), 21);
+            assert_eq!(fields.len(), 22);
             let facts = EnrollmentGrantFacts {
                 explicit_enroll_operation: bit(fields[1]),
                 normal_auth_path: bit(fields[2]),
                 commissioner_authenticated: bit(fields[3]),
                 commissioner_authorized: bit(fields[4]),
                 commissioner_authorization_fresh: bit(fields[5]),
-                commissioner_not_revoked: bit(fields[6]),
-                enrollment_nonce_unused: bit(fields[7]),
-                subject_possession_verified: bit(fields[8]),
-                requested_authority_within_commissioner_scope: bit(fields[9]),
-                scope_bounded: bit(fields[10]),
-                audience_bound: bit(fields[11]),
-                deployment_bound: bit(fields[12]),
-                validity_bounded: bit(fields[13]),
-                epoch_current: bit(fields[14]),
-                revocation_current: bit(fields[15]),
-                lineage_current: bit(fields[16]),
-                delegation_depth_within_limit: bit(fields[17]),
-                rollback_suspected: bit(fields[18]),
+                commissioner_authorization_generation_current: bit(fields[6]),
+                commissioner_not_revoked: bit(fields[7]),
+                enrollment_nonce_unused: bit(fields[8]),
+                subject_possession_verified: bit(fields[9]),
+                requested_authority_within_commissioner_scope: bit(fields[10]),
+                scope_bounded: bit(fields[11]),
+                audience_bound: bit(fields[12]),
+                deployment_bound: bit(fields[13]),
+                validity_bounded: bit(fields[14]),
+                epoch_current: bit(fields[15]),
+                revocation_current: bit(fields[16]),
+                lineage_current: bit(fields[17]),
+                delegation_depth_within_limit: bit(fields[18]),
+                rollback_suspected: bit(fields[19]),
             };
             assert_eq!(
                 classify_enrollment_grant(&facts),
                 EnrollmentGrantDecision {
-                    action: action(fields[19]),
-                    reason: reason(fields[20]),
+                    action: action(fields[20]),
+                    reason: reason(fields[21]),
                 },
                 "case {}",
                 fields[0]
             );
             count += 1;
         }
-        assert_eq!(count, 19);
+        assert_eq!(count, 20);
     }
 }

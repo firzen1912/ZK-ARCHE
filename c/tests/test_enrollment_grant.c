@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define VECTOR_PATH "../rust/test-vectors/state/enrollment-grant-v2.txt"
+#define VECTOR_PATH "../rust/test-vectors/state/enrollment-grant-v3.txt"
 
 static bool bit(const char *v) {
     assert(v != NULL);
@@ -25,11 +25,11 @@ static zk_enrollment_grant_reason_t reason(const char *v) {
         "CURRENT", "ROLLBACK_SUSPECTED", "NORMAL_AUTH_FORBIDDEN",
         "EXPLICIT_ENROLL_REQUIRED", "COMMISSIONER_UNAUTHENTICATED",
         "COMMISSIONER_UNAUTHORIZED", "COMMISSIONER_AUTHORIZATION_STALE",
-        "COMMISSIONER_REVOKED", "ENROLLMENT_REPLAY_DETECTED",
-        "SUBJECT_POSSESSION_MISSING", "AUTHORITY_ESCALATION",
-        "SCOPE_UNBOUNDED", "AUDIENCE_UNBOUND", "DEPLOYMENT_UNBOUND",
-        "VALIDITY_UNBOUNDED", "EPOCH_STALE", "REVOCATION_STALE",
-        "LINEAGE_STALE", "DELEGATION_DEPTH_EXCEEDED"
+        "COMMISSIONER_AUTHORIZATION_GENERATION_STALE", "COMMISSIONER_REVOKED",
+        "ENROLLMENT_REPLAY_DETECTED", "SUBJECT_POSSESSION_MISSING",
+        "AUTHORITY_ESCALATION", "SCOPE_UNBOUNDED", "AUDIENCE_UNBOUND",
+        "DEPLOYMENT_UNBOUND", "VALIDITY_UNBOUNDED", "EPOCH_STALE",
+        "REVOCATION_STALE", "LINEAGE_STALE", "DELEGATION_DEPTH_EXCEEDED"
     };
     size_t i;
     for (i = 0u; i < sizeof(names) / sizeof(names[0]); ++i)
@@ -46,43 +46,44 @@ int main(void) {
     assert(fp != NULL);
 
     while (fgets(line, sizeof(line), fp) != NULL) {
-        char *f[21];
+        char *f[22];
         size_t i;
         zk_enrollment_grant_facts_t facts;
         zk_enrollment_grant_decision_t got;
 
         line[strcspn(line, "\r\n")] = '\0';
-        if (strcmp(line, "version=2") == 0) {
+        if (strcmp(line, "version=3") == 0) {
             saw_version = 1;
             continue;
         }
         if (strncmp(line, "case=", 5u) != 0) continue;
 
         f[0] = strtok(line + 5u, "|");
-        for (i = 1u; i < 21u; ++i) f[i] = strtok(NULL, "|");
-        assert(f[20] != NULL && strtok(NULL, "|") == NULL);
+        for (i = 1u; i < 22u; ++i) f[i] = strtok(NULL, "|");
+        assert(f[21] != NULL && strtok(NULL, "|") == NULL);
 
         facts = (zk_enrollment_grant_facts_t){
             bit(f[1]), bit(f[2]), bit(f[3]), bit(f[4]), bit(f[5]), bit(f[6]),
             bit(f[7]), bit(f[8]), bit(f[9]), bit(f[10]), bit(f[11]), bit(f[12]),
-            bit(f[13]), bit(f[14]), bit(f[15]), bit(f[16]), bit(f[17]), bit(f[18])
+            bit(f[13]), bit(f[14]), bit(f[15]), bit(f[16]), bit(f[17]), bit(f[18]),
+            bit(f[19])
         };
 
         got = zk_enrollment_grant_classify(&facts);
-        assert(got.action == action(f[19]));
-        assert(got.reason == reason(f[20]));
+        assert(got.action == action(f[20]));
+        assert(got.reason == reason(f[21]));
         cases += 1u;
     }
 
     fclose(fp);
     assert(saw_version == 1);
-    assert(cases == 19u);
+    assert(cases == 20u);
 
     {
         zk_enrollment_grant_decision_t got = zk_enrollment_grant_classify(NULL);
         assert(got.action == ZK_ENROLLMENT_GRANT_DENY);
     }
 
-    puts("enrollment grant corpus v2: ok cases=19");
+    puts("enrollment grant corpus v3: ok cases=20");
     return EXIT_SUCCESS;
 }
