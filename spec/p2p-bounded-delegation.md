@@ -1,27 +1,65 @@
-# P2P bounded delegation contract
+# P2P Bounded Delegation Decision Contract
 
-Status: implementation-backed draft for `zk239`; not an RFC or deployment claim.
+Status: implementation-linked normative decision contract for the Common Contract P2P trust boundary. This document defines local decision semantics only; it does not define a grant wire format or credential signature format.
 
-## Security boundary
+## 1. Non-transitive trust root
 
-ZK-ARCHE trust is local and non-transitive by default. `A trusts B` and `B trusts C` MUST NOT imply that A accepts C. A MAY accept C only when A locally validates an explicit delegation grant issued by an entity A already trusts and every bound below is satisfied.
+Trust is local and non-transitive by default. A verifier MUST NOT accept a delegation merely because some already-trusted peer claims that the delegation issuer is trustworthy.
 
-Normal AUTH remains NO-LEARNING. Successful AUTH authenticates the holder; it does not create a delegation, enlarge scope, or mutate the local trust store.
+For a delegation to be considered, the verifier must have both:
 
-## Required local facts
+- an accepted trust relationship for the issuer; and
+- evidence that the issuer relationship is rooted in the verifier's own local trust state rather than inferred transitively from an unrelated peer relationship.
 
-A bounded delegation acceptance requires all of the following to be true: the issuer is already trusted by the local verifier; the holder is authenticated; an explicit grant exists and its integrity has already been verified; scope, audience, and deployment match; validity and policy epoch are current; revocation state is current and the grant/holder is not revoked; lineage is current; delegation depth is within the locally configured maximum; and any requested redelegation is explicitly permitted. Rollback suspicion fails closed before ordinary evaluation.
+Accordingly, `issuer_trusted=true` with `issuer_trust_local=false` MUST fail closed with `ISSUER_TRUST_NOT_LOCAL`.
 
-The decision MUST be local. CA, cloud identity, DNS, Internet, blockchain, manufacturer cloud, gateway approval, or an online central registry MUST NOT be required when the verifier has sufficient current local state.
+This rule does not prohibit explicit delegation. It prevents delegation from silently turning local trust into transitive trust. The explicit grant is the bounded authority path from the locally trusted issuer to the authenticated holder.
 
-## Depth and redelegation
+## 2. Required grant bounds
 
-Delegation depth is an explicit bound, not inferred graph reachability. A grant that exceeds the local maximum MUST fail closed. Redelegation is disabled unless the grant explicitly permits it; possession of an accepted delegated authorization does not itself confer authority to delegate again.
+After establishing a local issuer trust root, the verifier MUST require all of the following before accepting a delegation:
 
-## Revocation and freshness
+- authenticated holder;
+- present and integrity-valid grant;
+- matching scope, audience, and deployment/domain;
+- current validity interval and policy epoch;
+- current revocation view and no explicit revocation;
+- current authorization lineage;
+- delegation depth within the locally accepted bound;
+- explicit redelegation permission whenever redelegation is requested;
+- no rollback suspicion in the local lifecycle state.
 
-A stale revocation view, stale lineage, stale epoch, expired/not-yet-valid grant, or rollback suspicion MUST fail closed. Infrastructure loss does not automatically revoke a grant, but a peer MUST stop accepting it once its locally retained state exceeds the applicable freshness bound.
+Normal AUTH remains NO-LEARNING. Acceptance of a delegation MUST NOT add the holder or issuer to persistent trust merely because authentication or delegation verification succeeded.
 
-## Evidence boundary
+## 3. Fail-closed precedence
 
-The current Rust/C classifier consumes already-verified Boolean facts and does not define a wire encoding, signature/MAC format, persistent grant store, commissioner flow, or cryptographic grant-verification algorithm. Those remain separate prerequisites for full `zk239`/`zk240` conformance. The canonical decision corpus is `rust/test-vectors/p2p/bounded-delegation-v1.txt`.
+The shared Rust/C classifier applies this precedence:
+
+1. rollback suspicion;
+2. issuer not trusted;
+3. issuer trust not locally rooted;
+4. holder not authenticated;
+5. missing/invalid grant;
+6. scope/audience/deployment mismatch;
+7. stale validity or epoch;
+8. stale revocation view or explicit revocation;
+9. stale lineage;
+10. depth overflow;
+11. forbidden redelegation;
+12. otherwise `ACCEPT`.
+
+## 4. Infrastructure independence
+
+The decision consumes already-verified local facts. Evaluating the mandatory decision MUST NOT require CA, DNS, Internet access, manufacturer cloud, blockchain, central registry lookup, or gateway approval when the verifier already has sufficient authorized local state.
+
+Infrastructure MAY distribute or refresh trust, grants, revocation state, or policy state outside the decision. Loss of that infrastructure does not convert stale state into current state and does not authorize transitive trust inference.
+
+## 5. Canonical conformance corpus
+
+`rust/test-vectors/p2p/bounded-delegation-v2.txt` is the current canonical decision corpus. Version 2 adds an explicit negative case for transitively inferred issuer trust and is consumed by both Rust and C implementations.
+
+Version 1 remains historical evidence for the earlier decision surface.
+
+## 6. Evidence boundary
+
+This contract and corpus demonstrate wire-neutral decision parity and explicit non-transitivity semantics. They do not establish a cryptographic delegation-token encoding, physical constrained-target interoperability, secure storage, formal proof, independent cryptographic review, RFC/IETF status, or deployment qualification.

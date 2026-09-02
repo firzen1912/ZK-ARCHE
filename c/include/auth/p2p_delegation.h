@@ -3,17 +3,18 @@
 #include <stdbool.h>
 
 typedef struct {
-    bool issuer_trusted, holder_authenticated, grant_present, grant_integrity_valid;
-    bool scope_match, audience_match, deployment_match, validity_current;
-    bool epoch_current, revocation_current, explicitly_revoked, lineage_current;
-    bool depth_within_limit, redelegation_permitted, redelegation_requested;
-    bool rollback_suspected;
+    bool issuer_trusted, issuer_trust_local, holder_authenticated, grant_present;
+    bool grant_integrity_valid, scope_match, audience_match, deployment_match;
+    bool validity_current, epoch_current, revocation_current, explicitly_revoked;
+    bool lineage_current, depth_within_limit, redelegation_permitted;
+    bool redelegation_requested, rollback_suspected;
 } p2p_delegation_facts_t;
 
 typedef enum { P2P_DELEGATION_ACCEPT=0, P2P_DELEGATION_DENY=1 } p2p_delegation_action_t;
 typedef enum {
     P2P_DELEGATION_REASON_CURRENT=0, P2P_DELEGATION_REASON_INVALID_FACTS,
     P2P_DELEGATION_REASON_ROLLBACK_SUSPECTED, P2P_DELEGATION_REASON_ISSUER_UNTRUSTED,
+    P2P_DELEGATION_REASON_ISSUER_TRUST_NOT_LOCAL,
     P2P_DELEGATION_REASON_HOLDER_UNAUTHENTICATED, P2P_DELEGATION_REASON_GRANT_MISSING,
     P2P_DELEGATION_REASON_GRANT_INVALID, P2P_DELEGATION_REASON_SCOPE_MISMATCH,
     P2P_DELEGATION_REASON_AUDIENCE_MISMATCH, P2P_DELEGATION_REASON_DEPLOYMENT_MISMATCH,

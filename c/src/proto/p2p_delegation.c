@@ -5,6 +5,7 @@ p2p_delegation_decision_t p2p_delegation_classify(const p2p_delegation_facts_t *
     if (f==NULL) return decision(P2P_DELEGATION_DENY,P2P_DELEGATION_REASON_INVALID_FACTS);
     if (f->rollback_suspected) return decision(P2P_DELEGATION_DENY,P2P_DELEGATION_REASON_ROLLBACK_SUSPECTED);
     if (!f->issuer_trusted) return decision(P2P_DELEGATION_DENY,P2P_DELEGATION_REASON_ISSUER_UNTRUSTED);
+    if (!f->issuer_trust_local) return decision(P2P_DELEGATION_DENY,P2P_DELEGATION_REASON_ISSUER_TRUST_NOT_LOCAL);
     if (!f->holder_authenticated) return decision(P2P_DELEGATION_DENY,P2P_DELEGATION_REASON_HOLDER_UNAUTHENTICATED);
     if (!f->grant_present) return decision(P2P_DELEGATION_DENY,P2P_DELEGATION_REASON_GRANT_MISSING);
     if (!f->grant_integrity_valid) return decision(P2P_DELEGATION_DENY,P2P_DELEGATION_REASON_GRANT_INVALID);
