@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define VECTOR_PATH "../rust/test-vectors/p2p/common-contract-c-lifecycle-v1.txt"
+#define VECTOR_PATH "../rust/test-vectors/p2p/common-contract-lifecycle-v1.txt"
 
 static bool bit(const char *v){assert(v);if(strcmp(v,"true")==0)return true;assert(strcmp(v,"false")==0);return false;}
 static bool known_peer(const char *v){return strcmp(v,"mcu-core")==0||strcmp(v,"linux-edge")==0;}
