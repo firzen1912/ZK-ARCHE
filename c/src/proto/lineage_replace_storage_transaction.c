@@ -1,5 +1,7 @@
 #include "auth/lineage_replace_storage_transaction.h"
 
+#include <stddef.h>
+
 static bool plan_complete(const lineage_replace_plan_t *plan) {
     return plan != NULL &&
            plan->retire_predecessor &&

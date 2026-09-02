@@ -56,6 +56,16 @@ def require_order(text: str, first: str, second: str, owner: str) -> None:
         fail(f"{owner}: expected {first!r} before {second!r}")
 
 
+def require_scope(text: str, start: str, end: str, owner: str) -> str:
+    a = text.find(start)
+    if a < 0:
+        fail(f"{owner}: missing scope start {start!r}")
+    b = text.find(end, a + len(start))
+    if b < 0:
+        fail(f"{owner}: missing scope end {end!r}")
+    return text[a:b]
+
+
 def main() -> None:
     corpus = parse_corpus(read(CORPUS))
     if set(corpus) != set(REQUIRED_CASES):
@@ -87,17 +97,23 @@ def main() -> None:
         "rust",
     )
 
-    require_order(
+    c_auth3 = require_scope(
         c,
-        "err = auth_server_handle_auth3(&pending,",
-        "(void)auth_session_table_release(&S->sessions, slot);",
-        "c",
+        "case AUTH_PKT_AUTH_3: {",
+        "\n    default:",
+        "c AUTH_3",
     )
     require_order(
-        c,
+        c_auth3,
+        "err = auth_server_handle_auth3(&pending,",
+        "(void)auth_session_table_release(&S->sessions, slot);",
+        "c AUTH_3",
+    )
+    require_order(
+        c_auth3,
         "(void)auth_session_table_release(&S->sessions, slot);",
         "if (err) goto error_reply;",
-        "c",
+        "c AUTH_3",
     )
 
     required_spec = [
