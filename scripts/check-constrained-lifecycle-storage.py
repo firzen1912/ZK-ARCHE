@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 from typing import Any, NoReturn
 
-SCHEMA = "ZKARCHE-CONSTRAINED-LIFECYCLE-STORAGE/3"
+SCHEMA = "ZKARCHE-CONSTRAINED-LIFECYCLE-STORAGE/4"
 
 OBSERVATION_KEYS = (
     "wire_bytes_auth_exchange",
@@ -20,11 +20,13 @@ OBSERVATION_KEYS = (
     "persistent_state_bytes",
     "revocation_view_bytes",
     "authorization_view_bytes",
+    "authorization_generation_state_bytes",
     "enrollment_replay_state_bytes",
     "enrollment_replay_capacity_entries",
     "auth_latency_us",
     "update_latency_us",
     "restart_recovery_us",
+    "authorization_generation_update_latency_us",
     "enrollment_consume_latency_us",
     "enrollment_nonce_generation_us",
     "bytes_written_per_update",
@@ -60,6 +62,11 @@ REQUIRED_CONTEXT = (
     ("storage", "monotonic_freshness_source"),
     ("storage", "rollback_detection"),
     ("storage", "power_loss_model"),
+    ("storage", "authorization_generation_record_format"),
+    ("storage", "authorization_generation_source"),
+    ("storage", "authorization_generation_atomicity"),
+    ("storage", "authorization_generation_restart_policy"),
+    ("storage", "authorization_generation_rollback_policy"),
     ("storage", "enrollment_replay_record_format"),
     ("storage", "enrollment_replay_scope"),
     ("storage", "enrollment_replay_atomicity"),
@@ -128,6 +135,8 @@ def main() -> None:
         "rollback_test_executed",
         "entropy_path_exercised",
         "key_storage_path_exercised",
+        "authorization_generation_test_executed",
+        "authorization_generation_power_loss_test_executed",
         "enrollment_replay_test_executed",
         "enrollment_power_loss_test_executed",
     )
@@ -169,11 +178,13 @@ def main() -> None:
         "static_ram_bytes",
         "flash_text_rodata_bytes",
         "persistent_state_bytes",
+        "authorization_generation_state_bytes",
         "enrollment_replay_state_bytes",
         "enrollment_replay_capacity_entries",
         "auth_latency_us",
         "update_latency_us",
         "restart_recovery_us",
+        "authorization_generation_update_latency_us",
         "enrollment_consume_latency_us",
         "enrollment_nonce_generation_us",
     ):

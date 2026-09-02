@@ -49,12 +49,22 @@ if r.returncode == 0:
     )
 
 fake = copy.deepcopy(base)
+fake["observations"]["authorization_generation_state_bytes"] = 1
+r = run(fake)
+if r.returncode == 0:
+    raise SystemExit(
+        "constrained target validator self-test: fabricated authorization-generation observation was accepted"
+    )
+
+fake = copy.deepcopy(base)
 fake["evidence_status"] = "measured"
 fake["physical_target_executed"] = True
 fake["restart_test_executed"] = True
 fake["rollback_test_executed"] = True
 fake["entropy_path_exercised"] = True
 fake["key_storage_path_exercised"] = True
+fake["authorization_generation_test_executed"] = True
+fake["authorization_generation_power_loss_test_executed"] = True
 fake["enrollment_replay_test_executed"] = True
 fake["enrollment_power_loss_test_executed"] = True
 r = run(fake)
@@ -70,6 +80,42 @@ fake["restart_test_executed"] = True
 fake["rollback_test_executed"] = True
 fake["entropy_path_exercised"] = True
 fake["key_storage_path_exercised"] = True
+fake["authorization_generation_test_executed"] = False
+fake["authorization_generation_power_loss_test_executed"] = True
+fake["enrollment_replay_test_executed"] = True
+fake["enrollment_power_loss_test_executed"] = True
+r = run(fake)
+if r.returncode == 0:
+    raise SystemExit(
+        "constrained target validator self-test: measured claim without authorization-generation test was accepted"
+    )
+
+fake = copy.deepcopy(base)
+fake["evidence_status"] = "measured"
+fake["physical_target_executed"] = True
+fake["restart_test_executed"] = True
+fake["rollback_test_executed"] = True
+fake["entropy_path_exercised"] = True
+fake["key_storage_path_exercised"] = True
+fake["authorization_generation_test_executed"] = True
+fake["authorization_generation_power_loss_test_executed"] = False
+fake["enrollment_replay_test_executed"] = True
+fake["enrollment_power_loss_test_executed"] = True
+r = run(fake)
+if r.returncode == 0:
+    raise SystemExit(
+        "constrained target validator self-test: measured claim without authorization-generation power-loss test was accepted"
+    )
+
+fake = copy.deepcopy(base)
+fake["evidence_status"] = "measured"
+fake["physical_target_executed"] = True
+fake["restart_test_executed"] = True
+fake["rollback_test_executed"] = True
+fake["entropy_path_exercised"] = True
+fake["key_storage_path_exercised"] = True
+fake["authorization_generation_test_executed"] = True
+fake["authorization_generation_power_loss_test_executed"] = True
 fake["enrollment_replay_test_executed"] = False
 fake["enrollment_power_loss_test_executed"] = True
 r = run(fake)
@@ -78,4 +124,4 @@ if r.returncode == 0:
         "constrained target validator self-test: measured claim without enrollment replay test was accepted"
     )
 
-print("constrained-target-manifest-self-test: PASS negative_cases=4")
+print("constrained-target-manifest-self-test: PASS negative_cases=7")
