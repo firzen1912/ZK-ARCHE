@@ -105,6 +105,9 @@ run_step_in() {
     python3 "$ROOT/scripts/check-constrained-lifecycle-storage.py" \
       "$ROOT/evidence/constrained-target/lifecycle-storage-template.json"
 
+  run_step "constrained lifecycle-storage negative self-test" \
+    python3 "$ROOT/scripts/test-constrained-lifecycle-storage.py"
+
   run_step "P2P Common Contract qualification corpus" \
     python3 "$ROOT/scripts/check-p2p-common-contract-qualification.py"
 
@@ -113,6 +116,9 @@ run_step_in() {
 
   run_step "P2P exhaustive decision properties" \
     python3 "$ROOT/scripts/check-p2p-common-contract-properties.py"
+
+  run_step "P2P Rust/C lifecycle qualification" \
+    bash "$ROOT/scripts/check-p2p-common-contract-cross-language.sh"
 
   run_step "Rust lane" bash "$ROOT/scripts/ci-rust.sh"
   run_step "C lane" bash "$ROOT/scripts/ci-c.sh"
