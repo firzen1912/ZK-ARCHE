@@ -25,7 +25,7 @@ if command -v apt-get >/dev/null 2>&1; then
   export DEBIAN_FRONTEND=noninteractive
   apt-get update
   apt-get install -y --no-install-recommends \
-    build-essential pkg-config libsodium-dev ca-certificates
+    build-essential pkg-config libsodium-dev ca-certificates python3 python3-serial
 else
   echo "error: this installer currently supports Debian/Ubuntu/Raspberry Pi OS apt systems" >&2
   exit 1
@@ -38,6 +38,7 @@ make -C "${REPO_ROOT}/c" test
 
 install -D -m 0755 "${REPO_ROOT}/c/build/auth_server" /usr/local/bin/zk-arche-server
 install -D -m 0755 "${REPO_ROOT}/c/build/auth_client" /usr/local/bin/zk-arche-client
+install -D -m 0755 "${REPO_ROOT}/platforms/linux/serial_bridge.py" /usr/local/bin/zk-arche-serial-bridge
 
 install -d -m 0755 /etc/zk-arche
 install -d -m 0700 /var/lib/zk-arche
@@ -99,6 +100,7 @@ echo
 echo "Installed:"
 echo "  /usr/local/bin/zk-arche-server"
 echo "  /usr/local/bin/zk-arche-client"
+echo "  /usr/local/bin/zk-arche-serial-bridge"
 echo "  /etc/zk-arche/server.env"
 echo "  zk-arche.service (enabled, not started)"
 echo
@@ -108,3 +110,6 @@ echo "  sudo systemctl status zk-arche"
 echo
 echo "For a local client smoke test after enrollment configuration:"
 echo "  zk-arche-client --server 127.0.0.1:4040 --transport udp --state-dir ./client-state --setup --allow-tofu-setup"
+echo
+echo "For an STM32 UART bridge:"
+echo "  zk-arche-serial-bridge --serial /dev/ttyUSB0 --baud 921600 --server 127.0.0.1:4040"
