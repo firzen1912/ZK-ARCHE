@@ -24,6 +24,7 @@ Research or roadmap text does not override this package. If current implementati
 - `enrollment-grant-issuance.md` — wire-neutral explicit enrollment issuance decision and reason precedence.
 - `enroll-lifecycle-state-machine.md` — explicit ENROLL transition, one-time operation consumption, durable commit, restart, and rollback semantics.
 - `lifecycle-persistence-freshness.md` — authorization/revocation freshness and fail-closed durable lifecycle composition.
+- `authorization-generation-lifecycle.md` — normative ownership, advancement, generation binding, restart/rollback recovery, and cross-surface fail-closed semantics for local authorization generations.
 - `replay-continuity.md` — fail-closed replay state across restart/state loss.
 - `replay-epoch-recovery.md` — authenticated lineage-replacement security requirements for any future fresh replay epoch; implementation remains blocked.
 - `replay-epoch-transition-owner.md` — wire-neutral zk213 lifecycle state owner, canonical predecessor→successor transition inputs, decision classes, and atomic replacement semantics; Rust/C implementation remains absent.
