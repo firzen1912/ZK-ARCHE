@@ -15,12 +15,13 @@ sudo ./platforms/linux/install.sh
 
 The installer:
 
-1. installs the native compiler, `pkg-config`, and `libsodium-dev`;
+1. installs the native compiler, `pkg-config`, `libsodium-dev`, Python and pyserial;
 2. rebuilds the C lane from source;
 3. runs the C test suite before installation;
 4. installs `zk-arche-server` and `zk-arche-client`;
-5. installs a hardened systemd service;
-6. enables the service but does **not** start it.
+5. installs `zk-arche-serial-bridge` for transparent STM32 UART transport;
+6. installs a hardened systemd service;
+7. enables the service but does **not** start it.
 
 The default bind is `127.0.0.1:4040`, intentionally preventing accidental LAN exposure.
 
@@ -76,6 +77,19 @@ Subsequent AUTH:
 ```
 
 `--allow-tofu-setup` is an explicit enrollment choice, not a normal-AUTH policy. For stronger demonstrations use the repository's explicit pairing/provisioning semantics rather than treating TOFU as universal trust.
+
+## STM32 transparent serial bridge
+
+When the STM32 uses the UART adapter, keep the Linux ZK-ARCHE server on loopback and run:
+
+```bash
+zk-arche-serial-bridge \
+  --serial /dev/ttyUSB0 \
+  --baud 921600 \
+  --server 127.0.0.1:4040
+```
+
+The bridge only converts the MCU's two-byte-length-prefixed UART frames to UDP datagrams and returns the raw response bytes. It does not parse or decide ZK-ARCHE identity, proof, role, trust, authorization, or session state.
 
 ## Pi <-> Orin evidence run
 
