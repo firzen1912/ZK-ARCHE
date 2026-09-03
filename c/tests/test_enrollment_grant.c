@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define VECTOR_PATH "../rust/test-vectors/state/enrollment-grant-v3.txt"
+#define VECTOR_PATH "../rust/test-vectors/state/enrollment-grant-v4.txt"
 
 static bool bit(const char *v) {
     assert(v != NULL);
@@ -25,6 +25,7 @@ static zk_enrollment_grant_reason_t reason(const char *v) {
         "CURRENT", "ROLLBACK_SUSPECTED", "NORMAL_AUTH_FORBIDDEN",
         "EXPLICIT_ENROLL_REQUIRED", "COMMISSIONER_UNAUTHENTICATED",
         "COMMISSIONER_UNAUTHORIZED", "COMMISSIONER_AUTHORIZATION_STALE",
+        "COMMISSIONER_AUTHORIZATION_GENERATION_UNBOUND",
         "COMMISSIONER_AUTHORIZATION_GENERATION_STALE", "COMMISSIONER_REVOKED",
         "ENROLLMENT_REPLAY_DETECTED", "SUBJECT_POSSESSION_MISSING",
         "AUTHORITY_ESCALATION", "SCOPE_UNBOUNDED", "AUDIENCE_UNBOUND",
@@ -46,44 +47,44 @@ int main(void) {
     assert(fp != NULL);
 
     while (fgets(line, sizeof(line), fp) != NULL) {
-        char *f[22];
+        char *f[23];
         size_t i;
         zk_enrollment_grant_facts_t facts;
         zk_enrollment_grant_decision_t got;
 
         line[strcspn(line, "\r\n")] = '\0';
-        if (strcmp(line, "version=3") == 0) {
+        if (strcmp(line, "version=4") == 0) {
             saw_version = 1;
             continue;
         }
         if (strncmp(line, "case=", 5u) != 0) continue;
 
         f[0] = strtok(line + 5u, "|");
-        for (i = 1u; i < 22u; ++i) f[i] = strtok(NULL, "|");
-        assert(f[21] != NULL && strtok(NULL, "|") == NULL);
+        for (i = 1u; i < 23u; ++i) f[i] = strtok(NULL, "|");
+        assert(f[22] != NULL && strtok(NULL, "|") == NULL);
 
         facts = (zk_enrollment_grant_facts_t){
             bit(f[1]), bit(f[2]), bit(f[3]), bit(f[4]), bit(f[5]), bit(f[6]),
             bit(f[7]), bit(f[8]), bit(f[9]), bit(f[10]), bit(f[11]), bit(f[12]),
             bit(f[13]), bit(f[14]), bit(f[15]), bit(f[16]), bit(f[17]), bit(f[18]),
-            bit(f[19])
+            bit(f[19]), bit(f[20])
         };
 
         got = zk_enrollment_grant_classify(&facts);
-        assert(got.action == action(f[20]));
-        assert(got.reason == reason(f[21]));
+        assert(got.action == action(f[21]));
+        assert(got.reason == reason(f[22]));
         cases += 1u;
     }
 
     fclose(fp);
     assert(saw_version == 1);
-    assert(cases == 20u);
+    assert(cases == 21u);
 
     {
         zk_enrollment_grant_decision_t got = zk_enrollment_grant_classify(NULL);
         assert(got.action == ZK_ENROLLMENT_GRANT_DENY);
     }
 
-    puts("enrollment grant corpus v3: ok cases=20");
+    puts("enrollment grant corpus v4: ok cases=21");
     return EXIT_SUCCESS;
 }

@@ -1,0 +1,23 @@
+version=4
+# case|explicit_enroll|normal_auth|commissioner_authenticated|commissioner_authorized|commissioner_authorization_fresh|commissioner_authorization_generation_bound|commissioner_authorization_generation_current|commissioner_not_revoked|enrollment_nonce_unused|subject_possession|authority_within_scope|scope_bounded|audience_bound|deployment_bound|validity_bounded|epoch_current|revocation_current|lineage_current|depth_within_limit|rollback|action|reason
+case=ENR4-001|1|0|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|0|ISSUE|CURRENT
+case=ENR4-002|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|0|DENY|NORMAL_AUTH_FORBIDDEN
+case=ENR4-003|0|0|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|0|DENY|EXPLICIT_ENROLL_REQUIRED
+case=ENR4-004|1|0|0|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|0|DENY|COMMISSIONER_UNAUTHENTICATED
+case=ENR4-005|1|0|1|0|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|0|DENY|COMMISSIONER_UNAUTHORIZED
+case=ENR4-006|1|0|1|1|0|1|1|1|1|1|1|1|1|1|1|1|1|1|1|0|DENY|COMMISSIONER_AUTHORIZATION_STALE
+case=ENR4-007|1|0|1|1|1|1|1|0|1|1|1|1|1|1|1|1|1|1|1|0|DENY|COMMISSIONER_REVOKED
+case=ENR4-008|1|0|1|1|1|1|1|1|0|1|1|1|1|1|1|1|1|1|1|0|DENY|ENROLLMENT_REPLAY_DETECTED
+case=ENR4-009|1|0|1|1|1|1|1|1|1|0|1|1|1|1|1|1|1|1|1|0|DENY|SUBJECT_POSSESSION_MISSING
+case=ENR4-010|1|0|1|1|1|1|1|1|1|1|0|1|1|1|1|1|1|1|1|0|DENY|AUTHORITY_ESCALATION
+case=ENR4-011|1|0|1|1|1|1|1|1|1|1|1|0|1|1|1|1|1|1|1|0|DENY|SCOPE_UNBOUNDED
+case=ENR4-012|1|0|1|1|1|1|1|1|1|1|1|1|0|1|1|1|1|1|1|0|DENY|AUDIENCE_UNBOUND
+case=ENR4-013|1|0|1|1|1|1|1|1|1|1|1|1|1|0|1|1|1|1|1|0|DENY|DEPLOYMENT_UNBOUND
+case=ENR4-014|1|0|1|1|1|1|1|1|1|1|1|1|1|1|0|1|1|1|1|0|DENY|VALIDITY_UNBOUNDED
+case=ENR4-015|1|0|1|1|1|1|1|1|1|1|1|1|1|1|1|0|1|1|1|0|DENY|EPOCH_STALE
+case=ENR4-016|1|0|1|1|1|1|1|1|1|1|1|1|1|1|1|1|0|1|1|0|DENY|REVOCATION_STALE
+case=ENR4-017|1|0|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|0|1|0|DENY|LINEAGE_STALE
+case=ENR4-018|1|0|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|0|0|DENY|DELEGATION_DEPTH_EXCEEDED
+case=ENR4-019|1|0|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|DENY|ROLLBACK_SUSPECTED
+case=ENR4-020|1|0|1|1|1|1|0|1|1|1|1|1|1|1|1|1|1|1|1|0|DENY|COMMISSIONER_AUTHORIZATION_GENERATION_STALE
+case=ENR4-021|1|0|1|1|1|0|1|1|1|1|1|1|1|1|1|1|1|1|1|0|DENY|COMMISSIONER_AUTHORIZATION_GENERATION_UNBOUND
