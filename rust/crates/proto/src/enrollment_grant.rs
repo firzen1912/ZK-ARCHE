@@ -28,7 +28,10 @@ pub struct EnrollmentGrantFacts {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum EnrollmentGrantAction { Issue, Deny }
+pub enum EnrollmentGrantAction {
+    Issue,
+    Deny,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EnrollmentGrantReason {
@@ -66,26 +69,126 @@ fn decision(action: EnrollmentGrantAction, reason: EnrollmentGrantReason) -> Enr
 }
 
 pub fn classify_enrollment_grant(f: &EnrollmentGrantFacts) -> EnrollmentGrantDecision {
-    if f.rollback_suspected { return decision(EnrollmentGrantAction::Deny, EnrollmentGrantReason::RollbackSuspected); }
-    if f.normal_auth_path { return decision(EnrollmentGrantAction::Deny, EnrollmentGrantReason::NormalAuthForbidden); }
-    if !f.explicit_enroll_operation { return decision(EnrollmentGrantAction::Deny, EnrollmentGrantReason::ExplicitEnrollRequired); }
-    if !f.commissioner_authenticated { return decision(EnrollmentGrantAction::Deny, EnrollmentGrantReason::CommissionerUnauthenticated); }
-    if !f.commissioner_authorized { return decision(EnrollmentGrantAction::Deny, EnrollmentGrantReason::CommissionerUnauthorized); }
-    if !f.commissioner_authorization_fresh { return decision(EnrollmentGrantAction::Deny, EnrollmentGrantReason::CommissionerAuthorizationStale); }
-    if !f.commissioner_authorization_generation_bound { return decision(EnrollmentGrantAction::Deny, EnrollmentGrantReason::CommissionerAuthorizationGenerationUnbound); }
-    if !f.commissioner_authorization_generation_current { return decision(EnrollmentGrantAction::Deny, EnrollmentGrantReason::CommissionerAuthorizationGenerationStale); }
-    if !f.commissioner_not_revoked { return decision(EnrollmentGrantAction::Deny, EnrollmentGrantReason::CommissionerRevoked); }
-    if !f.enrollment_nonce_unused { return decision(EnrollmentGrantAction::Deny, EnrollmentGrantReason::EnrollmentReplayDetected); }
-    if !f.subject_possession_verified { return decision(EnrollmentGrantAction::Deny, EnrollmentGrantReason::SubjectPossessionMissing); }
-    if !f.requested_authority_within_commissioner_scope { return decision(EnrollmentGrantAction::Deny, EnrollmentGrantReason::AuthorityEscalation); }
-    if !f.scope_bounded { return decision(EnrollmentGrantAction::Deny, EnrollmentGrantReason::ScopeUnbounded); }
-    if !f.audience_bound { return decision(EnrollmentGrantAction::Deny, EnrollmentGrantReason::AudienceUnbound); }
-    if !f.deployment_bound { return decision(EnrollmentGrantAction::Deny, EnrollmentGrantReason::DeploymentUnbound); }
-    if !f.validity_bounded { return decision(EnrollmentGrantAction::Deny, EnrollmentGrantReason::ValidityUnbounded); }
-    if !f.epoch_current { return decision(EnrollmentGrantAction::Deny, EnrollmentGrantReason::EpochStale); }
-    if !f.revocation_current { return decision(EnrollmentGrantAction::Deny, EnrollmentGrantReason::RevocationStale); }
-    if !f.lineage_current { return decision(EnrollmentGrantAction::Deny, EnrollmentGrantReason::LineageStale); }
-    if !f.delegation_depth_within_limit { return decision(EnrollmentGrantAction::Deny, EnrollmentGrantReason::DelegationDepthExceeded); }
+    if f.rollback_suspected {
+        return decision(
+            EnrollmentGrantAction::Deny,
+            EnrollmentGrantReason::RollbackSuspected,
+        );
+    }
+    if f.normal_auth_path {
+        return decision(
+            EnrollmentGrantAction::Deny,
+            EnrollmentGrantReason::NormalAuthForbidden,
+        );
+    }
+    if !f.explicit_enroll_operation {
+        return decision(
+            EnrollmentGrantAction::Deny,
+            EnrollmentGrantReason::ExplicitEnrollRequired,
+        );
+    }
+    if !f.commissioner_authenticated {
+        return decision(
+            EnrollmentGrantAction::Deny,
+            EnrollmentGrantReason::CommissionerUnauthenticated,
+        );
+    }
+    if !f.commissioner_authorized {
+        return decision(
+            EnrollmentGrantAction::Deny,
+            EnrollmentGrantReason::CommissionerUnauthorized,
+        );
+    }
+    if !f.commissioner_authorization_fresh {
+        return decision(
+            EnrollmentGrantAction::Deny,
+            EnrollmentGrantReason::CommissionerAuthorizationStale,
+        );
+    }
+    if !f.commissioner_authorization_generation_bound {
+        return decision(
+            EnrollmentGrantAction::Deny,
+            EnrollmentGrantReason::CommissionerAuthorizationGenerationUnbound,
+        );
+    }
+    if !f.commissioner_authorization_generation_current {
+        return decision(
+            EnrollmentGrantAction::Deny,
+            EnrollmentGrantReason::CommissionerAuthorizationGenerationStale,
+        );
+    }
+    if !f.commissioner_not_revoked {
+        return decision(
+            EnrollmentGrantAction::Deny,
+            EnrollmentGrantReason::CommissionerRevoked,
+        );
+    }
+    if !f.enrollment_nonce_unused {
+        return decision(
+            EnrollmentGrantAction::Deny,
+            EnrollmentGrantReason::EnrollmentReplayDetected,
+        );
+    }
+    if !f.subject_possession_verified {
+        return decision(
+            EnrollmentGrantAction::Deny,
+            EnrollmentGrantReason::SubjectPossessionMissing,
+        );
+    }
+    if !f.requested_authority_within_commissioner_scope {
+        return decision(
+            EnrollmentGrantAction::Deny,
+            EnrollmentGrantReason::AuthorityEscalation,
+        );
+    }
+    if !f.scope_bounded {
+        return decision(
+            EnrollmentGrantAction::Deny,
+            EnrollmentGrantReason::ScopeUnbounded,
+        );
+    }
+    if !f.audience_bound {
+        return decision(
+            EnrollmentGrantAction::Deny,
+            EnrollmentGrantReason::AudienceUnbound,
+        );
+    }
+    if !f.deployment_bound {
+        return decision(
+            EnrollmentGrantAction::Deny,
+            EnrollmentGrantReason::DeploymentUnbound,
+        );
+    }
+    if !f.validity_bounded {
+        return decision(
+            EnrollmentGrantAction::Deny,
+            EnrollmentGrantReason::ValidityUnbounded,
+        );
+    }
+    if !f.epoch_current {
+        return decision(
+            EnrollmentGrantAction::Deny,
+            EnrollmentGrantReason::EpochStale,
+        );
+    }
+    if !f.revocation_current {
+        return decision(
+            EnrollmentGrantAction::Deny,
+            EnrollmentGrantReason::RevocationStale,
+        );
+    }
+    if !f.lineage_current {
+        return decision(
+            EnrollmentGrantAction::Deny,
+            EnrollmentGrantReason::LineageStale,
+        );
+    }
+    if !f.delegation_depth_within_limit {
+        return decision(
+            EnrollmentGrantAction::Deny,
+            EnrollmentGrantReason::DelegationDepthExceeded,
+        );
+    }
     decision(EnrollmentGrantAction::Issue, EnrollmentGrantReason::Current)
 }
 
@@ -93,8 +196,22 @@ pub fn classify_enrollment_grant(f: &EnrollmentGrantFacts) -> EnrollmentGrantDec
 mod tests {
     use super::*;
 
-    fn bit(value: &str) -> bool { match value { "0" => false, "1" => true, _ => panic!("invalid bit: {value}") } }
-    fn action(value: &str) -> EnrollmentGrantAction { match value { "ISSUE" => EnrollmentGrantAction::Issue, "DENY" => EnrollmentGrantAction::Deny, _ => panic!("invalid action: {value}") } }
+    fn bit(value: &str) -> bool {
+        match value {
+            "0" => false,
+            "1" => true,
+            _ => panic!("invalid bit: {value}"),
+        }
+    }
+
+    fn action(value: &str) -> EnrollmentGrantAction {
+        match value {
+            "ISSUE" => EnrollmentGrantAction::Issue,
+            "DENY" => EnrollmentGrantAction::Deny,
+            _ => panic!("invalid action: {value}"),
+        }
+    }
+
     fn reason(value: &str) -> EnrollmentGrantReason {
         match value {
             "CURRENT" => EnrollmentGrantReason::Current,
@@ -103,9 +220,15 @@ mod tests {
             "EXPLICIT_ENROLL_REQUIRED" => EnrollmentGrantReason::ExplicitEnrollRequired,
             "COMMISSIONER_UNAUTHENTICATED" => EnrollmentGrantReason::CommissionerUnauthenticated,
             "COMMISSIONER_UNAUTHORIZED" => EnrollmentGrantReason::CommissionerUnauthorized,
-            "COMMISSIONER_AUTHORIZATION_STALE" => EnrollmentGrantReason::CommissionerAuthorizationStale,
-            "COMMISSIONER_AUTHORIZATION_GENERATION_UNBOUND" => EnrollmentGrantReason::CommissionerAuthorizationGenerationUnbound,
-            "COMMISSIONER_AUTHORIZATION_GENERATION_STALE" => EnrollmentGrantReason::CommissionerAuthorizationGenerationStale,
+            "COMMISSIONER_AUTHORIZATION_STALE" => {
+                EnrollmentGrantReason::CommissionerAuthorizationStale
+            }
+            "COMMISSIONER_AUTHORIZATION_GENERATION_UNBOUND" => {
+                EnrollmentGrantReason::CommissionerAuthorizationGenerationUnbound
+            }
+            "COMMISSIONER_AUTHORIZATION_GENERATION_STALE" => {
+                EnrollmentGrantReason::CommissionerAuthorizationGenerationStale
+            }
             "COMMISSIONER_REVOKED" => EnrollmentGrantReason::CommissionerRevoked,
             "ENROLLMENT_REPLAY_DETECTED" => EnrollmentGrantReason::EnrollmentReplayDetected,
             "SUBJECT_POSSESSION_MISSING" => EnrollmentGrantReason::SubjectPossessionMissing,
@@ -127,7 +250,9 @@ mod tests {
         let corpus = include_str!("../../../test-vectors/state/enrollment-grant-v4.txt");
         let mut count = 0usize;
         for line in corpus.lines() {
-            let Some(case) = line.strip_prefix("case=") else { continue; };
+            let Some(case) = line.strip_prefix("case=") else {
+                continue;
+            };
             let fields: Vec<&str> = case.split('|').collect();
             assert_eq!(fields.len(), 23);
             let facts = EnrollmentGrantFacts {
@@ -152,7 +277,15 @@ mod tests {
                 delegation_depth_within_limit: bit(fields[19]),
                 rollback_suspected: bit(fields[20]),
             };
-            assert_eq!(classify_enrollment_grant(&facts), EnrollmentGrantDecision { action: action(fields[21]), reason: reason(fields[22]) }, "case {}", fields[0]);
+            assert_eq!(
+                classify_enrollment_grant(&facts),
+                EnrollmentGrantDecision {
+                    action: action(fields[21]),
+                    reason: reason(fields[22]),
+                },
+                "case {}",
+                fields[0]
+            );
             count += 1;
         }
         assert_eq!(count, 21);
