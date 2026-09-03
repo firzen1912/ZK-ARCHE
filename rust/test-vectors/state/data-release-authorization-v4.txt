@@ -1,0 +1,24 @@
+# ZKDATARELEASE/4
+# case|auth|device_authority_present|device_authority_current|protected_data_encrypted|release_key_scope_match|authz_present|authz_fresh|authz_generation_bound|authz_generation_current|rev_current|revoked|lineage|holder|audience|purpose|type|policy|epoch|bind_req|bind_valid|release_unused|rollback|action|reason
+case=current|1|1|1|1|1|1|1|1|1|1|0|1|1|1|1|1|1|1|0|0|1|0|RELEASE|CURRENT
+case=unauthenticated|0|1|1|1|1|1|1|1|1|1|0|1|1|1|1|1|1|1|0|0|1|0|FRESH_AUTH_REQUIRED|UNAUTHENTICATED
+case=device-authority-missing|1|0|1|1|1|1|1|1|1|1|0|1|1|1|1|1|1|1|0|0|1|0|DENY|DEVICE_RELEASE_AUTHORITY_MISSING
+case=device-authority-stale|1|1|0|1|1|1|1|1|1|1|0|1|1|1|1|1|1|1|0|0|1|0|DENY|DEVICE_RELEASE_AUTHORITY_STALE
+case=protected-data-plaintext|1|1|1|0|1|1|1|1|1|1|0|1|1|1|1|1|1|1|0|0|1|0|DENY|PROTECTED_DATA_NOT_ENCRYPTED
+case=release-key-scope-mismatch|1|1|1|1|0|1|1|1|1|1|0|1|1|1|1|1|1|1|0|0|1|0|DENY|RELEASE_KEY_SCOPE_MISMATCH
+case=authorization-missing|1|1|1|1|1|0|1|1|1|1|0|1|1|1|1|1|1|1|0|0|1|0|DENY|AUTHORIZATION_MISSING
+case=authorization-stale|1|1|1|1|1|1|0|1|1|1|0|1|1|1|1|1|1|1|0|0|1|0|DENY|AUTHORIZATION_STALE
+case=authorization-generation-unbound|1|1|1|1|1|1|1|0|1|1|0|1|1|1|1|1|1|1|0|0|1|0|DENY|AUTHORIZATION_GENERATION_UNBOUND
+case=authorization-generation-stale|1|1|1|1|1|1|1|1|0|1|0|1|1|1|1|1|1|1|0|0|1|0|DENY|AUTHORIZATION_GENERATION_STALE
+case=revocation-stale|1|1|1|1|1|1|1|1|1|0|0|1|1|1|1|1|1|1|0|0|1|0|DENY|REVOCATION_STALE
+case=revoked|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|0|0|1|0|DENY|REVOKED
+case=lineage-stale|1|1|1|1|1|1|1|1|1|1|0|0|1|1|1|1|1|1|0|0|1|0|DENY|LINEAGE_STALE
+case=holder-mismatch|1|1|1|1|1|1|1|1|1|1|0|1|0|1|1|1|1|1|0|0|1|0|DENY|HOLDER_MISMATCH
+case=audience-mismatch|1|1|1|1|1|1|1|1|1|1|0|1|1|0|1|1|1|1|0|0|1|0|DENY|AUDIENCE_MISMATCH
+case=purpose-mismatch|1|1|1|1|1|1|1|1|1|1|0|1|1|1|0|1|1|1|0|0|1|0|DENY|PURPOSE_MISMATCH
+case=data-type-mismatch|1|1|1|1|1|1|1|1|1|1|0|1|1|1|1|0|1|1|0|0|1|0|DENY|DATA_TYPE_MISMATCH
+case=policy-mismatch|1|1|1|1|1|1|1|1|1|1|0|1|1|1|1|1|0|1|0|0|1|0|DENY|POLICY_MISMATCH
+case=epoch-mismatch|1|1|1|1|1|1|1|1|1|1|0|1|1|1|1|1|1|0|0|0|1|0|DENY|EPOCH_MISMATCH
+case=binding-invalid|1|1|1|1|1|1|1|1|1|1|0|1|1|1|1|1|1|1|1|0|1|0|DENY|CHANNEL_BINDING_MISSING_OR_INVALID
+case=release-replay|1|1|1|1|1|1|1|1|1|1|0|1|1|1|1|1|1|1|0|0|0|0|DENY|RELEASE_REPLAY_DETECTED
+case=rollback|1|1|1|1|1|1|1|1|1|1|0|1|1|1|1|1|1|1|0|0|1|1|DENY|ROLLBACK_SUSPECTED

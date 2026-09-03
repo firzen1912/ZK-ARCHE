@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define VECTOR_PATH "../rust/test-vectors/state/data-release-authorization-v3.txt"
+#define VECTOR_PATH "../rust/test-vectors/state/data-release-authorization-v4.txt"
 
 static bool bit(const char *v) {
     assert(v);
@@ -26,10 +26,11 @@ static data_release_reason_t reason(const char *v) {
         "CURRENT", "ROLLBACK_SUSPECTED", "UNAUTHENTICATED",
         "DEVICE_RELEASE_AUTHORITY_MISSING", "DEVICE_RELEASE_AUTHORITY_STALE",
         "PROTECTED_DATA_NOT_ENCRYPTED", "RELEASE_KEY_SCOPE_MISMATCH",
-        "AUTHORIZATION_MISSING", "AUTHORIZATION_STALE", "AUTHORIZATION_GENERATION_STALE",
-        "REVOCATION_STALE", "REVOKED", "LINEAGE_STALE", "HOLDER_MISMATCH",
-        "AUDIENCE_MISMATCH", "PURPOSE_MISMATCH", "DATA_TYPE_MISMATCH", "POLICY_MISMATCH",
-        "EPOCH_MISMATCH", "CHANNEL_BINDING_MISSING_OR_INVALID", "RELEASE_REPLAY_DETECTED"
+        "AUTHORIZATION_MISSING", "AUTHORIZATION_STALE", "AUTHORIZATION_GENERATION_UNBOUND",
+        "AUTHORIZATION_GENERATION_STALE", "REVOCATION_STALE", "REVOKED", "LINEAGE_STALE",
+        "HOLDER_MISMATCH", "AUDIENCE_MISMATCH", "PURPOSE_MISMATCH", "DATA_TYPE_MISMATCH",
+        "POLICY_MISMATCH", "EPOCH_MISMATCH", "CHANNEL_BINDING_MISSING_OR_INVALID",
+        "RELEASE_REPLAY_DETECTED"
     };
     size_t i;
     for (i = 0u; i < sizeof(names) / sizeof(names[0]); ++i)
@@ -45,7 +46,7 @@ int main(void) {
     assert(fp);
 
     while (fgets(line, sizeof(line), fp)) {
-        char *fields[24];
+        char *fields[25];
         size_t i;
         data_release_facts_t f;
         data_release_decision_t got;
@@ -53,28 +54,28 @@ int main(void) {
         line[strcspn(line, "\r\n")] = '\0';
         if (strncmp(line, "case=", 5u)) continue;
         fields[0] = strtok(line + 5u, "|");
-        for (i = 1u; i < 24u; ++i) fields[i] = strtok(NULL, "|");
-        assert(fields[23] && strtok(NULL, "|") == NULL);
+        for (i = 1u; i < 25u; ++i) fields[i] = strtok(NULL, "|");
+        assert(fields[24] && strtok(NULL, "|") == NULL);
 
         f = (data_release_facts_t){
             bit(fields[1]), bit(fields[2]), bit(fields[3]), bit(fields[4]), bit(fields[5]),
             bit(fields[6]), bit(fields[7]), bit(fields[8]), bit(fields[9]), bit(fields[10]),
             bit(fields[11]), bit(fields[12]), bit(fields[13]), bit(fields[14]), bit(fields[15]),
             bit(fields[16]), bit(fields[17]), bit(fields[18]), bit(fields[19]), bit(fields[20]),
-            bit(fields[21])
+            bit(fields[21]), bit(fields[22])
         };
         got = data_release_authorization_classify(&f);
-        assert(got.action == action(fields[22]));
-        assert(got.reason == reason(fields[23]));
+        assert(got.action == action(fields[23]));
+        assert(got.reason == reason(fields[24]));
         cases += 1u;
     }
 
     fclose(fp);
-    assert(cases == 21u);
+    assert(cases == 22u);
     {
         data_release_decision_t got = data_release_authorization_classify(NULL);
         assert(got.action == DATA_RELEASE_ACTION_DENY);
     }
-    puts("data release authorization corpus v3: ok cases=21");
+    puts("data release authorization corpus v4: ok cases=22");
     return EXIT_SUCCESS;
 }

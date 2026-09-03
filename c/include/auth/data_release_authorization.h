@@ -11,6 +11,7 @@ typedef struct {
     bool release_key_scope_match;
     bool authorization_present;
     bool authorization_fresh;
+    bool authorization_generation_bound;
     bool authorization_generation_current;
     bool revocation_current;
     bool explicitly_revoked;
@@ -43,6 +44,7 @@ typedef enum {
     DATA_RELEASE_REASON_RELEASE_KEY_SCOPE_MISMATCH,
     DATA_RELEASE_REASON_AUTHORIZATION_MISSING,
     DATA_RELEASE_REASON_AUTHORIZATION_STALE,
+    DATA_RELEASE_REASON_AUTHORIZATION_GENERATION_UNBOUND,
     DATA_RELEASE_REASON_AUTHORIZATION_GENERATION_STALE,
     DATA_RELEASE_REASON_REVOCATION_STALE,
     DATA_RELEASE_REASON_REVOKED,

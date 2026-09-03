@@ -31,13 +31,14 @@ def load_p2p() -> dict[str, dict[str, str]]:
 
 
 def main() -> int:
-    enrollment = decision_rows("rust/test-vectors/state/enrollment-grant-v2.txt")
-    require_decision(enrollment, "ENR2-001", "ISSUE", "CURRENT")
-    require_decision(enrollment, "ENR2-006", "DENY", "COMMISSIONER_AUTHORIZATION_STALE")
-    require_decision(enrollment, "ENR2-008", "DENY", "ENROLLMENT_REPLAY_DETECTED")
-    require_decision(enrollment, "ENR2-016", "DENY", "REVOCATION_STALE")
-    require_decision(enrollment, "ENR2-017", "DENY", "LINEAGE_STALE")
-    require_decision(enrollment, "ENR2-019", "DENY", "ROLLBACK_SUSPECTED")
+    enrollment = decision_rows("rust/test-vectors/state/enrollment-grant-v3.txt")
+    require_decision(enrollment, "ENR3-001", "ISSUE", "CURRENT")
+    require_decision(enrollment, "ENR3-006", "DENY", "COMMISSIONER_AUTHORIZATION_STALE")
+    require_decision(enrollment, "ENR3-008", "DENY", "ENROLLMENT_REPLAY_DETECTED")
+    require_decision(enrollment, "ENR3-016", "DENY", "REVOCATION_STALE")
+    require_decision(enrollment, "ENR3-017", "DENY", "LINEAGE_STALE")
+    require_decision(enrollment, "ENR3-019", "DENY", "ROLLBACK_SUSPECTED")
+    require_decision(enrollment, "ENR3-020", "DENY", "COMMISSIONER_AUTHORIZATION_GENERATION_STALE")
 
     resumption = decision_rows("rust/test-vectors/state/resumption-authorization-v4.txt")
     require_decision(resumption, "current", "RESUME", "CURRENT")
@@ -51,19 +52,21 @@ def main() -> int:
     require_decision(resumption, "usage-counter-continuity-stale", "REJECT", "USAGE_COUNTER_CONTINUITY_STALE")
     require_decision(resumption, "rollback", "REJECT", "ROLLBACK_SUSPECTED")
 
-    transport = decision_rows("rust/test-vectors/state/transport-continuation-v2.txt")
+    transport = decision_rows("rust/test-vectors/state/transport-continuation-v3.txt")
     require_decision(transport, "steady", "CONTINUE", "CURRENT")
     require_decision(transport, "route-changed", "CONTINUE", "CURRENT")
     require_decision(transport, "connection-changed", "CONTINUE", "CURRENT")
     require_decision(transport, "replay-stale", "REJECT", "REPLAY_CONTINUITY_STALE")
     require_decision(transport, "usage-counter-stale", "REJECT", "USAGE_COUNTER_CONTINUITY_STALE")
+    require_decision(transport, "authorization-generation-unbound", "FULL_AUTH_REQUIRED", "AUTHORIZATION_GENERATION_UNBOUND")
     require_decision(transport, "authorization-generation-stale", "FULL_AUTH_REQUIRED", "AUTHORIZATION_GENERATION_STALE")
     require_decision(transport, "address-as-identity", "REJECT", "TRANSPORT_ADDRESS_AS_IDENTITY")
     require_decision(transport, "metadata-as-authority", "REJECT", "TRANSPORT_METADATA_AS_AUTHORITY")
 
-    data = decision_rows("rust/test-vectors/state/data-release-authorization-v3.txt")
+    data = decision_rows("rust/test-vectors/state/data-release-authorization-v4.txt")
     require_decision(data, "current", "RELEASE", "CURRENT")
     require_decision(data, "authorization-stale", "DENY", "AUTHORIZATION_STALE")
+    require_decision(data, "authorization-generation-unbound", "DENY", "AUTHORIZATION_GENERATION_UNBOUND")
     require_decision(data, "authorization-generation-stale", "DENY", "AUTHORIZATION_GENERATION_STALE")
     require_decision(data, "revocation-stale", "DENY", "REVOCATION_STALE")
     require_decision(data, "revoked", "DENY", "REVOKED")
@@ -89,22 +92,13 @@ def main() -> int:
 
     offline = p2p["XC2-002"]
     online = p2p["XC2-004"]
-    compared = (
-        "peer_a", "peer_b", "auth_complete", "preexisting_trust", "authorization_present",
-        "authorization_fresh", "authorization_generation_current", "revocation_current", "revoked",
-        "lineage_current", "replay_continuity_current", "restart_continuity_current",
-        "mandatory_floor_compatible", "binding_required", "binding_valid", "trust_mutation_requested", "expected",
-    )
+    compared = ("peer_a", "peer_b", "auth_complete", "preexisting_trust", "authorization_present", "authorization_fresh", "authorization_generation_current", "revocation_current", "revoked", "lineage_current", "replay_continuity_current", "restart_continuity_current", "mandatory_floor_compatible", "binding_required", "binding_valid", "trust_mutation_requested", "expected")
     assert all(offline[field] == online[field] for field in compared)
     assert offline["infrastructure_available"] == "false"
     assert online["infrastructure_available"] == "true"
     assert offline["expected"] == online["expected"] == "ESTABLISH"
 
-    print(
-        "cross-module-lifecycle-invariants: PASS "
-        "surfaces=6 authz_generation=4 revocation=5 lineage=5 "
-        "replay_restart=5 transport_non_authority=2 infrastructure_non_authority=1 delegation_non_repair=6"
-    )
+    print("cross-module-lifecycle-invariants: PASS surfaces=6 authz_generation=7 revocation=5 lineage=5 replay_restart=5 transport_non_authority=2 infrastructure_non_authority=1 delegation_non_repair=6")
     return 0
 
 

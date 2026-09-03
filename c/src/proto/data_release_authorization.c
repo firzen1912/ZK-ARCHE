@@ -12,6 +12,7 @@ data_release_decision_t data_release_authorization_classify(const data_release_f
     if (!f->release_key_scope_match) return RET(DATA_RELEASE_ACTION_DENY, DATA_RELEASE_REASON_RELEASE_KEY_SCOPE_MISMATCH);
     if (!f->authorization_present) return RET(DATA_RELEASE_ACTION_DENY, DATA_RELEASE_REASON_AUTHORIZATION_MISSING);
     if (!f->authorization_fresh) return RET(DATA_RELEASE_ACTION_DENY, DATA_RELEASE_REASON_AUTHORIZATION_STALE);
+    if (!f->authorization_generation_bound) return RET(DATA_RELEASE_ACTION_DENY, DATA_RELEASE_REASON_AUTHORIZATION_GENERATION_UNBOUND);
     if (!f->authorization_generation_current) return RET(DATA_RELEASE_ACTION_DENY, DATA_RELEASE_REASON_AUTHORIZATION_GENERATION_STALE);
     if (!f->revocation_current) return RET(DATA_RELEASE_ACTION_DENY, DATA_RELEASE_REASON_REVOCATION_STALE);
     if (f->explicitly_revoked) return RET(DATA_RELEASE_ACTION_DENY, DATA_RELEASE_REASON_REVOKED);
