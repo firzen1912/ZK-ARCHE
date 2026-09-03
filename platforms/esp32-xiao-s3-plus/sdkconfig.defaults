@@ -1,0 +1,15 @@
+# Seeed Studio XIAO ESP32-S3 Plus uses ESP32-S3 with 16 MB external flash.
+CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
+
+# Keep the first qualification profile inside internal RAM. PSRAM can be
+# evaluated later as an optional resource extension, not a core requirement.
+CONFIG_SPIRAM_USE_MALLOC=n
+
+# Defensive setting for the Espressif libsodium component. A 2026 regression
+# in libsodium 1.0.21 + ESP-IDF 5.5 hardware-SHA integration could corrupt
+# hash state. We pin libsodium 1.0.22 separately and still force the native
+# libsodium SHA implementation until vector evidence proves acceleration safe.
+CONFIG_LIBSODIUM_USE_MBEDTLS_SHA=n
+
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=8192
+CONFIG_LOG_DEFAULT_LEVEL_INFO=y
