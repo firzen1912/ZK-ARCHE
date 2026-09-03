@@ -25,7 +25,7 @@ def require_decision(rows: dict[str, tuple[str, str]], case: str, action: str, r
 
 
 def load_p2p() -> dict[str, dict[str, str]]:
-    path = ROOT / "rust/test-vectors/p2p/common-contract-lifecycle-v2.txt"
+    path = ROOT / "rust/test-vectors/p2p/common-contract-lifecycle-v3.txt"
     lines = [line for line in path.read_text(encoding="utf-8").splitlines() if not line.startswith("#")]
     return {row["case_id"]: row for row in csv.DictReader(lines, delimiter="|")}
 
@@ -82,23 +82,29 @@ def main() -> int:
     require_decision(delegation, "DEL2-018", "DENY", "ROLLBACK_SUSPECTED")
 
     p2p = load_p2p()
-    assert p2p["XC2-001"]["expected"] == "ESTABLISH"
-    for case in ("XC2-008", "XC2-009", "XC2-010", "XC2-011", "XC2-012", "XC2-013", "XC2-017"):
+    assert p2p["XC3-001"]["expected"] == "ESTABLISH"
+    for case in ("XC3-008", "XC3-009", "XC3-010", "XC3-011", "XC3-012", "XC3-013", "XC3-017", "XC3-021"):
         assert p2p[case]["expected"] == "FAIL_CLOSED", f"{case}: expected FAIL_CLOSED"
 
     assert delegation["DEL2-001"] == ("ACCEPT", "CURRENT")
-    for case in ("XC2-008", "XC2-009", "XC2-010", "XC2-011", "XC2-012", "XC2-013"):
+    for case in ("XC3-008", "XC3-009", "XC3-010", "XC3-011", "XC3-012", "XC3-013", "XC3-021"):
         assert p2p[case]["expected"] == "FAIL_CLOSED", f"{case}: delegation must not repair lifecycle state"
 
-    offline = p2p["XC2-002"]
-    online = p2p["XC2-004"]
-    compared = ("peer_a", "peer_b", "auth_complete", "preexisting_trust", "authorization_present", "authorization_fresh", "authorization_generation_current", "revocation_current", "revoked", "lineage_current", "replay_continuity_current", "restart_continuity_current", "mandatory_floor_compatible", "binding_required", "binding_valid", "trust_mutation_requested", "expected")
+    offline = p2p["XC3-002"]
+    online = p2p["XC3-004"]
+    compared = (
+        "peer_a", "peer_b", "auth_complete", "preexisting_trust", "authorization_present",
+        "authorization_fresh", "authorization_generation_bound", "authorization_generation_current",
+        "revocation_current", "revoked", "lineage_current", "replay_continuity_current",
+        "restart_continuity_current", "mandatory_floor_compatible", "binding_required", "binding_valid",
+        "trust_mutation_requested", "expected",
+    )
     assert all(offline[field] == online[field] for field in compared)
     assert offline["infrastructure_available"] == "false"
     assert online["infrastructure_available"] == "true"
     assert offline["expected"] == online["expected"] == "ESTABLISH"
 
-    print("cross-module-lifecycle-invariants: PASS surfaces=6 authz_generation=7 revocation=5 lineage=5 replay_restart=5 transport_non_authority=2 infrastructure_non_authority=1 delegation_non_repair=6")
+    print("cross-module-lifecycle-invariants: PASS surfaces=6 authz_generation=8 revocation=5 lineage=5 replay_restart=5 transport_non_authority=2 infrastructure_non_authority=1 delegation_non_repair=7")
     return 0
 
 

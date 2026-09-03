@@ -6,7 +6,7 @@ import csv
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-CORPUS = ROOT / "rust/test-vectors/p2p/common-contract-lifecycle-v2.txt"
+CORPUS = ROOT / "rust/test-vectors/p2p/common-contract-lifecycle-v3.txt"
 
 BOOL_FIELDS = {
     "infrastructure_available",
@@ -14,6 +14,7 @@ BOOL_FIELDS = {
     "preexisting_trust",
     "authorization_present",
     "authorization_fresh",
+    "authorization_generation_bound",
     "authorization_generation_current",
     "revocation_current",
     "revoked",
@@ -31,6 +32,7 @@ FAIL_CLOSED_MUTATIONS = {
     "preexisting_trust": False,
     "authorization_present": False,
     "authorization_fresh": False,
+    "authorization_generation_bound": False,
     "authorization_generation_current": False,
     "revocation_current": False,
     "revoked": True,
@@ -56,6 +58,8 @@ def classify(row: dict[str, object]) -> str:
     if not row["preexisting_trust"]:
         return "FAIL_CLOSED"
     if not row["authorization_present"] or not row["authorization_fresh"]:
+        return "FAIL_CLOSED"
+    if not row["authorization_generation_bound"]:
         return "FAIL_CLOSED"
     if not row["authorization_generation_current"]:
         return "FAIL_CLOSED"
@@ -88,7 +92,7 @@ def load_rows() -> list[dict[str, object]]:
 
 def main() -> int:
     rows = load_rows()
-    assert len(rows) == 20, f"expected 20 canonical rows, got {len(rows)}"
+    assert len(rows) == 21, f"expected 21 canonical rows, got {len(rows)}"
 
     for row in rows:
         observed = classify(row)
@@ -133,7 +137,7 @@ def main() -> int:
         "infrastructure_non_authority",
     }
     assert dimensions == expected_dimensions, f"mutation dimension drift: {sorted(dimensions)}"
-    assert mutation_count >= 80, f"insufficient mutation breadth: {mutation_count}"
+    assert mutation_count >= 86, f"insufficient mutation breadth: {mutation_count}"
     print(
         "p2p-common-contract-mutations: PASS "
         f"canonical={len(rows)} positive={len(positive)} mutations={mutation_count} "
