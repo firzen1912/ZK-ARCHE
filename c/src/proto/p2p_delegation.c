@@ -13,6 +13,8 @@ p2p_delegation_decision_t p2p_delegation_classify(const p2p_delegation_facts_t *
     if (!f->audience_match) return decision(P2P_DELEGATION_DENY,P2P_DELEGATION_REASON_AUDIENCE_MISMATCH);
     if (!f->deployment_match) return decision(P2P_DELEGATION_DENY,P2P_DELEGATION_REASON_DEPLOYMENT_MISMATCH);
     if (!f->validity_current) return decision(P2P_DELEGATION_DENY,P2P_DELEGATION_REASON_EXPIRED_OR_NOT_YET_VALID);
+    if (!f->authorization_generation_bound) return decision(P2P_DELEGATION_DENY,P2P_DELEGATION_REASON_AUTHORIZATION_GENERATION_UNBOUND);
+    if (!f->authorization_generation_current) return decision(P2P_DELEGATION_DENY,P2P_DELEGATION_REASON_AUTHORIZATION_GENERATION_STALE);
     if (!f->epoch_current) return decision(P2P_DELEGATION_DENY,P2P_DELEGATION_REASON_EPOCH_STALE);
     if (!f->revocation_current) return decision(P2P_DELEGATION_DENY,P2P_DELEGATION_REASON_REVOCATION_STALE);
     if (f->explicitly_revoked) return decision(P2P_DELEGATION_DENY,P2P_DELEGATION_REASON_REVOKED);

@@ -1,0 +1,22 @@
+version=3
+# case|issuer_trusted|issuer_trust_local|holder_authenticated|grant_present|grant_integrity_valid|scope_match|audience_match|deployment_match|validity_current|authorization_generation_bound|authorization_generation_current|epoch_current|revocation_current|explicitly_revoked|lineage_current|depth_within_limit|redelegation_permitted|redelegation_requested|rollback_suspected|action|reason
+case=DEL3-001|1|1|1|1|1|1|1|1|1|1|1|1|1|0|1|1|0|0|0|ACCEPT|CURRENT
+case=DEL3-002|0|0|1|1|1|1|1|1|1|1|1|1|1|0|1|1|0|0|0|DENY|ISSUER_UNTRUSTED
+case=DEL3-003|1|0|1|1|1|1|1|1|1|1|1|1|1|0|1|1|0|0|0|DENY|ISSUER_TRUST_NOT_LOCAL
+case=DEL3-004|1|1|0|1|1|1|1|1|1|1|1|1|1|0|1|1|0|0|0|DENY|HOLDER_UNAUTHENTICATED
+case=DEL3-005|1|1|1|0|1|1|1|1|1|1|1|1|1|0|1|1|0|0|0|DENY|GRANT_MISSING
+case=DEL3-006|1|1|1|1|0|1|1|1|1|1|1|1|1|0|1|1|0|0|0|DENY|GRANT_INVALID
+case=DEL3-007|1|1|1|1|1|0|1|1|1|1|1|1|1|0|1|1|0|0|0|DENY|SCOPE_MISMATCH
+case=DEL3-008|1|1|1|1|1|1|0|1|1|1|1|1|1|0|1|1|0|0|0|DENY|AUDIENCE_MISMATCH
+case=DEL3-009|1|1|1|1|1|1|1|0|1|1|1|1|1|0|1|1|0|0|0|DENY|DEPLOYMENT_MISMATCH
+case=DEL3-010|1|1|1|1|1|1|1|1|0|1|1|1|1|0|1|1|0|0|0|DENY|EXPIRED_OR_NOT_YET_VALID
+case=DEL3-011|1|1|1|1|1|1|1|1|1|0|1|1|1|0|1|1|0|0|0|DENY|AUTHORIZATION_GENERATION_UNBOUND
+case=DEL3-012|1|1|1|1|1|1|1|1|1|1|0|1|1|0|1|1|0|0|0|DENY|AUTHORIZATION_GENERATION_STALE
+case=DEL3-013|1|1|1|1|1|1|1|1|1|1|1|0|1|0|1|1|0|0|0|DENY|EPOCH_STALE
+case=DEL3-014|1|1|1|1|1|1|1|1|1|1|1|1|0|0|1|1|0|0|0|DENY|REVOCATION_STALE
+case=DEL3-015|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|0|0|0|DENY|REVOKED
+case=DEL3-016|1|1|1|1|1|1|1|1|1|1|1|1|1|0|0|1|0|0|0|DENY|LINEAGE_STALE
+case=DEL3-017|1|1|1|1|1|1|1|1|1|1|1|1|1|0|1|0|1|1|0|DENY|DEPTH_EXCEEDED
+case=DEL3-018|1|1|1|1|1|1|1|1|1|1|1|1|1|0|1|1|0|1|0|DENY|REDELEGATION_FORBIDDEN
+case=DEL3-019|1|1|1|1|1|1|1|1|1|1|1|1|1|0|1|1|1|1|0|ACCEPT|CURRENT
+case=DEL3-020|1|1|1|1|1|1|1|1|1|1|1|1|1|0|1|1|0|0|1|DENY|ROLLBACK_SUSPECTED

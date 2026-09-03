@@ -85,11 +85,13 @@ def main() -> int:
     require_decision(data, "release-replay", "DENY", "RELEASE_REPLAY_DETECTED")
     require_decision(data, "rollback", "DENY", "ROLLBACK_SUSPECTED")
 
-    delegation = decision_rows("rust/test-vectors/p2p/bounded-delegation-v2.txt")
-    require_decision(delegation, "DEL2-001", "ACCEPT", "CURRENT")
-    require_decision(delegation, "DEL2-012", "DENY", "REVOCATION_STALE")
-    require_decision(delegation, "DEL2-014", "DENY", "LINEAGE_STALE")
-    require_decision(delegation, "DEL2-018", "DENY", "ROLLBACK_SUSPECTED")
+    delegation = decision_rows("rust/test-vectors/p2p/bounded-delegation-v3.txt")
+    require_decision(delegation, "DEL3-001", "ACCEPT", "CURRENT")
+    require_decision(delegation, "DEL3-011", "DENY", "AUTHORIZATION_GENERATION_UNBOUND")
+    require_decision(delegation, "DEL3-012", "DENY", "AUTHORIZATION_GENERATION_STALE")
+    require_decision(delegation, "DEL3-014", "DENY", "REVOCATION_STALE")
+    require_decision(delegation, "DEL3-016", "DENY", "LINEAGE_STALE")
+    require_decision(delegation, "DEL3-020", "DENY", "ROLLBACK_SUSPECTED")
 
     p2p = load_p2p()
     assert p2p["XC3-001"]["expected"] == "ESTABLISH"
@@ -107,7 +109,7 @@ def main() -> int:
     assert online["infrastructure_available"] == "true"
     assert offline["expected"] == online["expected"] == "ESTABLISH"
 
-    print("cross-module-lifecycle-invariants: PASS surfaces=7 authz_generation=10 revocation=6 lineage=6 replay_restart=7 transport_non_authority=2 infrastructure_non_authority=1 delegation_non_repair=7")
+    print("cross-module-lifecycle-invariants: PASS surfaces=7 authz_generation=12 revocation=6 lineage=6 replay_restart=7 transport_non_authority=2 infrastructure_non_authority=1 delegation_non_repair=7")
     return 0
 
 if __name__ == "__main__":

@@ -5,7 +5,8 @@
 typedef struct {
     bool issuer_trusted, issuer_trust_local, holder_authenticated, grant_present;
     bool grant_integrity_valid, scope_match, audience_match, deployment_match;
-    bool validity_current, epoch_current, revocation_current, explicitly_revoked;
+    bool validity_current, authorization_generation_bound, authorization_generation_current;
+    bool epoch_current, revocation_current, explicitly_revoked;
     bool lineage_current, depth_within_limit, redelegation_permitted;
     bool redelegation_requested, rollback_suspected;
 } p2p_delegation_facts_t;
@@ -18,10 +19,12 @@ typedef enum {
     P2P_DELEGATION_REASON_HOLDER_UNAUTHENTICATED, P2P_DELEGATION_REASON_GRANT_MISSING,
     P2P_DELEGATION_REASON_GRANT_INVALID, P2P_DELEGATION_REASON_SCOPE_MISMATCH,
     P2P_DELEGATION_REASON_AUDIENCE_MISMATCH, P2P_DELEGATION_REASON_DEPLOYMENT_MISMATCH,
-    P2P_DELEGATION_REASON_EXPIRED_OR_NOT_YET_VALID, P2P_DELEGATION_REASON_EPOCH_STALE,
-    P2P_DELEGATION_REASON_REVOCATION_STALE, P2P_DELEGATION_REASON_REVOKED,
-    P2P_DELEGATION_REASON_LINEAGE_STALE, P2P_DELEGATION_REASON_DEPTH_EXCEEDED,
-    P2P_DELEGATION_REASON_REDELEGATION_FORBIDDEN
+    P2P_DELEGATION_REASON_EXPIRED_OR_NOT_YET_VALID,
+    P2P_DELEGATION_REASON_AUTHORIZATION_GENERATION_UNBOUND,
+    P2P_DELEGATION_REASON_AUTHORIZATION_GENERATION_STALE,
+    P2P_DELEGATION_REASON_EPOCH_STALE, P2P_DELEGATION_REASON_REVOCATION_STALE,
+    P2P_DELEGATION_REASON_REVOKED, P2P_DELEGATION_REASON_LINEAGE_STALE,
+    P2P_DELEGATION_REASON_DEPTH_EXCEEDED, P2P_DELEGATION_REASON_REDELEGATION_FORBIDDEN
 } p2p_delegation_reason_t;
 
 typedef struct { p2p_delegation_action_t action; p2p_delegation_reason_t reason; } p2p_delegation_decision_t;
