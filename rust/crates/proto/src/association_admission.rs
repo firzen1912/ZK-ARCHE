@@ -11,6 +11,7 @@ pub struct AssociationAdmissionFacts {
     pub preexisting_trust_record: bool,
     pub authorization_present: bool,
     pub authorization_fresh: bool,
+    pub authorization_generation_bound: bool,
     pub authorization_generation_current: bool,
     pub revocation_current: bool,
     pub explicitly_revoked: bool,
@@ -46,6 +47,7 @@ pub enum AssociationAdmissionReason {
     BindingInvalid,
     AuthorizationGenerationStale,
     RestartContinuityStale,
+    AuthorizationGenerationUnbound,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -98,6 +100,12 @@ pub fn classify_association_admission(
         return decision(
             AssociationAdmissionAction::FailClosed,
             AssociationAdmissionReason::AuthorizationStale,
+        );
+    }
+    if !facts.authorization_generation_bound {
+        return decision(
+            AssociationAdmissionAction::FailClosed,
+            AssociationAdmissionReason::AuthorizationGenerationUnbound,
         );
     }
     if !facts.authorization_generation_current {
@@ -177,6 +185,9 @@ mod tests {
             "TRUST_RECORD_MISSING" => AssociationAdmissionReason::TrustRecordMissing,
             "AUTHORIZATION_MISSING" => AssociationAdmissionReason::AuthorizationMissing,
             "AUTHORIZATION_STALE" => AssociationAdmissionReason::AuthorizationStale,
+            "AUTHORIZATION_GENERATION_UNBOUND" => {
+                AssociationAdmissionReason::AuthorizationGenerationUnbound
+            }
             "AUTHORIZATION_GENERATION_STALE" => {
                 AssociationAdmissionReason::AuthorizationGenerationStale
             }
@@ -192,41 +203,42 @@ mod tests {
 
     #[test]
     fn canonical_corpus_matches_classifier() {
-        let corpus = include_str!("../../../test-vectors/state/association-admission-v2.txt");
+        let corpus = include_str!("../../../test-vectors/state/association-admission-v3.txt");
         let mut count = 0usize;
         for line in corpus.lines() {
             let Some(case) = line.strip_prefix("case=") else {
                 continue;
             };
             let fields: Vec<&str> = case.split('|').collect();
-            assert_eq!(fields.len(), 17);
+            assert_eq!(fields.len(), 18);
             let facts = AssociationAdmissionFacts {
                 auth_complete: bit(fields[1]),
                 preexisting_trust_record: bit(fields[2]),
                 authorization_present: bit(fields[3]),
                 authorization_fresh: bit(fields[4]),
-                authorization_generation_current: bit(fields[5]),
-                revocation_current: bit(fields[6]),
-                explicitly_revoked: bit(fields[7]),
-                lineage_current: bit(fields[8]),
-                replay_continuity_current: bit(fields[9]),
-                restart_continuity_current: bit(fields[10]),
-                binding_required: bit(fields[11]),
-                binding_valid: bit(fields[12]),
-                rollback_suspected: bit(fields[13]),
-                trust_mutation_requested: bit(fields[14]),
+                authorization_generation_bound: bit(fields[5]),
+                authorization_generation_current: bit(fields[6]),
+                revocation_current: bit(fields[7]),
+                explicitly_revoked: bit(fields[8]),
+                lineage_current: bit(fields[9]),
+                replay_continuity_current: bit(fields[10]),
+                restart_continuity_current: bit(fields[11]),
+                binding_required: bit(fields[12]),
+                binding_valid: bit(fields[13]),
+                rollback_suspected: bit(fields[14]),
+                trust_mutation_requested: bit(fields[15]),
             };
             assert_eq!(
                 classify_association_admission(&facts),
                 AssociationAdmissionDecision {
-                    action: action(fields[15]),
-                    reason: reason(fields[16]),
+                    action: action(fields[16]),
+                    reason: reason(fields[17]),
                 },
                 "case {}",
                 fields[0]
             );
             count += 1;
         }
-        assert_eq!(count, 16);
+        assert_eq!(count, 17);
     }
 }

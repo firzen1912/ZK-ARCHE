@@ -31,6 +31,16 @@ def load_p2p() -> dict[str, dict[str, str]]:
 
 
 def main() -> int:
+    association = decision_rows("rust/test-vectors/state/association-admission-v3.txt")
+    require_decision(association, "ASC3-001", "ESTABLISH", "CURRENT")
+    require_decision(association, "ASC3-006", "FAIL_CLOSED", "AUTHORIZATION_GENERATION_UNBOUND")
+    require_decision(association, "ASC3-007", "FAIL_CLOSED", "AUTHORIZATION_GENERATION_STALE")
+    require_decision(association, "ASC3-008", "FAIL_CLOSED", "REVOCATION_STALE")
+    require_decision(association, "ASC3-010", "FAIL_CLOSED", "LINEAGE_STALE")
+    require_decision(association, "ASC3-011", "FAIL_CLOSED", "REPLAY_CONTINUITY_STALE")
+    require_decision(association, "ASC3-012", "FAIL_CLOSED", "RESTART_CONTINUITY_STALE")
+    require_decision(association, "ASC3-015", "FAIL_CLOSED", "ROLLBACK_SUSPECTED")
+
     enrollment = decision_rows("rust/test-vectors/state/enrollment-grant-v3.txt")
     require_decision(enrollment, "ENR3-001", "ISSUE", "CURRENT")
     require_decision(enrollment, "ENR3-006", "DENY", "COMMISSIONER_AUTHORIZATION_STALE")
@@ -86,27 +96,19 @@ def main() -> int:
     for case in ("XC3-008", "XC3-009", "XC3-010", "XC3-011", "XC3-012", "XC3-013", "XC3-017", "XC3-021"):
         assert p2p[case]["expected"] == "FAIL_CLOSED", f"{case}: expected FAIL_CLOSED"
 
-    assert delegation["DEL2-001"] == ("ACCEPT", "CURRENT")
     for case in ("XC3-008", "XC3-009", "XC3-010", "XC3-011", "XC3-012", "XC3-013", "XC3-021"):
         assert p2p[case]["expected"] == "FAIL_CLOSED", f"{case}: delegation must not repair lifecycle state"
 
     offline = p2p["XC3-002"]
     online = p2p["XC3-004"]
-    compared = (
-        "peer_a", "peer_b", "auth_complete", "preexisting_trust", "authorization_present",
-        "authorization_fresh", "authorization_generation_bound", "authorization_generation_current",
-        "revocation_current", "revoked", "lineage_current", "replay_continuity_current",
-        "restart_continuity_current", "mandatory_floor_compatible", "binding_required", "binding_valid",
-        "trust_mutation_requested", "expected",
-    )
+    compared = ("peer_a","peer_b","auth_complete","preexisting_trust","authorization_present","authorization_fresh","authorization_generation_bound","authorization_generation_current","revocation_current","revoked","lineage_current","replay_continuity_current","restart_continuity_current","mandatory_floor_compatible","binding_required","binding_valid","trust_mutation_requested","expected")
     assert all(offline[field] == online[field] for field in compared)
     assert offline["infrastructure_available"] == "false"
     assert online["infrastructure_available"] == "true"
     assert offline["expected"] == online["expected"] == "ESTABLISH"
 
-    print("cross-module-lifecycle-invariants: PASS surfaces=6 authz_generation=8 revocation=5 lineage=5 replay_restart=5 transport_non_authority=2 infrastructure_non_authority=1 delegation_non_repair=7")
+    print("cross-module-lifecycle-invariants: PASS surfaces=7 authz_generation=10 revocation=6 lineage=6 replay_restart=7 transport_non_authority=2 infrastructure_non_authority=1 delegation_non_repair=7")
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -1,10 +1,10 @@
 (* ZK-ARCHE secure-association admission symbolic model.
    Scope: the wire-neutral CORE/LINK postcondition in
    spec/core-association-admission.md. This model is non-normative and models
-   only decision composition after owning AUTH/TRUST/LINK/BIND subsystems have
-   produced their authoritative facts. It does not model cryptographic proof
-   soundness, parser correctness, revocation distribution, persistence physics,
-   key erasure, transport security, or implementation memory safety. *)
+   only decision composition after owning AUTH/TRUST/LINK/BIND/lifecycle
+   subsystems have produced authoritative facts. It does not model
+   cryptographic proof soundness, parser correctness, revocation distribution,
+   persistence physics, key erasure, transport security, or memory safety. *)
 
 free c: channel.
 free cmd_establish: bitstring.
@@ -13,16 +13,13 @@ free cmd_revoked: bitstring.
 free cmd_other_failure: bitstring.
 
 type evaluation.
-
-(* Preserve a single admission evaluation across mutually exclusive input
-   branches; without this precision annotation, the Horn-clause abstraction
-   may combine events from separate repetitions of the process. *)
 set preciseActions = true.
 
 event AuthComplete(evaluation).
 event PreexistingTrustRecord(evaluation).
 event AuthorizationPresent(evaluation).
 event AuthorizationFresh(evaluation).
+event AuthorizationGenerationBound(evaluation).
 event AuthorizationGenerationCurrent(evaluation).
 event RevocationCurrent(evaluation).
 event HolderNotRevoked(evaluation).
@@ -36,52 +33,21 @@ event ExplicitRevocationObserved(evaluation).
 event AssociationRejected(evaluation).
 event AssociationEstablished(evaluation).
 
-(* Establishment is permitted only after every positive prerequisite owned by
-   the concrete classifier has been admitted for the same evaluation. *)
-query e:evaluation;
-  event(AssociationEstablished(e)) ==> event(AuthComplete(e)).
-
-query e:evaluation;
-  event(AssociationEstablished(e)) ==> event(PreexistingTrustRecord(e)).
-
-query e:evaluation;
-  event(AssociationEstablished(e)) ==> event(AuthorizationPresent(e)).
-
-query e:evaluation;
-  event(AssociationEstablished(e)) ==> event(AuthorizationFresh(e)).
-
-query e:evaluation;
-  event(AssociationEstablished(e)) ==> event(AuthorizationGenerationCurrent(e)).
-
-query e:evaluation;
-  event(AssociationEstablished(e)) ==> event(RevocationCurrent(e)).
-
-query e:evaluation;
-  event(AssociationEstablished(e)) ==> event(HolderNotRevoked(e)).
-
-query e:evaluation;
-  event(AssociationEstablished(e)) ==> event(LineageCurrent(e)).
-
-query e:evaluation;
-  event(AssociationEstablished(e)) ==> event(ReplayContinuityCurrent(e)).
-
-query e:evaluation;
-  event(AssociationEstablished(e)) ==> event(RestartContinuityCurrent(e)).
-
-query e:evaluation;
-  event(AssociationEstablished(e)) ==> event(BindingSatisfied(e)).
-
-query e:evaluation;
-  event(AssociationEstablished(e)) ==> event(RollbackClear(e)).
-
-(* Normal AUTH is NO-LEARNING: an evaluation that requests trust mutation must
-   not also establish a security-authoritative association. *)
-query e:evaluation;
-  event(AssociationEstablished(e)) && event(TrustMutationRequested(e)) ==> false.
-
-(* Explicitly revoked authority state must never compose to establishment. *)
-query e:evaluation;
-  event(AssociationEstablished(e)) && event(ExplicitRevocationObserved(e)) ==> false.
+query e:evaluation; event(AssociationEstablished(e)) ==> event(AuthComplete(e)).
+query e:evaluation; event(AssociationEstablished(e)) ==> event(PreexistingTrustRecord(e)).
+query e:evaluation; event(AssociationEstablished(e)) ==> event(AuthorizationPresent(e)).
+query e:evaluation; event(AssociationEstablished(e)) ==> event(AuthorizationFresh(e)).
+query e:evaluation; event(AssociationEstablished(e)) ==> event(AuthorizationGenerationBound(e)).
+query e:evaluation; event(AssociationEstablished(e)) ==> event(AuthorizationGenerationCurrent(e)).
+query e:evaluation; event(AssociationEstablished(e)) ==> event(RevocationCurrent(e)).
+query e:evaluation; event(AssociationEstablished(e)) ==> event(HolderNotRevoked(e)).
+query e:evaluation; event(AssociationEstablished(e)) ==> event(LineageCurrent(e)).
+query e:evaluation; event(AssociationEstablished(e)) ==> event(ReplayContinuityCurrent(e)).
+query e:evaluation; event(AssociationEstablished(e)) ==> event(RestartContinuityCurrent(e)).
+query e:evaluation; event(AssociationEstablished(e)) ==> event(BindingSatisfied(e)).
+query e:evaluation; event(AssociationEstablished(e)) ==> event(RollbackClear(e)).
+query e:evaluation; event(AssociationEstablished(e)) && event(TrustMutationRequested(e)) ==> false.
+query e:evaluation; event(AssociationEstablished(e)) && event(ExplicitRevocationObserved(e)) ==> false.
 
 let AdmissionEvaluation(e:evaluation) =
   in(c, command:bitstring);
@@ -90,6 +56,7 @@ let AdmissionEvaluation(e:evaluation) =
     event PreexistingTrustRecord(e);
     event AuthorizationPresent(e);
     event AuthorizationFresh(e);
+    event AuthorizationGenerationBound(e);
     event AuthorizationGenerationCurrent(e);
     event RevocationCurrent(e);
     event HolderNotRevoked(e);
@@ -108,5 +75,4 @@ let AdmissionEvaluation(e:evaluation) =
   else if command = cmd_other_failure then
     event AssociationRejected(e).
 
-process
-  !(new e:evaluation; AdmissionEvaluation(e))
+process !(new e:evaluation; AdmissionEvaluation(e))

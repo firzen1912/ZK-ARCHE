@@ -31,6 +31,9 @@ association_admission_decision_t association_admission_classify(
     if (!facts->authorization_fresh)
         return decision(ASSOCIATION_ADMISSION_FAIL_CLOSED,
                         ASSOCIATION_ADMISSION_REASON_AUTHORIZATION_STALE);
+    if (!facts->authorization_generation_bound)
+        return decision(ASSOCIATION_ADMISSION_FAIL_CLOSED,
+                        ASSOCIATION_ADMISSION_REASON_AUTHORIZATION_GENERATION_UNBOUND);
     if (!facts->authorization_generation_current)
         return decision(ASSOCIATION_ADMISSION_FAIL_CLOSED,
                         ASSOCIATION_ADMISSION_REASON_AUTHORIZATION_GENERATION_STALE);
