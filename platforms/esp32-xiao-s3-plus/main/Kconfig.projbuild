@@ -1,0 +1,43 @@
+menu "ZK-ARCHE XIAO ESP32-S3 Plus"
+
+config ZK_WIFI_SSID
+    string "Wi-Fi SSID"
+    default ""
+
+config ZK_WIFI_PASSWORD
+    string "Wi-Fi password"
+    default ""
+
+config ZK_SERVER_IPV4
+    string "ZK-ARCHE server IPv4 address"
+    default "192.168.1.10"
+
+config ZK_SERVER_PORT
+    int "ZK-ARCHE UDP server port"
+    range 1 65535
+    default 4040
+
+config ZK_ROLE
+    int "Requested enrollment role"
+    range 1 65535
+    default 2
+
+config ZK_ALLOWED_ROLES
+    string "Allowed peer roles (comma-separated)"
+    default "1,2"
+    help
+        Initial firmware currently enforces the default 1,2 set in code.
+        This option is reserved for the next parser-backed revision.
+
+config ZK_ALLOW_TOFU_SETUP
+    bool "Allow first-boot TOFU enrollment"
+    default n
+    help
+        Development/bring-up only. Normal AUTH never expands trust. Prefer
+        pairing-token or explicitly provisioned enrollment for qualification.
+
+config ZK_PAIRING_TOKEN
+    string "Optional pairing token"
+    default ""
+
+endmenu
