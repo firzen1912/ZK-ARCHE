@@ -7,12 +7,13 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-MATRIX = ROOT / "rust/test-vectors/p2p/common-contract-decision-v1.txt"
+MATRIX = ROOT / "rust/test-vectors/p2p/common-contract-decision-v2.txt"
 
 FIELDS = [
     "case_id", "peer_a", "peer_b", "infrastructure_available", "auth_valid",
-    "authorization_fresh", "revocation_fresh", "holder_revoked", "lineage_current",
-    "mandatory_floor_compatible", "binding_required", "binding_valid", "expected",
+    "authorization_fresh", "authorization_generation_bound", "authorization_generation_current",
+    "revocation_fresh", "holder_revoked", "lineage_current", "mandatory_floor_compatible",
+    "binding_required", "binding_valid", "expected",
 ]
 PEER_CLASSES = ("mcu-core", "linux-edge")
 SUCCESS = "MUTUAL_AUTH_LOCAL_DECISION"
@@ -27,6 +28,8 @@ def fail(message: str) -> None:
 def classify(
     auth_valid: bool,
     authorization_fresh: bool,
+    authorization_generation_bound: bool,
+    authorization_generation_current: bool,
     revocation_fresh: bool,
     holder_revoked: bool,
     lineage_current: bool,
@@ -37,6 +40,8 @@ def classify(
     if not auth_valid:
         return FAIL
     if not mandatory_floor_compatible:
+        return FAIL
+    if not authorization_generation_bound or not authorization_generation_current:
         return FAIL
     if not revocation_fresh or holder_revoked:
         return FAIL
@@ -76,8 +81,8 @@ def load_canonical_cases() -> list[dict[str, str]]:
         lines = MATRIX.read_text(encoding="utf-8").splitlines()
     except OSError as exc:
         fail(f"cannot read canonical matrix: {exc}")
-    if not lines or lines[0] != "# ZKP2PDECISION/1":
-        fail("missing exact ZKP2PDECISION/1 marker")
+    if not lines or lines[0] != "# ZKP2PDECISION/2":
+        fail("missing exact ZKP2PDECISION/2 marker")
     data = [line for line in lines[1:] if line and not line.startswith("#")]
     reader = csv.DictReader(data, delimiter="|")
     if reader.fieldnames != FIELDS:
@@ -100,7 +105,8 @@ def validate_canonical(rows: list[dict[str, str]]) -> None:
         values = tuple(
             parse_bool(cid, field, row[field])
             for field in (
-                "auth_valid", "authorization_fresh", "revocation_fresh", "holder_revoked",
+                "auth_valid", "authorization_fresh", "authorization_generation_bound",
+                "authorization_generation_current", "revocation_fresh", "holder_revoked",
                 "lineage_current", "mandatory_floor_compatible", "binding_required", "binding_valid",
             )
         )
@@ -121,6 +127,7 @@ def main() -> None:
     state_count = 0
     success_count = 0
     failure_count = 0
+    generation_failures = 0
 
     # Exhaust the complete Boolean decision surface for both infrastructure
     # states and every constrained/edge peer pairing. Peer class and optional
@@ -128,7 +135,7 @@ def main() -> None:
     # authority for an otherwise identical local security-evidence tuple.
     peer_pairs = tuple(itertools.product(PEER_CLASSES, repeat=2))
     for peer_a, peer_b in peer_pairs:
-        for security_state in itertools.product((False, True), repeat=8):
+        for security_state in itertools.product((False, True), repeat=10):
             offline = classify_context(peer_a, peer_b, False, security_state)
             online = classify_context(peer_a, peer_b, True, security_state)
             if offline != online:
@@ -147,41 +154,70 @@ def main() -> None:
                         f"{peer_a}->{peer_b} versus {other_a}->{other_b} state={security_state}"
                     )
 
-            auth, authz, revfresh, revoked, lineage, floor_ok, binding_required, binding_valid = security_state
+            (
+                auth, authz, generation_bound, generation_current, revfresh, revoked,
+                lineage, floor_ok, binding_required, binding_valid,
+            ) = security_state
             outcome = offline
             state_count += 2  # offline + online
             if outcome == SUCCESS:
                 success_count += 2
-                if not (auth and authz and revfresh and not revoked and lineage and floor_ok):
+                if not (
+                    auth and authz and generation_bound and generation_current
+                    and revfresh and not revoked and lineage and floor_ok
+                ):
                     fail(f"success escaped a mandatory fail-closed guard: {security_state}")
                 if binding_required and not binding_valid:
                     fail(f"success escaped required-binding validation: {security_state}")
             else:
                 failure_count += 2
+                if not generation_bound or not generation_current:
+                    generation_failures += 2
 
             # Optional binding metadata cannot become an implicit authority.
             if not binding_required:
                 with_invalid_binding = classify(
-                    auth, authz, revfresh, revoked, lineage, floor_ok, False, False
+                    auth, authz, generation_bound, generation_current, revfresh,
+                    revoked, lineage, floor_ok, False, False
                 )
                 with_valid_binding = classify(
-                    auth, authz, revfresh, revoked, lineage, floor_ok, False, True
+                    auth, authz, generation_bound, generation_current, revfresh,
+                    revoked, lineage, floor_ok, False, True
                 )
                 if with_invalid_binding != with_valid_binding:
                     fail(f"optional binding validity changed decision: {security_state}")
 
-    if state_count != 2048:
-        fail(f"unexpected exhaustive state count {state_count}, expected 2048")
-    if success_count != 24 or failure_count != 2024:
+            # Mutation property: changing either generation prerequisite from
+            # true to false must never preserve a successful decision.
+            if outcome == SUCCESS:
+                unbound = classify(
+                    auth, authz, False, generation_current, revfresh,
+                    revoked, lineage, floor_ok, binding_required, binding_valid
+                )
+                stale = classify(
+                    auth, authz, generation_bound, False, revfresh,
+                    revoked, lineage, floor_ok, binding_required, binding_valid
+                )
+                if unbound != FAIL or stale != FAIL:
+                    fail(f"generation mutation preserved success: {security_state}")
+
+    if state_count != 8192:
+        fail(f"unexpected exhaustive state count {state_count}, expected 8192")
+    if success_count != 24 or failure_count != 8168:
         fail(
             f"unexpected decision distribution success={success_count} failure={failure_count}; "
             "classifier semantics drifted"
+        )
+    if generation_failures != 6144:
+        fail(
+            f"unexpected generation fail-closed count {generation_failures}, expected 6144"
         )
 
     print(
         "p2p-common-contract-properties: PASS "
         f"canonical={len(rows)} exhaustive_states={state_count} "
-        f"success={success_count} fail_closed={failure_count}"
+        f"success={success_count} fail_closed={failure_count} "
+        f"generation_fail_closed={generation_failures}"
     )
 
 
