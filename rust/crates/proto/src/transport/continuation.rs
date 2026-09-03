@@ -2,7 +2,7 @@
 //!
 //! Routing addresses and adapter metadata are never protocol identity or
 //! authorization authority. Continuation also inherits the bounded-reuse and
-//! authorization-generation freshness requirements of resumption.
+//! authorization-generation binding/freshness requirements of resumption.
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TransportContinuationFacts {
@@ -14,6 +14,7 @@ pub struct TransportContinuationFacts {
     pub resumption_authorized: bool,
     pub replay_continuity_current: bool,
     pub usage_counter_continuity_current: bool,
+    pub authorization_generation_bound: bool,
     pub authorization_generation_current: bool,
     pub association_invalidated: bool,
     pub transport_route_changed: bool,
@@ -29,8 +30,9 @@ pub enum TransportContinuationAction { Continue, FullAuthRequired, Reject }
 pub enum TransportContinuationReason {
     Current, TransportAddressAsIdentity, TransportMetadataAsAuthority,
     AssociationInvalidated, ReplayContinuityStale, UsageCounterContinuityStale,
-    AuthorizationGenerationStale, PeerContextMismatch, ProfileContextMismatch,
-    BindingInvalid, ResumptionNotAuthorized, ContinuationNotRequested,
+    AuthorizationGenerationUnbound, AuthorizationGenerationStale,
+    PeerContextMismatch, ProfileContextMismatch, BindingInvalid,
+    ResumptionNotAuthorized, ContinuationNotRequested,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -51,6 +53,7 @@ pub fn classify_transport_continuation(f: &TransportContinuationFacts) -> Transp
     if f.association_invalidated { return decision(Reject, AssociationInvalidated); }
     if !f.replay_continuity_current { return decision(Reject, ReplayContinuityStale); }
     if !f.usage_counter_continuity_current { return decision(Reject, UsageCounterContinuityStale); }
+    if !f.authorization_generation_bound { return decision(FullAuthRequired, AuthorizationGenerationUnbound); }
     if !f.authorization_generation_current { return decision(FullAuthRequired, AuthorizationGenerationStale); }
     if !f.authenticated_peer_context_match { return decision(Reject, PeerContextMismatch); }
     if !f.authenticated_profile_context_match { return decision(FullAuthRequired, ProfileContextMismatch); }
@@ -74,6 +77,7 @@ mod tests {
         "ASSOCIATION_INVALIDATED" => TransportContinuationReason::AssociationInvalidated,
         "REPLAY_CONTINUITY_STALE" => TransportContinuationReason::ReplayContinuityStale,
         "USAGE_COUNTER_CONTINUITY_STALE" => TransportContinuationReason::UsageCounterContinuityStale,
+        "AUTHORIZATION_GENERATION_UNBOUND" => TransportContinuationReason::AuthorizationGenerationUnbound,
         "AUTHORIZATION_GENERATION_STALE" => TransportContinuationReason::AuthorizationGenerationStale,
         "PEER_CONTEXT_MISMATCH" => TransportContinuationReason::PeerContextMismatch,
         "PROFILE_CONTEXT_MISMATCH" => TransportContinuationReason::ProfileContextMismatch,
@@ -84,24 +88,25 @@ mod tests {
 
     #[test]
     fn canonical_corpus_matches_classifier() {
-        let corpus = include_str!("../../../../test-vectors/state/transport-continuation-v2.txt");
+        let corpus = include_str!("../../../../test-vectors/state/transport-continuation-v3.txt");
         let mut count = 0usize;
         for line in corpus.lines() {
             let Some(case) = line.strip_prefix("case=") else { continue; };
             let fields: Vec<&str> = case.split('|').collect();
-            assert_eq!(fields.len(), 17);
+            assert_eq!(fields.len(), 18);
             let facts = TransportContinuationFacts {
                 continuation_requested: bit(fields[1]), authenticated_peer_context_match: bit(fields[2]),
                 authenticated_profile_context_match: bit(fields[3]), binding_required: bit(fields[4]),
                 binding_valid: bit(fields[5]), resumption_authorized: bit(fields[6]),
                 replay_continuity_current: bit(fields[7]), usage_counter_continuity_current: bit(fields[8]),
-                authorization_generation_current: bit(fields[9]), association_invalidated: bit(fields[10]),
-                transport_route_changed: bit(fields[11]), transport_connection_changed: bit(fields[12]),
-                transport_address_as_identity: bit(fields[13]), transport_metadata_as_authority: bit(fields[14]),
+                authorization_generation_bound: bit(fields[9]), authorization_generation_current: bit(fields[10]),
+                association_invalidated: bit(fields[11]), transport_route_changed: bit(fields[12]),
+                transport_connection_changed: bit(fields[13]), transport_address_as_identity: bit(fields[14]),
+                transport_metadata_as_authority: bit(fields[15]),
             };
-            assert_eq!(classify_transport_continuation(&facts), TransportContinuationDecision { action: action(fields[15]), reason: reason(fields[16]) }, "case {}", fields[0]);
+            assert_eq!(classify_transport_continuation(&facts), TransportContinuationDecision { action: action(fields[16]), reason: reason(fields[17]) }, "case {}", fields[0]);
             count += 1;
         }
-        assert_eq!(count, 15);
+        assert_eq!(count, 16);
     }
 }
