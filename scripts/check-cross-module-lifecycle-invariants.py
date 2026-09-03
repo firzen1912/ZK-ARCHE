@@ -39,9 +39,10 @@ def main() -> int:
     require_decision(enrollment, "ENR2-017", "DENY", "LINEAGE_STALE")
     require_decision(enrollment, "ENR2-019", "DENY", "ROLLBACK_SUSPECTED")
 
-    resumption = decision_rows("rust/test-vectors/state/resumption-authorization-v3.txt")
+    resumption = decision_rows("rust/test-vectors/state/resumption-authorization-v4.txt")
     require_decision(resumption, "current", "RESUME", "CURRENT")
     require_decision(resumption, "authz-stale", "FULL_AUTH_REQUIRED", "AUTHORIZATION_STALE")
+    require_decision(resumption, "authz-generation-unbound", "FULL_AUTH_REQUIRED", "AUTHORIZATION_GENERATION_UNBOUND")
     require_decision(resumption, "authz-generation-stale", "FULL_AUTH_REQUIRED", "AUTHORIZATION_GENERATION_STALE")
     require_decision(resumption, "revocation-stale", "REJECT", "REVOCATION_STALE")
     require_decision(resumption, "revoked", "REJECT", "REVOKED")
@@ -82,13 +83,9 @@ def main() -> int:
     for case in ("XC2-008", "XC2-009", "XC2-010", "XC2-011", "XC2-012", "XC2-013", "XC2-017"):
         assert p2p[case]["expected"] == "FAIL_CLOSED", f"{case}: expected FAIL_CLOSED"
 
-    # Delegation is bounded authorization evidence, never a lifecycle repair path.
-    # A valid grant therefore cannot override stale local Common Contract state.
     assert delegation["DEL2-001"] == ("ACCEPT", "CURRENT")
     for case in ("XC2-008", "XC2-009", "XC2-010", "XC2-011", "XC2-012", "XC2-013"):
-        assert p2p[case]["expected"] == "FAIL_CLOSED", (
-            f"{case}: delegation acceptance must not repair stale local lifecycle state"
-        )
+        assert p2p[case]["expected"] == "FAIL_CLOSED", f"{case}: delegation must not repair lifecycle state"
 
     offline = p2p["XC2-002"]
     online = p2p["XC2-004"]
@@ -96,8 +93,7 @@ def main() -> int:
         "peer_a", "peer_b", "auth_complete", "preexisting_trust", "authorization_present",
         "authorization_fresh", "authorization_generation_current", "revocation_current", "revoked",
         "lineage_current", "replay_continuity_current", "restart_continuity_current",
-        "mandatory_floor_compatible", "binding_required", "binding_valid",
-        "trust_mutation_requested", "expected",
+        "mandatory_floor_compatible", "binding_required", "binding_valid", "trust_mutation_requested", "expected",
     )
     assert all(offline[field] == online[field] for field in compared)
     assert offline["infrastructure_available"] == "false"
@@ -106,9 +102,8 @@ def main() -> int:
 
     print(
         "cross-module-lifecycle-invariants: PASS "
-        "surfaces=6 authz_generation=3 revocation=5 lineage=5 "
-        "replay_restart=5 transport_non_authority=2 infrastructure_non_authority=1 "
-        "delegation_non_repair=6"
+        "surfaces=6 authz_generation=4 revocation=5 lineage=5 "
+        "replay_restart=5 transport_non_authority=2 infrastructure_non_authority=1 delegation_non_repair=6"
     )
     return 0
 

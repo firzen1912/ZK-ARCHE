@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define VECTOR_PATH "../rust/test-vectors/state/resumption-authorization-v3.txt"
+#define VECTOR_PATH "../rust/test-vectors/state/resumption-authorization-v4.txt"
 
 static bool bit(const char *value) {
     assert(value != NULL);
@@ -36,9 +36,10 @@ static resumption_reason_t reason(const char *value) {
         "CURRENT", "INVALID_FACTS", "ROLLBACK_SUSPECTED", "USAGE_COUNTER_CONTINUITY_STALE",
         "CREDENTIAL_MISSING", "CREDENTIAL_INVALID", "BINDING_MISMATCH", "EXPIRED",
         "REUSE_LIMIT_REACHED", "AUTHORIZATION_CONTEXT_MISSING", "AUTHORIZATION_STALE",
-        "AUTHORIZATION_GENERATION_STALE", "REVOCATION_STALE", "REVOKED", "LINEAGE_STALE",
-        "RESTART_CONTINUITY_STALE", "CREDENTIAL_EPOCH_STALE", "SESSION_INVALIDATED",
-        "PEER_MISMATCH", "DEPLOYMENT_MISMATCH", "AUDIENCE_MISMATCH", "PROFILE_MISMATCH"};
+        "AUTHORIZATION_GENERATION_UNBOUND", "AUTHORIZATION_GENERATION_STALE",
+        "REVOCATION_STALE", "REVOKED", "LINEAGE_STALE", "RESTART_CONTINUITY_STALE",
+        "CREDENTIAL_EPOCH_STALE", "SESSION_INVALIDATED", "PEER_MISMATCH",
+        "DEPLOYMENT_MISMATCH", "AUDIENCE_MISMATCH", "PROFILE_MISMATCH"};
     size_t i;
     for (i = 0u; i < sizeof(names) / sizeof(names[0]); ++i)
         if (strcmp(value, names[i]) == 0) return (resumption_reason_t)i;
@@ -53,36 +54,36 @@ int main(void) {
     int saw_version = 0;
     assert(fp != NULL);
     while (fgets(line, sizeof(line), fp) != NULL) {
-        char *fields[24];
+        char *fields[25];
         size_t i;
         resumption_authorization_facts_t facts;
         resumption_authorization_decision_t got;
         line[strcspn(line, "\r\n")] = '\0';
-        if (strcmp(line, "version=3") == 0) { saw_version = 1; continue; }
+        if (strcmp(line, "version=4") == 0) { saw_version = 1; continue; }
         if (strncmp(line, "case=", 5u) != 0) continue;
         fields[0] = strtok(line + 5u, "|");
-        for (i = 1u; i < 24u; ++i) fields[i] = strtok(NULL, "|");
-        assert(fields[23] != NULL && strtok(NULL, "|") == NULL);
+        for (i = 1u; i < 25u; ++i) fields[i] = strtok(NULL, "|");
+        assert(fields[24] != NULL && strtok(NULL, "|") == NULL);
         facts = (resumption_authorization_facts_t){
             bit(fields[1]), bit(fields[2]), bit(fields[3]), bit(fields[4]),
             count(fields[5]), count(fields[6]), bit(fields[7]), bit(fields[8]),
             bit(fields[9]), bit(fields[10]), bit(fields[11]), bit(fields[12]),
             bit(fields[13]), bit(fields[14]), bit(fields[15]), bit(fields[16]),
             bit(fields[17]), bit(fields[18]), bit(fields[19]), bit(fields[20]),
-            bit(fields[21])};
+            bit(fields[21]), bit(fields[22])};
         got = resumption_authorization_classify(&facts);
-        assert(got.action == action(fields[22]));
-        assert(got.reason == reason(fields[23]));
+        assert(got.action == action(fields[23]));
+        assert(got.reason == reason(fields[24]));
         cases += 1u;
     }
     fclose(fp);
     assert(saw_version == 1);
-    assert(cases == 21u);
+    assert(cases == 22u);
     {
         resumption_authorization_decision_t got = resumption_authorization_classify(NULL);
         assert(got.action == RESUMPTION_ACTION_REJECT);
         assert(got.reason == RESUMPTION_REASON_INVALID_FACTS);
     }
-    puts("resumption authorization corpus v3: ok cases=21");
+    puts("resumption authorization corpus v4: ok cases=22");
     return EXIT_SUCCESS;
 }

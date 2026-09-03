@@ -15,6 +15,7 @@ pub struct ResumptionAuthorizationFacts {
     pub usage_counter_continuity_current: bool,
     pub authorization_context_present: bool,
     pub authorization_context_fresh: bool,
+    pub authorization_generation_bound: bool,
     pub authorization_generation_current: bool,
     pub revocation_current: bool,
     pub explicitly_revoked: bool,
@@ -30,202 +31,88 @@ pub struct ResumptionAuthorizationFacts {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ResumptionAction {
-    Resume,
-    FullAuthRequired,
-    Reject,
-}
+pub enum ResumptionAction { Resume, FullAuthRequired, Reject }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ResumptionReason {
-    Current,
-    InvalidFacts,
-    RollbackSuspected,
-    UsageCounterContinuityStale,
-    CredentialMissing,
-    CredentialInvalid,
-    BindingMismatch,
-    Expired,
-    ReuseLimitReached,
-    AuthorizationContextMissing,
-    AuthorizationStale,
-    AuthorizationGenerationStale,
-    RevocationStale,
-    Revoked,
-    LineageStale,
-    RestartContinuityStale,
-    CredentialEpochStale,
-    SessionInvalidated,
-    PeerMismatch,
-    DeploymentMismatch,
-    AudienceMismatch,
-    ProfileMismatch,
+    Current, InvalidFacts, RollbackSuspected, UsageCounterContinuityStale,
+    CredentialMissing, CredentialInvalid, BindingMismatch, Expired, ReuseLimitReached,
+    AuthorizationContextMissing, AuthorizationStale, AuthorizationGenerationUnbound,
+    AuthorizationGenerationStale, RevocationStale, Revoked, LineageStale,
+    RestartContinuityStale, CredentialEpochStale, SessionInvalidated, PeerMismatch,
+    DeploymentMismatch, AudienceMismatch, ProfileMismatch,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct ResumptionAuthorizationDecision {
-    pub action: ResumptionAction,
-    pub reason: ResumptionReason,
-}
+pub struct ResumptionAuthorizationDecision { pub action: ResumptionAction, pub reason: ResumptionReason }
 
 fn d(action: ResumptionAction, reason: ResumptionReason) -> ResumptionAuthorizationDecision {
     ResumptionAuthorizationDecision { action, reason }
 }
 
-pub fn classify_resumption_authorization(
-    f: &ResumptionAuthorizationFacts,
-) -> ResumptionAuthorizationDecision {
+pub fn classify_resumption_authorization(f: &ResumptionAuthorizationFacts) -> ResumptionAuthorizationDecision {
     use ResumptionAction::*;
     use ResumptionReason::*;
-    if f.rollback_suspected {
-        return d(Reject, RollbackSuspected);
-    }
-    if !f.restart_continuity_current {
-        return d(Reject, RestartContinuityStale);
-    }
-    if !f.usage_counter_continuity_current {
-        return d(Reject, UsageCounterContinuityStale);
-    }
-    if f.session_invalidated {
-        return d(Reject, SessionInvalidated);
-    }
-    if !f.credential_epoch_current {
-        return d(FullAuthRequired, CredentialEpochStale);
-    }
-    if !f.credential_present {
-        return d(FullAuthRequired, CredentialMissing);
-    }
-    if !f.credential_integrity_valid {
-        return d(FullAuthRequired, CredentialInvalid);
-    }
-    if !f.binding_valid {
-        return d(FullAuthRequired, BindingMismatch);
-    }
-    if f.expired {
-        return d(FullAuthRequired, Expired);
-    }
-    if f.usage_limit == 0 || f.usage_count >= f.usage_limit {
-        return d(FullAuthRequired, ReuseLimitReached);
-    }
-    if !f.authorization_context_present {
-        return d(FullAuthRequired, AuthorizationContextMissing);
-    }
-    if !f.authorization_context_fresh {
-        return d(FullAuthRequired, AuthorizationStale);
-    }
-    if !f.authorization_generation_current {
-        return d(FullAuthRequired, AuthorizationGenerationStale);
-    }
-    if !f.revocation_current {
-        return d(Reject, RevocationStale);
-    }
-    if f.explicitly_revoked {
-        return d(Reject, Revoked);
-    }
-    if !f.lineage_current {
-        return d(Reject, LineageStale);
-    }
-    if !f.peer_match {
-        return d(FullAuthRequired, PeerMismatch);
-    }
-    if !f.deployment_match {
-        return d(FullAuthRequired, DeploymentMismatch);
-    }
-    if !f.audience_match {
-        return d(FullAuthRequired, AudienceMismatch);
-    }
-    if !f.profile_match {
-        return d(FullAuthRequired, ProfileMismatch);
-    }
+    if f.rollback_suspected { return d(Reject, RollbackSuspected); }
+    if !f.restart_continuity_current { return d(Reject, RestartContinuityStale); }
+    if !f.usage_counter_continuity_current { return d(Reject, UsageCounterContinuityStale); }
+    if f.session_invalidated { return d(Reject, SessionInvalidated); }
+    if !f.credential_epoch_current { return d(FullAuthRequired, CredentialEpochStale); }
+    if !f.credential_present { return d(FullAuthRequired, CredentialMissing); }
+    if !f.credential_integrity_valid { return d(FullAuthRequired, CredentialInvalid); }
+    if !f.binding_valid { return d(FullAuthRequired, BindingMismatch); }
+    if f.expired { return d(FullAuthRequired, Expired); }
+    if f.usage_limit == 0 || f.usage_count >= f.usage_limit { return d(FullAuthRequired, ReuseLimitReached); }
+    if !f.authorization_context_present { return d(FullAuthRequired, AuthorizationContextMissing); }
+    if !f.authorization_context_fresh { return d(FullAuthRequired, AuthorizationStale); }
+    if !f.authorization_generation_bound { return d(FullAuthRequired, AuthorizationGenerationUnbound); }
+    if !f.authorization_generation_current { return d(FullAuthRequired, AuthorizationGenerationStale); }
+    if !f.revocation_current { return d(Reject, RevocationStale); }
+    if f.explicitly_revoked { return d(Reject, Revoked); }
+    if !f.lineage_current { return d(Reject, LineageStale); }
+    if !f.peer_match { return d(FullAuthRequired, PeerMismatch); }
+    if !f.deployment_match { return d(FullAuthRequired, DeploymentMismatch); }
+    if !f.audience_match { return d(FullAuthRequired, AudienceMismatch); }
+    if !f.profile_match { return d(FullAuthRequired, ProfileMismatch); }
     d(Resume, Current)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    fn b(v: &str) -> bool {
-        match v {
-            "0" => false,
-            "1" => true,
-            _ => panic!("bad bit"),
-        }
-    }
-    fn a(v: &str) -> ResumptionAction {
-        match v {
-            "RESUME" => ResumptionAction::Resume,
-            "FULL_AUTH_REQUIRED" => ResumptionAction::FullAuthRequired,
-            "REJECT" => ResumptionAction::Reject,
-            _ => panic!("bad action"),
-        }
-    }
+    fn b(v: &str) -> bool { match v { "0" => false, "1" => true, _ => panic!("bad bit") } }
+    fn a(v: &str) -> ResumptionAction { match v { "RESUME" => ResumptionAction::Resume, "FULL_AUTH_REQUIRED" => ResumptionAction::FullAuthRequired, "REJECT" => ResumptionAction::Reject, _ => panic!("bad action") } }
     fn r(v: &str) -> ResumptionReason {
         use ResumptionReason::*;
         match v {
-            "CURRENT" => Current,
-            "ROLLBACK_SUSPECTED" => RollbackSuspected,
-            "USAGE_COUNTER_CONTINUITY_STALE" => UsageCounterContinuityStale,
-            "CREDENTIAL_MISSING" => CredentialMissing,
-            "CREDENTIAL_INVALID" => CredentialInvalid,
-            "BINDING_MISMATCH" => BindingMismatch,
-            "EXPIRED" => Expired,
-            "REUSE_LIMIT_REACHED" => ReuseLimitReached,
-            "AUTHORIZATION_CONTEXT_MISSING" => AuthorizationContextMissing,
-            "AUTHORIZATION_STALE" => AuthorizationStale,
-            "AUTHORIZATION_GENERATION_STALE" => AuthorizationGenerationStale,
-            "REVOCATION_STALE" => RevocationStale,
-            "REVOKED" => Revoked,
-            "LINEAGE_STALE" => LineageStale,
-            "RESTART_CONTINUITY_STALE" => RestartContinuityStale,
-            "CREDENTIAL_EPOCH_STALE" => CredentialEpochStale,
-            "SESSION_INVALIDATED" => SessionInvalidated,
-            "PEER_MISMATCH" => PeerMismatch,
-            "DEPLOYMENT_MISMATCH" => DeploymentMismatch,
-            "AUDIENCE_MISMATCH" => AudienceMismatch,
-            "PROFILE_MISMATCH" => ProfileMismatch,
-            _ => panic!("bad reason"),
+            "CURRENT"=>Current,"ROLLBACK_SUSPECTED"=>RollbackSuspected,"USAGE_COUNTER_CONTINUITY_STALE"=>UsageCounterContinuityStale,
+            "CREDENTIAL_MISSING"=>CredentialMissing,"CREDENTIAL_INVALID"=>CredentialInvalid,"BINDING_MISMATCH"=>BindingMismatch,
+            "EXPIRED"=>Expired,"REUSE_LIMIT_REACHED"=>ReuseLimitReached,"AUTHORIZATION_CONTEXT_MISSING"=>AuthorizationContextMissing,
+            "AUTHORIZATION_STALE"=>AuthorizationStale,"AUTHORIZATION_GENERATION_UNBOUND"=>AuthorizationGenerationUnbound,
+            "AUTHORIZATION_GENERATION_STALE"=>AuthorizationGenerationStale,"REVOCATION_STALE"=>RevocationStale,"REVOKED"=>Revoked,
+            "LINEAGE_STALE"=>LineageStale,"RESTART_CONTINUITY_STALE"=>RestartContinuityStale,"CREDENTIAL_EPOCH_STALE"=>CredentialEpochStale,
+            "SESSION_INVALIDATED"=>SessionInvalidated,"PEER_MISMATCH"=>PeerMismatch,"DEPLOYMENT_MISMATCH"=>DeploymentMismatch,
+            "AUDIENCE_MISMATCH"=>AudienceMismatch,"PROFILE_MISMATCH"=>ProfileMismatch,_=>panic!("bad reason")
         }
     }
     #[test]
     fn canonical_corpus() {
-        let corpus = include_str!("../../../test-vectors/state/resumption-authorization-v3.txt");
+        let corpus = include_str!("../../../test-vectors/state/resumption-authorization-v4.txt");
         let mut n = 0;
         for line in corpus.lines().filter(|l| l.starts_with("case=")) {
             let x: Vec<&str> = line[5..].split('|').collect();
-            assert_eq!(x.len(), 24);
+            assert_eq!(x.len(), 25);
             let f = ResumptionAuthorizationFacts {
-                credential_present: b(x[1]),
-                credential_integrity_valid: b(x[2]),
-                binding_valid: b(x[3]),
-                expired: b(x[4]),
-                usage_count: x[5].parse().unwrap(),
-                usage_limit: x[6].parse().unwrap(),
-                usage_counter_continuity_current: b(x[7]),
-                authorization_context_present: b(x[8]),
-                authorization_context_fresh: b(x[9]),
-                authorization_generation_current: b(x[10]),
-                revocation_current: b(x[11]),
-                explicitly_revoked: b(x[12]),
-                lineage_current: b(x[13]),
-                restart_continuity_current: b(x[14]),
-                credential_epoch_current: b(x[15]),
-                session_invalidated: b(x[16]),
-                peer_match: b(x[17]),
-                deployment_match: b(x[18]),
-                audience_match: b(x[19]),
-                profile_match: b(x[20]),
-                rollback_suspected: b(x[21]),
+                credential_present:b(x[1]), credential_integrity_valid:b(x[2]), binding_valid:b(x[3]), expired:b(x[4]),
+                usage_count:x[5].parse().unwrap(), usage_limit:x[6].parse().unwrap(), usage_counter_continuity_current:b(x[7]),
+                authorization_context_present:b(x[8]), authorization_context_fresh:b(x[9]), authorization_generation_bound:b(x[10]),
+                authorization_generation_current:b(x[11]), revocation_current:b(x[12]), explicitly_revoked:b(x[13]), lineage_current:b(x[14]),
+                restart_continuity_current:b(x[15]), credential_epoch_current:b(x[16]), session_invalidated:b(x[17]), peer_match:b(x[18]),
+                deployment_match:b(x[19]), audience_match:b(x[20]), profile_match:b(x[21]), rollback_suspected:b(x[22]),
             };
-            assert_eq!(
-                classify_resumption_authorization(&f),
-                ResumptionAuthorizationDecision {
-                    action: a(x[22]),
-                    reason: r(x[23])
-                },
-                "{}",
-                x[0]
-            );
+            assert_eq!(classify_resumption_authorization(&f), ResumptionAuthorizationDecision { action:a(x[23]), reason:r(x[24]) }, "{}", x[0]);
             n += 1;
         }
-        assert_eq!(n, 21);
+        assert_eq!(n, 22);
     }
 }

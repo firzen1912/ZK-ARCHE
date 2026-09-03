@@ -37,6 +37,9 @@ resumption_authorization_decision_t resumption_authorization_classify(
                         RESUMPTION_REASON_AUTHORIZATION_CONTEXT_MISSING);
     if (!facts->authorization_context_fresh)
         return decision(RESUMPTION_ACTION_FULL_AUTH_REQUIRED, RESUMPTION_REASON_AUTHORIZATION_STALE);
+    if (!facts->authorization_generation_bound)
+        return decision(RESUMPTION_ACTION_FULL_AUTH_REQUIRED,
+                        RESUMPTION_REASON_AUTHORIZATION_GENERATION_UNBOUND);
     if (!facts->authorization_generation_current)
         return decision(RESUMPTION_ACTION_FULL_AUTH_REQUIRED,
                         RESUMPTION_REASON_AUTHORIZATION_GENERATION_STALE);
