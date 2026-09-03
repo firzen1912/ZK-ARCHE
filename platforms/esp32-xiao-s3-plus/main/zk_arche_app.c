@@ -1,9 +1,4 @@
-/*
- * ZK-ARCHE client firmware for Seeed Studio XIAO ESP32-S3 Plus.
- *
- * This port intentionally reuses the canonical C protocol/wire/crypto core.
- * Only Wi-Fi/UDP and NVS credential persistence are platform-specific.
- */
+/* ZK-ARCHE client firmware for Seeed Studio XIAO ESP32-S3 Plus. */
 
 #include "auth/iot_auth.h"
 #include "auth/auth_crypto.h"
@@ -11,9 +6,8 @@
 #include "auth/auth_store.h"
 
 #include <errno.h>
-#include <inttypes.h>
+#include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -21,7 +15,6 @@
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_netif.h"
-#include "esp_system.h"
 #include "esp_wifi.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
@@ -38,6 +31,12 @@
 #define CRED_BLOB_LEN      146u
 #define CRED_NVS_NAMESPACE "zk_arche"
 #define CRED_NVS_KEY       "cred_v1"
+
+#ifdef CONFIG_ZK_ALLOW_TOFU_SETUP
+#define ZK_ALLOW_TOFU 1
+#else
+#define ZK_ALLOW_TOFU 0
+#endif
 
 static EventGroupHandle_t s_wifi_event_group;
 static int s_wifi_retry;
@@ -56,7 +55,7 @@ static uint64_t get_u64_le(const uint8_t in[8])
     return v;
 }
 
-/* Same semantic fields/version as c/include/auth/store.h, persisted in NVS. */
+/* Same semantic credential fields/version as c/include/auth/store.h. */
 static void creds_encode(const auth_credentials_t *c, uint8_t out[CRED_BLOB_LEN])
 {
     static const uint8_t magic[8] = {'I','A','C','R','E','D',0,1};
@@ -154,25 +153,23 @@ static esp_err_t wifi_connect(void)
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID,
-                                                &wifi_event_handler, NULL));
-    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP,
-                                                &wifi_event_handler, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_register(
+        WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_register(
+        IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler, NULL));
 
-    wifi_config_t wifi_config = {0};
-    strlcpy((char *)wifi_config.sta.ssid, CONFIG_ZK_WIFI_SSID,
-            sizeof wifi_config.sta.ssid);
-    strlcpy((char *)wifi_config.sta.password, CONFIG_ZK_WIFI_PASSWORD,
-            sizeof wifi_config.sta.password);
-    wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
+    wifi_config_t wc = {0};
+    strlcpy((char *)wc.sta.ssid, CONFIG_ZK_WIFI_SSID, sizeof wc.sta.ssid);
+    strlcpy((char *)wc.sta.password, CONFIG_ZK_WIFI_PASSWORD, sizeof wc.sta.password);
+    wc.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wc));
     ESP_ERROR_CHECK(esp_wifi_start());
 
-    EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
-        WIFI_CONNECTED_BIT | WIFI_FAIL_BIT, pdFALSE, pdFALSE,
-        pdMS_TO_TICKS(30000));
+    EventBits_t bits = xEventGroupWaitBits(
+        s_wifi_event_group, WIFI_CONNECTED_BIT | WIFI_FAIL_BIT,
+        pdFALSE, pdFALSE, pdMS_TO_TICKS(30000));
     return (bits & WIFI_CONNECTED_BIT) ? ESP_OK : ESP_FAIL;
 }
 
@@ -180,7 +177,6 @@ static int udp_open(struct sockaddr_in *server)
 {
     int fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
     if (fd < 0) return -1;
-
     memset(server, 0, sizeof *server);
     server->sin_family = AF_INET;
     server->sin_port = htons((uint16_t)CONFIG_ZK_SERVER_PORT);
@@ -189,7 +185,6 @@ static int udp_open(struct sockaddr_in *server)
         errno = EINVAL;
         return -1;
     }
-
     struct timeval timeout = {.tv_sec = 5, .tv_usec = 0};
     if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof timeout) != 0) {
         close(fd);
@@ -206,7 +201,6 @@ static auth_err_t udp_roundtrip(int fd, const struct sockaddr_in *server,
         ssize_t sent = sendto(fd, out, out_len, 0,
                               (const struct sockaddr *)server, sizeof *server);
         if (sent < 0 || (size_t)sent != out_len) return AUTH_ERR_IO;
-
         ssize_t got = recvfrom(fd, in, in_cap, 0, NULL, NULL);
         if (got >= 0) {
             *in_len = (size_t)got;
@@ -229,7 +223,6 @@ static auth_err_t ctx_from_creds(auth_client_ctx_t *ctx,
     if (err != AUTH_OK) return err;
     err = auth_client_ctx_init(ctx);
     if (err != AUTH_OK) return err;
-
     ctx->has_pinned_server = creds->has_pinned_server;
     memcpy(ctx->server_pub_pinned, creds->server_pub_pinned, 32);
     ctx->has_role = creds->has_role;
@@ -264,14 +257,12 @@ static auth_err_t do_setup(int fd, const struct sockaddr_in *server,
 
     size_t out_len = 0, in_len = 0;
     const char *token = CONFIG_ZK_PAIRING_TOKEN;
-    size_t token_len = strlen(token);
-
-    err = auth_client_build_setup1(&ctx, (const uint8_t *)token, token_len,
+    err = auth_client_build_setup1(&ctx, (const uint8_t *)token, strlen(token),
                                    s_out, sizeof s_out, &out_len);
     if (err != AUTH_OK) return err;
     err = udp_roundtrip(fd, server, s_out, out_len, s_in, sizeof s_in, &in_len);
     if (err != AUTH_OK) return err;
-    err = auth_client_handle_setup2(&ctx, s_in, in_len, CONFIG_ZK_ALLOW_TOFU_SETUP);
+    err = auth_client_handle_setup2(&ctx, s_in, in_len, ZK_ALLOW_TOFU);
     if (err != AUTH_OK) return err;
 
     err = auth_client_build_setup3(&ctx, s_out, sizeof s_out, &out_len);
@@ -287,7 +278,6 @@ static auth_err_t do_setup(int fd, const struct sockaddr_in *server,
     memcpy(creds->role_commitment, ctx.role_commitment, 32);
     memcpy(creds->role_blind, ctx.role_blind, 32);
     creds->role_code = ctx.role_code;
-
     return creds_save(creds) == ESP_OK ? AUTH_OK : AUTH_ERR_IO;
 }
 
@@ -304,7 +294,7 @@ static auth_err_t do_auth(int fd, const struct sockaddr_in *server,
     uint64_t allowed[AUTH_MAX_ROLES];
     size_t n_allowed = 0;
     if (parse_roles(CONFIG_ZK_ALLOWED_ROLES, allowed, AUTH_MAX_ROLES,
-                    &n_allowed) != 0) return AUTH_ERR_INVALID_INPUT;
+                    &n_allowed) != 0) return AUTH_ERR_INVALID_ARGUMENT;
 
     size_t out_len = 0, in_len = 0;
     err = auth_client_build_auth1(&ctx, allowed, n_allowed,
@@ -335,13 +325,12 @@ static void led_signal(int count)
 
 void app_main(void)
 {
-    esp_err_t nvs_err = nvs_flash_init();
-    if (nvs_err == ESP_ERR_NVS_NO_FREE_PAGES ||
-        nvs_err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+    esp_err_t e = nvs_flash_init();
+    if (e == ESP_ERR_NVS_NO_FREE_PAGES || e == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
-        nvs_err = nvs_flash_init();
+        e = nvs_flash_init();
     }
-    ESP_ERROR_CHECK(nvs_err);
+    ESP_ERROR_CHECK(e);
 
     if (auth_init() != AUTH_OK) {
         ESP_LOGE(TAG, "crypto initialization failed");
@@ -354,27 +343,22 @@ void app_main(void)
     ESP_ERROR_CHECK(creds_load(&creds, &found));
     if (!found) {
         memset(&creds, 0, sizeof creds);
-        auth_random_bytes(creds.device_root, sizeof creds.device_root);
+        auth_random_bytes32(creds.device_root);
         if (creds_save(&creds) != ESP_OK) {
             ESP_LOGE(TAG, "failed to persist fresh device root");
             led_signal(10);
             return;
         }
-        ESP_LOGI(TAG, "created new persistent device root in NVS");
+        ESP_LOGI(TAG, "created persistent device root in NVS");
     }
 
     uint8_t device_id[AUTH_DEVICE_ID_LEN];
     auth_derive_device_id(device_id, creds.device_root);
-    ESP_LOGI(TAG, "device-id prefix %02x%02x%02x%02x (secret material not logged)",
+    ESP_LOGI(TAG, "device-id prefix %02x%02x%02x%02x; secrets are not logged",
              device_id[0], device_id[1], device_id[2], device_id[3]);
 
-    if (strlen(CONFIG_ZK_WIFI_SSID) == 0) {
-        ESP_LOGE(TAG, "configure Wi-Fi with: idf.py menuconfig");
-        led_signal(10);
-        return;
-    }
-    if (wifi_connect() != ESP_OK) {
-        ESP_LOGE(TAG, "Wi-Fi connection failed");
+    if (strlen(CONFIG_ZK_WIFI_SSID) == 0 || wifi_connect() != ESP_OK) {
+        ESP_LOGE(TAG, "Wi-Fi not configured/connected; use idf.py menuconfig");
         led_signal(10);
         return;
     }
@@ -387,23 +371,17 @@ void app_main(void)
         return;
     }
 
-    auth_err_t err;
+    auth_err_t err = AUTH_OK;
     if (!creds.has_pinned_server || !creds.has_role) {
         ESP_LOGI(TAG, "credentials incomplete: executing explicit SETUP");
         err = do_setup(fd, &server, &creds);
-        if (err != AUTH_OK) {
-            ESP_LOGE(TAG, "SETUP failed: %s", auth_strerror(err));
-            close(fd);
-            led_signal(10);
-            return;
-        }
-        ESP_LOGI(TAG, "SETUP complete and credentials persisted");
+        if (err == AUTH_OK) ESP_LOGI(TAG, "SETUP complete; credentials persisted");
     }
-
-    err = do_auth(fd, &server, &creds);
+    if (err == AUTH_OK) err = do_auth(fd, &server, &creds);
     close(fd);
+
     if (err != AUTH_OK) {
-        ESP_LOGE(TAG, "AUTH failed: %s", auth_strerror(err));
+        ESP_LOGE(TAG, "ZK-ARCHE failed: %s", auth_strerror(err));
         led_signal(10);
         return;
     }
