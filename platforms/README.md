@@ -8,8 +8,13 @@ This directory turns the protocol implementations into board/deployment targets 
 |---|---|---|---|---|
 | Raspberry Pi 5 | Linux-edge | client/server/commissioner harness | UDP/TCP | deployable from the existing C lane |
 | NVIDIA Jetson Orin Nano | accelerated-edge | client/server/commissioner harness | UDP/TCP | deployable from the existing C lane |
-| Seeed Studio XIAO ESP32-S3 Plus | MCU-plus | constrained client/peer | Wi-Fi UDP first; BLE later | port scaffold; requires a full Ristretto255-capable libsodium component and on-board validation |
-| ST NUCLEO-L432KC | MCU-core | constrained client/peer | UART/USB first | qualification scaffold; crypto footprint must be proven before claiming a flashable AUTH profile |
+| Seeed Studio XIAO ESP32-S3 Plus | MCU-plus | constrained client/peer | Wi-Fi UDP first; BLE later | ESP-IDF client port; on-board/vector validation still required |
+| WeAct STM32U585CIU6 Core Mini | MCU-core bring-up | constrained client/peer | UART/USB first | primary compact STM32 port target; enough memory to preserve the current suite while measuring it |
+| ST NUCLEO-L432KC | MCU-core stress target | minimum-resource client/peer | UART/USB | later 64-KB-RAM/256-KB-flash qualification target; current crypto footprint must be proven before claiming support |
+
+## Why two STM32 targets
+
+The first STM32 port must establish correct byte-level behavior before optimizing for the smallest memory envelope. The compact STM32U585 board gives the current Ristretto255/libsodium-based implementation enough headroom for a faithful Cortex-M33 port while also exposing a true RNG, TrustZone and modern security controls. Once the port reproduces canonical vectors, the NUCLEO-L432KC becomes a deliberate stress target. Failure to fit the L432KC is evidence that drives footprint work; it is not permission to weaken the mandatory security suite.
 
 ## Non-negotiable porting rule
 
@@ -30,10 +35,10 @@ A target is considered a ZK-ARCHE protocol port only when it preserves the same 
         |                |                |
    Linux adapter     ESP-IDF adapter   STM32 adapter
         |                |                |
- libsodium/POSIX     full sodium      reviewed embedded
- UDP/TCP/files       RNG/NVS/UDP      RNG/storage/UART
+ libsodium/POSIX     ESP libsodium     ARM libsodium / later reviewed backend
+ UDP/TCP/files       NVS/Wi-Fi UDP     RNG/flash/UART framing
         |                |                |
-    Pi / Orin       XIAO ESP32-S3+   NUCLEO-L432KC
+    Pi / Orin       XIAO ESP32-S3+   STM32U585 -> L432 stress target
 ```
 
 The protocol core remains transport/storage agnostic. A port should adapt:
@@ -50,12 +55,13 @@ The protocol core remains transport/storage agnostic. A port should adapt:
 1. Build and run the existing host tests on x86/Linux.
 2. Deploy the C server/client on Raspberry Pi 5 and Jetson Orin Nano.
 3. Retain Linux-edge and accelerated-edge manifests.
-4. Bring up XIAO ESP32-S3 Plus RNG, NVS and UDP.
-5. Compile the unmodified protocol/wire core against a full Ristretto255-capable embedded crypto backend.
-6. Reproduce canonical vectors on ESP32-S3 before doing live SETUP/AUTH.
-7. Bring up NUCLEO-L432KC with hardware RNG, bounded persistent storage, UART/USB transport and measured memory map.
-8. Prove that the selected crypto backend fits the L432KC. If it does not, record that result rather than weakening the mandatory suite.
-9. Run the no-infrastructure matrix in both directions:
+4. Build/flash the XIAO ESP32-S3 Plus client, then reproduce canonical vectors before accepting live SETUP/AUTH evidence.
+5. Bring up the compact STM32U585 with hardware RNG, bounded flash persistence and UART/USB byte transport.
+6. Cross-compile the same Ristretto255 suite; retain exact flash/RAM/stack/latency measurements and canonical vector parity.
+7. Run STM32U585 <-> ESP32/Pi/Orin interoperability in both initiator/responder directions as implementations become available.
+8. Port the proven MCU path to NUCLEO-L432KC and measure whether the mandatory suite fits its 64 KB RAM / 256 KB flash envelope.
+9. If L432KC does not fit, record the result and optimize implementation footprint without changing mandatory protocol semantics.
+10. Run the no-infrastructure matrix in both directions:
 
 ```text
 STM32 <-> STM32
@@ -74,6 +80,7 @@ Do not use a successful build or a successful single handshake as a substitute f
 
 - `platforms/linux/` — Raspberry Pi 5 and Jetson Orin Nano deployment helpers.
 - `platforms/esp32-xiao-s3-plus/` — ESP-IDF integration contract and firmware port.
-- `platforms/stm32-nucleo-l432kc/` — STM32Cube/embedded integration contract and constrained-target bring-up.
+- `platforms/stm32-u585-core-mini/` — primary compact STM32 Cortex-M33 port.
+- `platforms/stm32-nucleo-l432kc/` — later minimum-resource STM32 stress/qualification target.
 
 These files are integration surfaces. Security- or wire-relevant behavior remains owned by the canonical spec, C/Rust implementations, vectors and assurance gates.
