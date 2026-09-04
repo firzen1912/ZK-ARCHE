@@ -173,6 +173,7 @@ The historical 2026-08-15 through 2026-08-25 reports remain valid provenance. Fu
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-09-04 | [Daily research](daily/2026-09-04.md) | IESG-approved TLS/DTLS IoT profile: constrained resource ceilings, resumption/0-RTT separation, application/service-context binding, target hardware evidence boundary | benchmark / reproduce / investigate; explicit review required |
 | 2026-09-03 | [Daily research](daily/2026-09-03.md) | generation-bound delegation as an ordered key-continuous attenuating chain; exact descendant revocation; one-successor bounded continuation/replacement | reproduce; explicit review required |
 | 2026-09-02 | [Daily research](daily/2026-09-02.md) | exact ENROLL attempt-context freshness, nonce-vs-expiry separation, enrollment→association→DATA authority non-implication, optional assisted-enrollment boundary | reproduce / investigate; explicit review required |
 | 2026-09-01 | [Daily research](daily/2026-09-01.md) | exporter-generation/channel-binding lifecycle, authentication-domain binding semantics, resumption recovery interaction, optional attestation freshness separation | reproduce / research-only; explicit review required |
