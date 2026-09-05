@@ -9,12 +9,12 @@ The two documents are complementary. The improvement roadmap owns the canonical 
 
 ## Roadmap progress
 
-> **Current evidence-based completion: 42.07%**<br>
-> **Remaining to full roadmap: 57.93%**<br>
-> Progress snapshot reviewed: **2026-09-02**<br>
-> Evidence basis: clean exact-head `dev` release qualification on 2026-09-02, using the local ProVerif 2.05 lane.
+> **Current evidence-based completion: 45.12%**<br>
+> **Remaining to full roadmap: 54.88%**<br>
+> Progress snapshot reviewed: **2026-09-05**<br>
+> Evidence basis: clean exact-head `dev` validation at `01d89d3` on 2026-09-05, using the local ProVerif 2.05 lane.
 
-`42.07%` is a roadmap-tracking metric, **not** a claim that ZK-ARCHE is 42.07% secure, production-ready, RFC-standardized, externally reviewed, or deployment-qualified.
+`45.12%` is a roadmap-tracking metric, **not** a claim that ZK-ARCHE is 45.12% secure, production-ready, RFC-standardized, externally reviewed, or deployment-qualified.
 
 The score is the arithmetic mean of the evidence-completion scores for canonical phases `zk201`–`zk241`. Each phase is evaluated only against its declared exit evidence.
 
@@ -22,12 +22,12 @@ The score is the arithmetic mean of the evidence-completion scores for canonical
 |---|---:|---:|
 | Baseline / reproducible truth | `zk201`–`zk205` | **85.00%** |
 | Assurance / review / claim gate | `zk206`–`zk210` | **55.00%** |
-| Enrollment / authorization / lifecycle | `zk211`–`zk215` | **35.00%** |
-| AUTH hardening / IoT profiles | `zk216`–`zk224` | **33.33%** |
-| Interop / RFC / transport / decomposition | `zk225`–`zk230` | **45.83%** |
-| Data sovereignty | `zk231`–`zk238` | **21.88%** |
+| Enrollment / authorization / lifecycle | `zk211`–`zk215` | **45.00%** |
+| AUTH hardening / IoT profiles | `zk216`–`zk224` | **36.11%** |
+| Interop / RFC / transport / decomposition | `zk225`–`zk230` | **50.00%** |
+| Data sovereignty | `zk231`–`zk238` | **25.00%** |
 | Infrastructure-independent P2P Common Contract | `zk239`–`zk241` | **33.33%** |
-| **Overall** | `zk201`–`zk241` | **42.07%** |
+| **Overall** | `zk201`–`zk241` | **45.12%** |
 
 ### Scoring rubric
 
@@ -47,25 +47,64 @@ Required independent review, physical-target measurements, formal results, inter
 
 ### Phase scorecard
 
-This scorecard makes the grouped arithmetic reproducible. Each phase is scored against the declared exit evidence in [`improvement-roadmap.md`](./improvement-roadmap.md), not against implementation effort. The 41 phase scores sum to `1725`; `1725 / 41 = 42.07%`.
+This scorecard makes the grouped arithmetic reproducible. Each phase is scored against the declared exit evidence in [`improvement-roadmap.md`](./improvement-roadmap.md), not against implementation effort. The 41 phase scores sum to `1850`; `1850 / 41 = 45.12%`.
 
 | Roadmap group | Phase scores |
 |---|---|
 | Baseline / reproducible truth | `zk201=100`, `zk202=100`, `zk203=75`, `zk204=75`, `zk205=75` |
 | Assurance / review / claim gate | `zk206=75`, `zk207=50`, `zk208=25`, `zk209=25`, `zk210=100` |
-| Enrollment / authorization / lifecycle | `zk211=25`, `zk212=25`, `zk213=75`, `zk214=50`, `zk215=0` |
-| AUTH hardening / IoT profiles | `zk216=25`, `zk217=75`, `zk218=75`, `zk219=25`, `zk220=0`, `zk221=50`, `zk222=50`, `zk223=0`, `zk224=0` |
-| Interop / RFC / transport / decomposition | `zk225=75`, `zk226=50`, `zk227=25`, `zk228=50`, `zk229=25`, `zk230=50` |
-| Data sovereignty | `zk231=50`, `zk232=0`, `zk233=25`, `zk234=50`, `zk235=0`, `zk236=25`, `zk237=25`, `zk238=0` |
+| Enrollment / authorization / lifecycle | `zk211=50`, `zk212=50`, `zk213=75`, `zk214=50`, `zk215=0` |
+| AUTH hardening / IoT profiles | `zk216=25`, `zk217=75`, `zk218=75`, `zk219=25`, `zk220=0`, `zk221=75`, `zk222=50`, `zk223=0`, `zk224=0` |
+| Interop / RFC / transport / decomposition | `zk225=75`, `zk226=50`, `zk227=25`, `zk228=50`, `zk229=25`, `zk230=75` |
+| Data sovereignty | `zk231=50`, `zk232=0`, `zk233=25`, `zk234=75`, `zk235=0`, `zk236=25`, `zk237=25`, `zk238=0` |
 | Infrastructure-independent P2P Common Contract | `zk239=50`, `zk240=25`, `zk241=25` |
 
 The 2026-09-01 decision checkpoints justify the threshold increases for lifecycle, DATA, and local P2P decision surfaces: they contain Rust/C classifiers and deterministic corpora, not full wire protocols, target evidence, or independent qualification. In particular, `p2p-iot-core` remains draft and the qualification corpus intentionally retains unexecuted/blocked cross-class cases; that evidence does not promote `zk240` or `zk241` beyond 25%.
 
+### 2026-09-05 re-score rationale
+
+The prior snapshot was scored at `a7e9ff8` (2026-09-02 02:01). Thirty-five substantive commits landed after it — the authorization-generation lifecycle series, the key-usage-continuity work, and the associated corpora — none of which had been evaluated. Five phases crossed a rubric threshold. Every other phase is unchanged.
+
+| Phase | Old | New | Basis for crossing the threshold |
+|---|---:|---:|---|
+| `zk211` late-enrollment grants | 25 | **50** | `enrollment-grant-v4` corpus plus Rust/C classifier now bind holder possession, nonce/replay, scope, audience, deployment, validity, epoch, revocation, lineage, and delegation depth. Moves past "initial implementation" into material implementation with tests. Held below 75: no suite/profile compatibility binding, and grant *issuance* remains decision-level rather than a signed wire artifact with vectors. |
+| `zk212` commissioner enrollment | 25 | **50** | Commissioner authority is gated and tested — authentication, authorization, freshness, generation binding/currentness, revocation, and requested-authority-within-scope, with corpus coverage. Held below 75: the declared **audit evidence** leg does not exist anywhere in the tree. |
+| `zk221` authorization-aware resumption | 50 | **75** | The resumption classifier now binds 9 of the 10 declared record elements — peer, deployment, audience, profile, security context, lineage/generation, credential epoch, expiry, and reuse limits with counter continuity — and covers 6 of 7 declared negative tests. Held below 100: privacy-relevant identifier state and repeated-identifier linkability are absent. |
+| `zk230` CORE/AUTH/LINK/TRUST/BIND/ENROLL/DATA decomposition | 50 | **75** | All three declared legs now have evidence: module ownership (per-module `spec/` contracts), adapter boundary (BIND contract plus transport address/metadata non-authority tests), and cross-module lifecycle contracts (an invariant audit binding 7 surfaces, with authorization generation on 12 assertions and key-usage continuity on 6). Held below 100: RFC-class normative completeness remains TD-004. |
+| `zk234` policy-bound release tokens | 50 | **75** | `data-release-authorization-v4` covers every element the exit criterion names — holder, audience, purpose, epoch, lineage, and revocation — plus policy, data type, channel binding, and release-replay. Held below 100: decision-level only; no release-token wire artifact, no target evidence. |
+
+Phases with real progress that did **not** cross a threshold, recorded here per update rule 6 rather than inflating the score:
+
+- **`zk207` formal traceability (holds at 50).** The association-admission model now mirrors every mandatory fact as a correspondence query (16 of 41 total true queries) and the gate pins the model blob to exact HEAD, so a fact cannot be dropped from the classifier without failing the formal lane. But the property/attacker matrix, explicit compromise models, anonymity/unlinkability properties, and downgrade-resistance properties remain absent. TD-003 stays open.
+- **`zk214` revocation as convergence (holds at 50).** The "invalidate dependent state" leg is now genuinely strong: an advancing authorization generation invalidates associations, resumption, transport continuation, DATA release, enrollment, and delegation. `spec/revocation-convergence-and-stale-authorization.md` itself still declares the phase open, listing a versioned revocation-view representation, authenticated update ingestion, full/differential reconciliation, and disconnected-peer convergence tests as missing.
+- **`zk239` P2P trust (holds at 50).** This is the closest call. The cross-class corpus reached 24 cases in both peer-class directions with 92 mutations across 16 dimensions, 8192 exhaustive decision states, and delegation-cannot-repair-lifecycle tests. Three of the nine declared exit bullets are still materially absent: formal/model traceability for trust and authorization decisions, a credential/reference-mapping threat model, and revocation/epoch convergence (blocked behind `zk214`). Consistent with the note above on `zk240`/`zk241`, decision-corpus breadth alone is not promoted.
+- **`zk237` channel-bound sovereignty (holds at 25).** Channel binding to release context is enforced at decision level, but the exit criterion names *exporter* binding, and `zk228` exporter derivation does not exist.
+
+No phase decreased. `zk240` and `zk241` remain at 25 because both depend on TD-001 independent review and TD-002 target measurement, and `p2p-iot-core` remains draft and non-selectable.
+
 ### Exact-current validation status
 
-On 2026-09-02, `scripts/ci-release-qualification.sh` passed its clean exact-head preflight and postflight. The run covered Rust formatting, check, tests, Clippy, dependency audit; C normal, ASan, and UBSan builds/tests; vector regeneration/drift; contract/corpus checks; and all scoped ProVerif models (37 true queries across AUTH-v3, replay continuity, lineage replacement, and association admission).
+On 2026-09-05, `scripts/ci-all.sh` and `scripts/ci-formal.sh` passed at exact head `01d89d3`. The run covered Rust formatting, check, tests, Clippy, dependency audit; C normal, clang, ASan, and UBSan builds/tests; vector regeneration/drift; contract/corpus checks; and all scoped ProVerif models (**41** true queries: AUTH-v3 10, replay continuity 9, lineage replacement 6, association admission 16).
 
-This restores `zk202` to 100% and the baseline group to 85%. It does not close the roadmap's independent-review, constrained-target, comprehensive formal-traceability, or RFC-class evidence gaps.
+`zk202` holds at 100% and the baseline group at 85%. This does not close the roadmap's independent-review, constrained-target, comprehensive formal-traceability, or RFC-class evidence gaps.
+
+#### Regression window 2026-09-03 → 2026-09-05
+
+Recorded because the previous snapshot's "clean exact-head" basis did not hold for the whole interval between snapshots.
+
+Commit `251c987` (2026-09-03 00:44) added the `authorization_generation_bound` fact to the CORE association-admission classifier but updated only the CORE consumers. Both P2P common-contract harnesses were left behind, and exact-head `dev` stopped building:
+
+- the Rust harness omitted the new field (`E0063`), so `cargo test --workspace` could not compile;
+- the C harness used a positional initializer, which shifted every fact after `authorization_fresh` by one and failed `-Wmissing-field-initializers`.
+
+The break was introduced after the 2026-09-02 qualification, so that qualification was valid when recorded, but `dev` was not executably qualifiable from 2026-09-03 00:44 until `339f31b` restored it on 2026-09-05 01:52. Everything committed in that window — including two daily research reports asserting exact-head health — was recorded against a non-building tree.
+
+Two process facts made this possible and remain true:
+
+1. The pre-commit gate checks formatting, wire-registry parity, and formal-model mirrors. **It does not compile either lane.**
+2. `dev` intentionally has no hosted Actions, so nothing else re-ran the wrappers.
+
+The `scripts/ci-all.sh` wrapper itself was never at fault — it detected the break immediately when finally run, which is why `zk202` is not reduced. The gap is enforcement, not tooling, and it is not currently tracked in the technical-debt register.
 
 ## Current evidence posture
 
