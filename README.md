@@ -11,7 +11,7 @@ ZK-ARCHE is **not production-ready and not an IETF standard**. Security, formal-
 
 ## Current development snapshot
 
-The current `dev` branch has advanced well beyond the earlier unified-repository baseline. As of 2026-08-31, the implementation/specification state includes:
+The current `dev` branch has advanced well beyond the earlier unified-repository baseline. As of 2026-09-05, the implementation/specification state includes:
 
 | Area | Current state |
 |---|---|
@@ -19,11 +19,14 @@ The current `dev` branch has advanced well beyond the earlier unified-repository
 | AUTH v3 | A non-advertised candidate is specified and implemented far enough for deterministic Rust/C reference primitives, canonical context encoding/parsing, reflection resistance, and `iot-core` authorization/attribution testing. It is **not promoted for production selection**. |
 | Authentication context | Canonical AUTH v3 context encoding, bounded parsers, negative corpora, allocation/resource checks, and cross-language decision tests are present. |
 | Replay lifecycle | Replay cache behavior, replay guards, replay continuity, epoch recovery, and restart/rollback-oriented lifecycle contracts are implemented/tested across the active lanes where applicable. |
+| Secure-association admission | A wire-neutral CORE/LINK postcondition composes the authoritative AUTH, TRUST, LINK, lifecycle, and BIND decisions and fails closed, in a fixed precedence order, on any of **15** mandatory conditions. A completed cryptographic AUTH is explicitly necessary but not sufficient. Both lanes consume the same canonical decision corpus, and the postcondition is mirrored as a ProVerif correspondence model. |
+| Lifecycle fact convergence | Authorization generation (both provenance binding and currentness), revocation, lineage, replay continuity, restart continuity, and key-usage/counter continuity are now enforced consistently across association admission, resumption, transport continuation, data release, enrollment grants, and P2P delegation. A cross-module invariant audit fails closed on divergence between those surfaces, so one surface cannot quietly admit what another rejects. |
+| P2P Common Contract | Cross-class MCU↔edge lifecycle behavior is qualified by a shared decision corpus covering both peer-class directions, offline establishment from sufficient local state, and deterministic mutation qualification. Infrastructure availability is deliberately not an authority input: its presence cannot repair a stale lifecycle fact, and its absence cannot block an otherwise-valid local decision. |
 | Error handling | Wire-error normalization and registry parity checks now fail closed on unknown or drifting error mappings rather than silently accepting inconsistent behavior. |
 | Trust mutation | Normal AUTH remains **NO-LEARNING**. Trust mutation is separated from authentication and is being modeled through explicit lifecycle operations rather than implicit authentication side effects. |
 | LINEAGE_REPLACE | The repository now carries a bounded replacement/recovery state machine with contracts and Rust/C coverage for attempt binding, freshness, possession, authorization, bound auth context, session binding, storage capability/transactions, recovery, reconciliation, convergence, provenance, and verified commit ordering. |
-| Cross-language conformance | Shared deterministic corpora/vectors cover AUTH v3, profile behavior, replay continuity, lineage replacement, and wire/error semantics across Rust and C. |
-| Formal assurance | Synchronized ProVerif models exist for AUTH v3, replay continuity, and LINEAGE_REPLACE commit ordering. The formal qualification gate binds evidence to the exact repository HEAD, model blob, tool version, query count, and retained output and fails closed when prerequisites are unavailable. |
+| Cross-language conformance | Shared deterministic corpora/vectors cover AUTH v3, profile behavior, replay continuity, lineage replacement, wire/error semantics, and the lifecycle decision surfaces above across Rust and C. |
+| Formal assurance | Synchronized ProVerif models exist for AUTH v3, replay continuity, LINEAGE_REPLACE commit ordering, and secure-association admission. The association-admission model mirrors every mandatory fact as a correspondence query, so a fact cannot be dropped from the classifier without failing the formal gate. The gate binds evidence to the exact repository HEAD, model blob, tool version, query count, and retained output, and fails closed when prerequisites are unavailable. |
 | Specification maturity | `spec/` is now an active draft normative package rather than only a skeleton, with AUTH v3, profile, replay, privacy/security, registry, and lineage-replacement contracts under review. |
 | Research/governance | Daily research, weekly findings, weekly requests, roadmaps, ADRs, assurance checkpoints, technical debt, and release governance are separated so external research cannot silently become protocol behavior. |
 
@@ -169,6 +172,19 @@ rust/test-vectors/0x0001/
 ```
 
 Newer corpora cover AUTH v3 context/reference behavior, `iot-core` authorization and attribution, replay continuity, LINEAGE_REPLACE state/recovery semantics, profiles, and wire-error normalization. C independently consumes the shared behavior to detect byte-level and decision-level drift.
+
+Alongside the byte-level vectors, two families of **decision corpora** pin lifecycle behavior:
+
+```text
+rust/test-vectors/state/    # association admission, enrollment grants, resumption,
+                            # transport continuation, data release, revocation freshness
+rust/test-vectors/p2p/      # Common Contract lifecycle, bounded delegation,
+                            # cross-class decisions, local trust/delegation
+```
+
+Each corpus is versioned rather than edited in place, so an added lifecycle fact produces a new version and earlier versions stay retained as historical evidence. Both lanes read the same file, and `scripts/check-*` gates re-derive the expected decisions independently of either implementation.
+
+A decision corpus is decision-level evidence only. It is not byte-level handshake interoperability, physical constrained-target evidence, formal proof, or independent cryptographic review.
 
 For the legacy vector anchor:
 
