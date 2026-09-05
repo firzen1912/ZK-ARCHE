@@ -67,15 +67,19 @@ Normal AUTH is NO-LEARNING. A mathematically valid proof from an unknown peer MU
 
 Trust mutation belongs to explicit ENROLL, commissioner/grant, reviewed rekey/re-registration, revocation, or equivalent lifecycle transitions. A successful association-admission result confirms only that locally authoritative prerequisites were already satisfactory.
 
-## 5. Re-evaluation and invalidation
+## 5. Re-evaluation, authority loss, and invalidation
 
 The same postcondition applies to retaining an existing association. When locally authoritative lifecycle state changes, implementations MUST re-evaluate the association before security-sensitive continued use when the profile requires that state to be current.
 
 An existing association MUST NOT remain security-authoritative merely because traffic keys still exist when authorization becomes stale, generation provenance becomes unavailable, the local generation advances, the holder becomes revoked, lineage becomes stale, replay, restart, or key-usage continuity is lost, rollback is suspected, or a required channel binding becomes invalid.
 
-Successful reauthentication does not by itself restore authorization-generation provenance/currentness, restart continuity, or key-usage continuity. Those facts remain owned by their corresponding lifecycle authorities and MUST be established independently.
+A `FAIL_CLOSED` result during retention re-evaluation removes the association's authority for new protected application traffic immediately. Callers MUST NOT continue transmitting or accepting security-sensitive application data under that association merely because cryptographic key material or a transport connection remains present.
 
-This contract does not define key erasure timing or a wire alert. Those behaviors remain LINK/state-machine work and require separate specification and tests.
+Existing key material MAY remain transiently resident only for a narrowly scoped shutdown, authenticated close, or implementation-owned cleanup path when the selected profile explicitly permits that behavior. Such transient retention MUST NOT authorize new application data, repair stale lifecycle facts, advance replay/key-usage state as if the association were current, or convert a failed association back to `ESTABLISH` without a fresh successful admission evaluation.
+
+Successful reauthentication does not by itself restore authorization-generation provenance/currentness, restart continuity, key-usage continuity, revocation freshness, lineage freshness, or required channel binding. Those facts remain owned by their corresponding lifecycle authorities and MUST be established independently before association authority is restored.
+
+This postcondition deliberately distinguishes **authority invalidation** from **key erasure mechanics**. The classifier defines when an association ceases to be security-authoritative; concrete key-zeroization timing, transport shutdown ordering, authenticated-close behavior, and any wire alert remain LINK/state-machine responsibilities and require their own implementation and negative tests. Implementations MUST NOT use the absence of an immediate erasure primitive as justification for continuing protected application traffic after `FAIL_CLOSED`.
 
 ## 6. Binding and transport independence
 
@@ -96,5 +100,7 @@ Infrastructure may synchronize policy or revocation state. If local state exceed
 Version 4 covers successful admission plus negative cases for incomplete AUTH, missing trust, missing/stale authorization, unbound authorization generation, stale bound generation, stale revocation, explicit revocation, stale lineage, replay-continuity loss, restart-continuity loss, key-usage-continuity loss, required-binding failure, rollback suspicion, and attempted trust mutation.
 
 `rust/models/proverif/zk_arche_association_admission_draft.pv` mirrors each mandatory fact as a correspondence query, so every fact above is required for `AssociationEstablished` in the symbolic model as well as in both implementations.
+
+The current corpus proves the admission decision, not caller-side zeroization or transport teardown. The new authority-loss requirement in Section 5 therefore strengthens normative lifecycle semantics without claiming new executable evidence for key erasure, authenticated close, or shutdown ordering.
 
 The corpus is decision-level evidence only. It is not byte-level handshake interoperability, physical constrained-target evidence, formal proof, or independent cryptographic review.
