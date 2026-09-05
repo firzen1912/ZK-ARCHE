@@ -15,6 +15,7 @@ typedef struct {
     bool lineage_current;
     bool replay_continuity_current;
     bool restart_continuity_current;
+    bool usage_counter_continuity_current;
     bool binding_required;
     bool binding_valid;
     bool rollback_suspected;
@@ -42,7 +43,8 @@ typedef enum {
     ASSOCIATION_ADMISSION_REASON_BINDING_INVALID = 12,
     ASSOCIATION_ADMISSION_REASON_AUTHORIZATION_GENERATION_STALE = 13,
     ASSOCIATION_ADMISSION_REASON_RESTART_CONTINUITY_STALE = 14,
-    ASSOCIATION_ADMISSION_REASON_AUTHORIZATION_GENERATION_UNBOUND = 15
+    ASSOCIATION_ADMISSION_REASON_AUTHORIZATION_GENERATION_UNBOUND = 15,
+    ASSOCIATION_ADMISSION_REASON_USAGE_COUNTER_CONTINUITY_STALE = 16
 } association_admission_reason_t;
 
 typedef struct {

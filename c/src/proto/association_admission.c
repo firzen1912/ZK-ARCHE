@@ -52,6 +52,9 @@ association_admission_decision_t association_admission_classify(
     if (!facts->restart_continuity_current)
         return decision(ASSOCIATION_ADMISSION_FAIL_CLOSED,
                         ASSOCIATION_ADMISSION_REASON_RESTART_CONTINUITY_STALE);
+    if (!facts->usage_counter_continuity_current)
+        return decision(ASSOCIATION_ADMISSION_FAIL_CLOSED,
+                        ASSOCIATION_ADMISSION_REASON_USAGE_COUNTER_CONTINUITY_STALE);
     if (facts->binding_required && !facts->binding_valid)
         return decision(ASSOCIATION_ADMISSION_FAIL_CLOSED,
                         ASSOCIATION_ADMISSION_REASON_BINDING_INVALID);

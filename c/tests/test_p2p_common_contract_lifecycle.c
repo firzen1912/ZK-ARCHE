@@ -71,6 +71,9 @@ int main(void) {
             .lineage_current = bit(f[12]),
             .replay_continuity_current = bit(f[13]),
             .restart_continuity_current = restart_continuity_current,
+            /* The v3 P2P corpus does not yet model key-usage-counter
+               continuity; CORE owns that fact today. */
+            .usage_counter_continuity_current = true,
             .binding_required = bit(f[16]),
             .binding_valid = bit(f[17]),
             .rollback_suspected = false,

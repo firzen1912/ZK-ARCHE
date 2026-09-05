@@ -51,6 +51,10 @@ fn canonical_p2p_common_contract_lifecycle_corpus() {
             lineage_current: bit(fields[12]),
             replay_continuity_current: bit(fields[13]),
             restart_continuity_current,
+            // The v3 P2P corpus does not yet model key-usage-counter continuity;
+            // CORE owns that fact today. P2P qualification for it lands with the
+            // v4 common-contract corpus.
+            usage_counter_continuity_current: true,
             binding_required: bit(fields[16]),
             binding_valid: bit(fields[17]),
             rollback_suspected: false,

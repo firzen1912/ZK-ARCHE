@@ -26,6 +26,7 @@ event HolderNotRevoked(evaluation).
 event LineageCurrent(evaluation).
 event ReplayContinuityCurrent(evaluation).
 event RestartContinuityCurrent(evaluation).
+event UsageCounterContinuityCurrent(evaluation).
 event BindingSatisfied(evaluation).
 event RollbackClear(evaluation).
 event TrustMutationRequested(evaluation).
@@ -44,6 +45,7 @@ query e:evaluation; event(AssociationEstablished(e)) ==> event(HolderNotRevoked(
 query e:evaluation; event(AssociationEstablished(e)) ==> event(LineageCurrent(e)).
 query e:evaluation; event(AssociationEstablished(e)) ==> event(ReplayContinuityCurrent(e)).
 query e:evaluation; event(AssociationEstablished(e)) ==> event(RestartContinuityCurrent(e)).
+query e:evaluation; event(AssociationEstablished(e)) ==> event(UsageCounterContinuityCurrent(e)).
 query e:evaluation; event(AssociationEstablished(e)) ==> event(BindingSatisfied(e)).
 query e:evaluation; event(AssociationEstablished(e)) ==> event(RollbackClear(e)).
 query e:evaluation; event(AssociationEstablished(e)) && event(TrustMutationRequested(e)) ==> false.
@@ -63,6 +65,7 @@ let AdmissionEvaluation(e:evaluation) =
     event LineageCurrent(e);
     event ReplayContinuityCurrent(e);
     event RestartContinuityCurrent(e);
+    event UsageCounterContinuityCurrent(e);
     event BindingSatisfied(e);
     event RollbackClear(e);
     event AssociationEstablished(e)

@@ -31,15 +31,16 @@ def load_p2p() -> dict[str, dict[str, str]]:
 
 
 def main() -> int:
-    association = decision_rows("rust/test-vectors/state/association-admission-v3.txt")
-    require_decision(association, "ASC3-001", "ESTABLISH", "CURRENT")
-    require_decision(association, "ASC3-006", "FAIL_CLOSED", "AUTHORIZATION_GENERATION_UNBOUND")
-    require_decision(association, "ASC3-007", "FAIL_CLOSED", "AUTHORIZATION_GENERATION_STALE")
-    require_decision(association, "ASC3-008", "FAIL_CLOSED", "REVOCATION_STALE")
-    require_decision(association, "ASC3-010", "FAIL_CLOSED", "LINEAGE_STALE")
-    require_decision(association, "ASC3-011", "FAIL_CLOSED", "REPLAY_CONTINUITY_STALE")
-    require_decision(association, "ASC3-012", "FAIL_CLOSED", "RESTART_CONTINUITY_STALE")
-    require_decision(association, "ASC3-015", "FAIL_CLOSED", "ROLLBACK_SUSPECTED")
+    association = decision_rows("rust/test-vectors/state/association-admission-v4.txt")
+    require_decision(association, "ASC4-001", "ESTABLISH", "CURRENT")
+    require_decision(association, "ASC4-006", "FAIL_CLOSED", "AUTHORIZATION_GENERATION_UNBOUND")
+    require_decision(association, "ASC4-007", "FAIL_CLOSED", "AUTHORIZATION_GENERATION_STALE")
+    require_decision(association, "ASC4-008", "FAIL_CLOSED", "REVOCATION_STALE")
+    require_decision(association, "ASC4-010", "FAIL_CLOSED", "LINEAGE_STALE")
+    require_decision(association, "ASC4-011", "FAIL_CLOSED", "REPLAY_CONTINUITY_STALE")
+    require_decision(association, "ASC4-012", "FAIL_CLOSED", "RESTART_CONTINUITY_STALE")
+    require_decision(association, "ASC4-013", "FAIL_CLOSED", "USAGE_COUNTER_CONTINUITY_STALE")
+    require_decision(association, "ASC4-016", "FAIL_CLOSED", "ROLLBACK_SUSPECTED")
 
     enrollment = decision_rows("rust/test-vectors/state/enrollment-grant-v3.txt")
     require_decision(enrollment, "ENR3-001", "ISSUE", "CURRENT")
@@ -109,7 +110,7 @@ def main() -> int:
     assert online["infrastructure_available"] == "true"
     assert offline["expected"] == online["expected"] == "ESTABLISH"
 
-    print("cross-module-lifecycle-invariants: PASS surfaces=7 authz_generation=12 revocation=6 lineage=6 replay_restart=7 transport_non_authority=2 infrastructure_non_authority=1 delegation_non_repair=7")
+    print("cross-module-lifecycle-invariants: PASS surfaces=7 authz_generation=12 revocation=6 lineage=6 replay_restart=7 usage_counter=3 transport_non_authority=2 infrastructure_non_authority=1 delegation_non_repair=7")
     return 0
 
 if __name__ == "__main__":

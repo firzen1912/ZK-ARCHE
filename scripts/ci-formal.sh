@@ -132,7 +132,7 @@ run_model \
 run_model \
   "association-admission" \
   "$ROOT/rust/models/proverif/zk_arche_association_admission_draft.pv" \
-  15
+  16
 
 echo
 echo "formal evidence manifest: $MANIFEST"

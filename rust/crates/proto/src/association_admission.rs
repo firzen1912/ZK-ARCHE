@@ -18,6 +18,7 @@ pub struct AssociationAdmissionFacts {
     pub lineage_current: bool,
     pub replay_continuity_current: bool,
     pub restart_continuity_current: bool,
+    pub usage_counter_continuity_current: bool,
     pub binding_required: bool,
     pub binding_valid: bool,
     pub rollback_suspected: bool,
@@ -48,6 +49,7 @@ pub enum AssociationAdmissionReason {
     AuthorizationGenerationStale,
     RestartContinuityStale,
     AuthorizationGenerationUnbound,
+    UsageCounterContinuityStale,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -144,6 +146,12 @@ pub fn classify_association_admission(
             AssociationAdmissionReason::RestartContinuityStale,
         );
     }
+    if !facts.usage_counter_continuity_current {
+        return decision(
+            AssociationAdmissionAction::FailClosed,
+            AssociationAdmissionReason::UsageCounterContinuityStale,
+        );
+    }
     if facts.binding_required && !facts.binding_valid {
         return decision(
             AssociationAdmissionAction::FailClosed,
@@ -196,6 +204,9 @@ mod tests {
             "LINEAGE_STALE" => AssociationAdmissionReason::LineageStale,
             "REPLAY_CONTINUITY_STALE" => AssociationAdmissionReason::ReplayContinuityStale,
             "RESTART_CONTINUITY_STALE" => AssociationAdmissionReason::RestartContinuityStale,
+            "USAGE_COUNTER_CONTINUITY_STALE" => {
+                AssociationAdmissionReason::UsageCounterContinuityStale
+            }
             "BINDING_INVALID" => AssociationAdmissionReason::BindingInvalid,
             _ => panic!("invalid reason: {value}"),
         }
@@ -203,14 +214,14 @@ mod tests {
 
     #[test]
     fn canonical_corpus_matches_classifier() {
-        let corpus = include_str!("../../../test-vectors/state/association-admission-v3.txt");
+        let corpus = include_str!("../../../test-vectors/state/association-admission-v4.txt");
         let mut count = 0usize;
         for line in corpus.lines() {
             let Some(case) = line.strip_prefix("case=") else {
                 continue;
             };
             let fields: Vec<&str> = case.split('|').collect();
-            assert_eq!(fields.len(), 18);
+            assert_eq!(fields.len(), 19);
             let facts = AssociationAdmissionFacts {
                 auth_complete: bit(fields[1]),
                 preexisting_trust_record: bit(fields[2]),
@@ -223,22 +234,23 @@ mod tests {
                 lineage_current: bit(fields[9]),
                 replay_continuity_current: bit(fields[10]),
                 restart_continuity_current: bit(fields[11]),
-                binding_required: bit(fields[12]),
-                binding_valid: bit(fields[13]),
-                rollback_suspected: bit(fields[14]),
-                trust_mutation_requested: bit(fields[15]),
+                usage_counter_continuity_current: bit(fields[12]),
+                binding_required: bit(fields[13]),
+                binding_valid: bit(fields[14]),
+                rollback_suspected: bit(fields[15]),
+                trust_mutation_requested: bit(fields[16]),
             };
             assert_eq!(
                 classify_association_admission(&facts),
                 AssociationAdmissionDecision {
-                    action: action(fields[16]),
-                    reason: reason(fields[17]),
+                    action: action(fields[17]),
+                    reason: reason(fields[18]),
                 },
                 "case {}",
                 fields[0]
             );
             count += 1;
         }
-        assert_eq!(count, 17);
+        assert_eq!(count, 18);
     }
 }
