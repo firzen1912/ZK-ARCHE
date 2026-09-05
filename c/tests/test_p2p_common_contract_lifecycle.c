@@ -57,15 +57,31 @@ int main(void) {
         restart_continuity_current = bit(f[14]);
         mandatory_floor_compatible = bit(f[15]);
 
+        /* Designated initializers are mandatory here: a positional initializer
+           silently shifts every fact when a lifecycle fact is added. */
         facts = (association_admission_facts_t){
-            bit(f[4]), bit(f[5]), bit(f[6]), bit(f[7]), authorization_generation_current,
-            bit(f[10]), bit(f[11]), bit(f[12]), bit(f[13]), restart_continuity_current,
-            bit(f[16]), bit(f[17]), false, bit(f[18])
+            .auth_complete = bit(f[4]),
+            .preexisting_trust_record = bit(f[5]),
+            .authorization_present = bit(f[6]),
+            .authorization_fresh = bit(f[7]),
+            .authorization_generation_bound = authorization_generation_bound,
+            .authorization_generation_current = authorization_generation_current,
+            .revocation_current = bit(f[10]),
+            .explicitly_revoked = bit(f[11]),
+            .lineage_current = bit(f[12]),
+            .replay_continuity_current = bit(f[13]),
+            .restart_continuity_current = restart_continuity_current,
+            .binding_required = bit(f[16]),
+            .binding_valid = bit(f[17]),
+            .rollback_suspected = false,
+            .trust_mutation_requested = bit(f[18])
         };
 
+        /* Every lifecycle fact above is decided by the CORE classifier, which is
+           authoritative. Only mandatory_floor_compatible is a P2P
+           common-contract fact the classifier does not own. */
         got = association_admission_classify(&facts);
-        if (!authorization_generation_bound || !authorization_generation_current ||
-            !restart_continuity_current || !mandatory_floor_compatible)
+        if (!mandatory_floor_compatible)
             got.action = ASSOCIATION_ADMISSION_FAIL_CLOSED;
 
         if (strcmp(f[19], "ESTABLISH") == 0) {

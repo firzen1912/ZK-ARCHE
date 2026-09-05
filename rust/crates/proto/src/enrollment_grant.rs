@@ -64,7 +64,10 @@ pub struct EnrollmentGrantDecision {
     pub reason: EnrollmentGrantReason,
 }
 
-fn decision(action: EnrollmentGrantAction, reason: EnrollmentGrantReason) -> EnrollmentGrantDecision {
+fn decision(
+    action: EnrollmentGrantAction,
+    reason: EnrollmentGrantReason,
+) -> EnrollmentGrantDecision {
     EnrollmentGrantDecision { action, reason }
 }
 

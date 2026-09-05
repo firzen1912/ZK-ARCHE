@@ -44,6 +44,7 @@ fn canonical_p2p_common_contract_lifecycle_corpus() {
             preexisting_trust_record: bit(fields[5]),
             authorization_present: bit(fields[6]),
             authorization_fresh: bit(fields[7]),
+            authorization_generation_bound,
             authorization_generation_current,
             revocation_current: bit(fields[10]),
             explicitly_revoked: bit(fields[11]),
@@ -56,25 +57,35 @@ fn canonical_p2p_common_contract_lifecycle_corpus() {
             trust_mutation_requested: bit(fields[18]),
         };
 
+        // Every lifecycle fact above is decided by the CORE classifier, which is
+        // authoritative. Only `mandatory_floor_compatible` is a P2P
+        // common-contract fact the classifier does not own, so it is the only
+        // condition applied outside it.
         let mut action = classify_association_admission(&facts).action;
-        if !authorization_generation_bound
-            || !authorization_generation_current
-            || !restart_continuity_current
-            || !mandatory_floor_compatible
-        {
+        if !mandatory_floor_compatible {
             action = AssociationAdmissionAction::FailClosed;
         }
 
         match fields[19] {
             "ESTABLISH" => {
-                assert_eq!(action, AssociationAdmissionAction::Establish, "{}", fields[0]);
+                assert_eq!(
+                    action,
+                    AssociationAdmissionAction::Establish,
+                    "{}",
+                    fields[0]
+                );
                 established += 1;
                 if !infrastructure_available {
                     offline_established += 1;
                 }
             }
             "FAIL_CLOSED" => {
-                assert_eq!(action, AssociationAdmissionAction::FailClosed, "{}", fields[0]);
+                assert_eq!(
+                    action,
+                    AssociationAdmissionAction::FailClosed,
+                    "{}",
+                    fields[0]
+                );
                 failed += 1;
             }
             other => panic!("invalid expected action: {other}"),
