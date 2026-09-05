@@ -59,6 +59,7 @@ The active debt ceiling remains:
 | TD-002 | reproducible STM32/ESP32-S3-class target measurements | zk208 / zk216 / zk222 / zk236 / zk240 / zk241 |
 | TD-003 | formal models remain skeletons without full model-to-code traceability | zk207 / zk209 / zk217 / zk218 / zk239 |
 | TD-004 | RFC-style normative specification remains incomplete | zk217 / zk218 / zk225 / zk226 / zk230 / zk240 |
+| TD-005 | exact-head executable qualification is not enforced on every path into `dev` | zk202 / zk210 / zk222 |
 
 The current research backlog contains R-001 through R-015. The strongest human-reviewed findings now affecting roadmap acceptance criteria are:
 

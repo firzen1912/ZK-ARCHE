@@ -99,12 +99,13 @@ Commit `251c987` (2026-09-03 00:44) added the `authorization_generation_bound` f
 
 The break was introduced after the 2026-09-02 qualification, so that qualification was valid when recorded, but `dev` was not executably qualifiable from 2026-09-03 00:44 until `339f31b` restored it on 2026-09-05 01:52. Everything committed in that window — including two daily research reports asserting exact-head health — was recorded against a non-building tree.
 
-Two process facts made this possible and remain true:
+Three process facts made this possible and remain true:
 
-1. The pre-commit gate checks formatting, wire-registry parity, and formal-model mirrors. **It does not compile either lane.**
-2. `dev` intentionally has no hosted Actions, so nothing else re-ran the wrappers.
+1. The pre-commit gate checks formatting, wire-registry parity, and formal-model mirrors. **It does not compile either lane**, so a non-building commit can be created locally.
+2. The pre-push hook *does* run `scripts/ci-all.sh` for `dev`, but it is local, per-clone configuration (`core.hooksPath`), and `.githooks/` is tracked only on `main` — a `dev` checkout installs no gate by default. Any commit reaching `dev` through the GitHub API or web editor bypasses it entirely.
+3. `dev` intentionally has no hosted Actions, so no independent path re-runs the wrappers.
 
-The `scripts/ci-all.sh` wrapper itself was never at fault — it detected the break immediately when finally run, which is why `zk202` is not reduced. The gap is enforcement, not tooling, and it is not currently tracked in the technical-debt register.
+The `scripts/ci-all.sh` wrapper itself was never at fault — it detected the break immediately when finally run, which is why `zk202` is not reduced. The gap is enforcement coverage rather than the wrapper, and it is now tracked as **TD-005** in the [technical debt register](../technical-debt/README.md).
 
 ## Current evidence posture
 
@@ -113,7 +114,7 @@ ZK-ARCHE deliberately keeps maturity states separate. Evidence for one state mus
 | State | Current posture |
 |---|---|
 | `IMPLEMENTED` | Material Rust/C protocol implementation exists for the current baseline, but the full roadmap is not implemented. |
-| `TESTED` | Strong automated Rust/C, deterministic-vector, negative-path, formal-model, and qualification coverage exists for implemented surfaces; exact-current release qualification passed. Future roadmap surfaces remain incomplete. |
+| `TESTED` | Strong automated Rust/C, deterministic-vector, negative-path, formal-model, and qualification coverage exists for implemented surfaces, and passed at the exact head recorded above. Coverage is only as current as the last recorded run: TD-005 tracks the absence of per-HEAD enforcement. Future roadmap surfaces remain incomplete. |
 | `INTEROPERABLE` | Rust/C interoperability evidence exists for shared implemented behavior; this does not cover every future profile, transport, lifecycle, or P2P requirement. |
 | `FORMALLY ANALYZED` | Scoped formal properties have retained evidence; TD-003 remains open because full property coverage and model-to-spec/code traceability are incomplete. |
 | `MEASURED` | Available software/environment evidence exists, but required physical STM32/ESP32-S3-class evidence remains incomplete under TD-002. |
@@ -138,7 +139,10 @@ The main evidence ceilings remain:
 4. **TD-004 — RFC-class normative specification**  
    The normative grammar, complete state machines, registries, requirement language, Security/Privacy Considerations, annotated traces, conformance/change-control package, and independent-implementation evidence remain incomplete.
 
-5. **P2P Common Contract qualification**  
+5. **TD-005 — exact-head qualification enforcement**<br>
+   `scripts/ci-all.sh` is sound, but nothing guarantees it ran for a given `dev` HEAD. The pre-commit gate does not compile either lane, the pre-push gate is per-clone local configuration whose source is tracked only on `main`, API/web commits bypass local hooks, and `dev` runs no hosted Actions. Until an unqualified HEAD is detectable, "exact-current `dev` health" is an assumption rather than retained evidence.
+
+6. **P2P Common Contract qualification**<br>
    `p2p-iot-core` remains draft/non-selectable. The repository now owns a fail-closed cross-class qualification corpus, but executable constrained↔constrained and constrained↔higher-capability evidence, bounded stale-authorization semantics, target budgets, and no-infrastructure runtime evidence remain unfinished.
 
 ## Current execution priority
