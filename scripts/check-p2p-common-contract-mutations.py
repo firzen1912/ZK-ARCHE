@@ -6,7 +6,7 @@ import csv
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-CORPUS = ROOT / "rust/test-vectors/p2p/common-contract-lifecycle-v3.txt"
+CORPUS = ROOT / "rust/test-vectors/p2p/common-contract-lifecycle-v4.txt"
 
 BOOL_FIELDS = {
     "infrastructure_available",
@@ -21,6 +21,7 @@ BOOL_FIELDS = {
     "lineage_current",
     "replay_continuity_current",
     "restart_continuity_current",
+    "usage_counter_continuity_current",
     "mandatory_floor_compatible",
     "binding_required",
     "binding_valid",
@@ -39,6 +40,7 @@ FAIL_CLOSED_MUTATIONS = {
     "lineage_current": False,
     "replay_continuity_current": False,
     "restart_continuity_current": False,
+    "usage_counter_continuity_current": False,
     "mandatory_floor_compatible": False,
     "trust_mutation_requested": True,
 }
@@ -69,6 +71,8 @@ def classify(row: dict[str, object]) -> str:
         return "FAIL_CLOSED"
     if not row["replay_continuity_current"] or not row["restart_continuity_current"]:
         return "FAIL_CLOSED"
+    if not row["usage_counter_continuity_current"]:
+        return "FAIL_CLOSED"
     if not row["mandatory_floor_compatible"]:
         return "FAIL_CLOSED"
     if row["binding_required"] and not row["binding_valid"]:
@@ -92,7 +96,7 @@ def load_rows() -> list[dict[str, object]]:
 
 def main() -> int:
     rows = load_rows()
-    assert len(rows) == 21, f"expected 21 canonical rows, got {len(rows)}"
+    assert len(rows) == 24, f"expected 24 canonical rows, got {len(rows)}"
 
     for row in rows:
         observed = classify(row)
@@ -137,7 +141,7 @@ def main() -> int:
         "infrastructure_non_authority",
     }
     assert dimensions == expected_dimensions, f"mutation dimension drift: {sorted(dimensions)}"
-    assert mutation_count >= 86, f"insufficient mutation breadth: {mutation_count}"
+    assert mutation_count >= 92, f"insufficient mutation breadth: {mutation_count}"
     print(
         "p2p-common-contract-mutations: PASS "
         f"canonical={len(rows)} positive={len(positive)} mutations={mutation_count} "

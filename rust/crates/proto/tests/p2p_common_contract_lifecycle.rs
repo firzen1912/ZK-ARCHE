@@ -16,7 +16,7 @@ fn known_peer(value: &str) -> bool {
 
 #[test]
 fn canonical_p2p_common_contract_lifecycle_corpus() {
-    let corpus = include_str!("../../../test-vectors/p2p/common-contract-lifecycle-v3.txt");
+    let corpus = include_str!("../../../test-vectors/p2p/common-contract-lifecycle-v4.txt");
     let mut cases = 0usize;
     let mut established = 0usize;
     let mut failed = 0usize;
@@ -24,12 +24,12 @@ fn canonical_p2p_common_contract_lifecycle_corpus() {
     let mut cross_class = 0usize;
 
     for line in corpus.lines() {
-        if line.starts_with('#') || !line.starts_with("XC3-") {
+        if line.starts_with('#') || !line.starts_with("XC4-") {
             continue;
         }
 
         let fields: Vec<&str> = line.split('|').collect();
-        assert_eq!(fields.len(), 20, "bad corpus row: {line}");
+        assert_eq!(fields.len(), 21, "bad corpus row: {line}");
         assert!(known_peer(fields[1]));
         assert!(known_peer(fields[2]));
 
@@ -37,7 +37,7 @@ fn canonical_p2p_common_contract_lifecycle_corpus() {
         let authorization_generation_bound = bit(fields[8]);
         let authorization_generation_current = bit(fields[9]);
         let restart_continuity_current = bit(fields[14]);
-        let mandatory_floor_compatible = bit(fields[15]);
+        let mandatory_floor_compatible = bit(fields[16]);
 
         let facts = AssociationAdmissionFacts {
             auth_complete: bit(fields[4]),
@@ -51,14 +51,11 @@ fn canonical_p2p_common_contract_lifecycle_corpus() {
             lineage_current: bit(fields[12]),
             replay_continuity_current: bit(fields[13]),
             restart_continuity_current,
-            // The v3 P2P corpus does not yet model key-usage-counter continuity;
-            // CORE owns that fact today. P2P qualification for it lands with the
-            // v4 common-contract corpus.
-            usage_counter_continuity_current: true,
-            binding_required: bit(fields[16]),
-            binding_valid: bit(fields[17]),
+            usage_counter_continuity_current: bit(fields[15]),
+            binding_required: bit(fields[17]),
+            binding_valid: bit(fields[18]),
             rollback_suspected: false,
-            trust_mutation_requested: bit(fields[18]),
+            trust_mutation_requested: bit(fields[19]),
         };
 
         // Every lifecycle fact above is decided by the CORE classifier, which is
@@ -70,7 +67,7 @@ fn canonical_p2p_common_contract_lifecycle_corpus() {
             action = AssociationAdmissionAction::FailClosed;
         }
 
-        match fields[19] {
+        match fields[20] {
             "ESTABLISH" => {
                 assert_eq!(
                     action,
@@ -101,9 +98,9 @@ fn canonical_p2p_common_contract_lifecycle_corpus() {
         cases += 1;
     }
 
-    assert_eq!(cases, 21);
+    assert_eq!(cases, 24);
     assert_eq!(established, 6);
-    assert_eq!(failed, 15);
+    assert_eq!(failed, 18);
     assert_eq!(offline_established, 5);
-    assert!(cross_class >= 17);
+    assert!(cross_class >= 19);
 }

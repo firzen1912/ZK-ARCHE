@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define VECTOR_PATH "../rust/test-vectors/p2p/common-contract-lifecycle-v3.txt"
+#define VECTOR_PATH "../rust/test-vectors/p2p/common-contract-lifecycle-v4.txt"
 
 static bool bit(const char *v) {
     assert(v != NULL);
@@ -31,7 +31,7 @@ int main(void) {
 
     assert(fp != NULL);
     while (fgets(line, sizeof line, fp) != NULL) {
-        char *f[20];
+        char *f[21];
         size_t i;
         association_admission_facts_t facts;
         association_admission_decision_t got;
@@ -42,20 +42,20 @@ int main(void) {
         bool mandatory_floor_compatible;
 
         line[strcspn(line, "\r\n")] = '\0';
-        if (line[0] == '#' || strncmp(line, "XC3-", 4) != 0)
+        if (line[0] == '#' || strncmp(line, "XC4-", 4) != 0)
             continue;
 
         f[0] = strtok(line, "|");
-        for (i = 1u; i < 20u; ++i)
+        for (i = 1u; i < 21u; ++i)
             f[i] = strtok(NULL, "|");
-        assert(f[19] != NULL && strtok(NULL, "|") == NULL);
+        assert(f[20] != NULL && strtok(NULL, "|") == NULL);
         assert(known_peer(f[1]) && known_peer(f[2]));
 
         infrastructure_available = bit(f[3]);
         authorization_generation_bound = bit(f[8]);
         authorization_generation_current = bit(f[9]);
         restart_continuity_current = bit(f[14]);
-        mandatory_floor_compatible = bit(f[15]);
+        mandatory_floor_compatible = bit(f[16]);
 
         /* Designated initializers are mandatory here: a positional initializer
            silently shifts every fact when a lifecycle fact is added. */
@@ -71,13 +71,11 @@ int main(void) {
             .lineage_current = bit(f[12]),
             .replay_continuity_current = bit(f[13]),
             .restart_continuity_current = restart_continuity_current,
-            /* The v3 P2P corpus does not yet model key-usage-counter
-               continuity; CORE owns that fact today. */
-            .usage_counter_continuity_current = true,
-            .binding_required = bit(f[16]),
-            .binding_valid = bit(f[17]),
+            .usage_counter_continuity_current = bit(f[15]),
+            .binding_required = bit(f[17]),
+            .binding_valid = bit(f[18]),
             .rollback_suspected = false,
-            .trust_mutation_requested = bit(f[18])
+            .trust_mutation_requested = bit(f[19])
         };
 
         /* Every lifecycle fact above is decided by the CORE classifier, which is
@@ -87,13 +85,13 @@ int main(void) {
         if (!mandatory_floor_compatible)
             got.action = ASSOCIATION_ADMISSION_FAIL_CLOSED;
 
-        if (strcmp(f[19], "ESTABLISH") == 0) {
+        if (strcmp(f[20], "ESTABLISH") == 0) {
             assert(got.action == ASSOCIATION_ADMISSION_ESTABLISH);
             established++;
             if (!infrastructure_available)
                 offline_established++;
         } else {
-            assert(strcmp(f[19], "FAIL_CLOSED") == 0);
+            assert(strcmp(f[20], "FAIL_CLOSED") == 0);
             assert(got.action == ASSOCIATION_ADMISSION_FAIL_CLOSED);
             failed++;
         }
@@ -104,11 +102,11 @@ int main(void) {
     }
 
     fclose(fp);
-    assert(cases == 21u);
+    assert(cases == 24u);
     assert(established == 6u);
-    assert(failed == 15u);
+    assert(failed == 18u);
     assert(offline_established == 5u);
-    assert(cross_class >= 17u);
-    puts("p2p common-contract C lifecycle qualification v3: ok cases=21 establish=6 fail_closed=15 offline_establish=5");
+    assert(cross_class >= 19u);
+    puts("p2p common-contract C lifecycle qualification v4: ok cases=24 establish=6 fail_closed=18 offline_establish=5");
     return EXIT_SUCCESS;
 }

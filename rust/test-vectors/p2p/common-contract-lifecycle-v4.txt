@@ -1,0 +1,26 @@
+# ZKP2PLIFECYCLE/4
+case_id|peer_a|peer_b|infrastructure_available|auth_complete|preexisting_trust|authorization_present|authorization_fresh|authorization_generation_bound|authorization_generation_current|revocation_current|revoked|lineage_current|replay_continuity_current|restart_continuity_current|usage_counter_continuity_current|mandatory_floor_compatible|binding_required|binding_valid|trust_mutation_requested|expected
+XC4-001|mcu-core|mcu-core|false|true|true|true|true|true|true|true|false|true|true|true|true|true|false|false|false|ESTABLISH
+XC4-002|mcu-core|linux-edge|false|true|true|true|true|true|true|true|false|true|true|true|true|true|false|false|false|ESTABLISH
+XC4-003|linux-edge|mcu-core|false|true|true|true|true|true|true|true|false|true|true|true|true|true|false|false|false|ESTABLISH
+XC4-004|mcu-core|linux-edge|true|true|true|true|true|true|true|true|false|true|true|true|true|true|false|false|false|ESTABLISH
+XC4-005|mcu-core|linux-edge|false|false|true|true|true|true|true|true|false|true|true|true|true|true|false|false|false|FAIL_CLOSED
+XC4-006|mcu-core|linux-edge|false|true|false|true|true|true|true|true|false|true|true|true|true|true|false|false|false|FAIL_CLOSED
+XC4-007|mcu-core|linux-edge|false|true|true|true|false|true|true|true|false|true|true|true|true|true|false|false|false|FAIL_CLOSED
+XC4-008|mcu-core|linux-edge|false|true|true|true|true|true|false|true|false|true|true|true|true|true|false|false|false|FAIL_CLOSED
+XC4-009|mcu-core|linux-edge|false|true|true|true|true|true|true|false|false|true|true|true|true|true|false|false|false|FAIL_CLOSED
+XC4-010|mcu-core|linux-edge|false|true|true|true|true|true|true|true|true|true|true|true|true|true|false|false|false|FAIL_CLOSED
+XC4-011|mcu-core|linux-edge|false|true|true|true|true|true|true|true|false|false|true|true|true|true|false|false|false|FAIL_CLOSED
+XC4-012|mcu-core|linux-edge|false|true|true|true|true|true|true|true|false|true|false|true|true|true|false|false|false|FAIL_CLOSED
+XC4-013|mcu-core|linux-edge|false|true|true|true|true|true|true|true|false|true|true|false|true|true|false|false|false|FAIL_CLOSED
+XC4-014|mcu-core|linux-edge|false|true|true|true|true|true|true|true|false|true|true|true|true|false|false|false|false|FAIL_CLOSED
+XC4-015|mcu-core|linux-edge|false|true|true|true|true|true|true|true|false|true|true|true|true|true|true|true|false|ESTABLISH
+XC4-016|mcu-core|linux-edge|false|true|true|true|true|true|true|true|false|true|true|true|true|true|true|false|false|FAIL_CLOSED
+XC4-017|mcu-core|mcu-core|false|true|true|true|true|true|true|true|false|true|true|true|true|true|false|false|true|FAIL_CLOSED
+XC4-018|linux-edge|mcu-core|false|true|true|true|true|true|false|true|false|true|true|true|true|true|false|false|false|FAIL_CLOSED
+XC4-019|mcu-core|mcu-core|false|true|true|true|true|true|true|true|false|true|true|false|true|true|false|false|false|FAIL_CLOSED
+XC4-020|linux-edge|mcu-core|false|true|true|true|true|true|true|true|false|true|true|true|true|true|true|true|false|ESTABLISH
+XC4-021|mcu-core|linux-edge|false|true|true|true|true|false|true|true|false|true|true|true|true|true|false|false|false|FAIL_CLOSED
+XC4-022|mcu-core|linux-edge|false|true|true|true|true|true|true|true|false|true|true|true|false|true|false|false|false|FAIL_CLOSED
+XC4-023|linux-edge|mcu-core|false|true|true|true|true|true|true|true|false|true|true|true|false|true|false|false|false|FAIL_CLOSED
+XC4-024|mcu-core|mcu-core|false|true|true|true|true|true|true|true|false|true|true|true|false|true|false|false|false|FAIL_CLOSED
