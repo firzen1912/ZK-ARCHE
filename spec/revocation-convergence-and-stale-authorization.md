@@ -26,6 +26,8 @@ scope_authorized
 
 `max_staleness` is profile policy, not a network timeout. `required_min_epoch` is the minimum authority epoch already known locally to be required for the decision. Transport address, DNS state, cloud reachability, or gateway reachability MUST NOT substitute for authority epoch/freshness evidence.
 
+The versioned logical representation that produces the authority-scoped `view_epoch`, observation time, and revocation entries is defined by [`revocation-view-representation.md`](./revocation-view-representation.md). Representation validity and authenticity remain separate: a structurally valid view is not authoritative until the future authenticated-ingestion layer establishes provenance and integrity.
+
 ## 3. Decision classes
 
 The evaluator MUST produce one of:
@@ -58,7 +60,9 @@ Offline operation is permitted while the local revocation/authorization view rem
 
 If a peer remains disconnected beyond the bound, inability to refresh does not make old authorization current. The peer MUST fail closed for operations requiring current authorization or restrict itself to a separately specified safe subset. This contract does not define such a subset; absent explicit profile text, the required behavior is fail closed.
 
-Full and differential update mechanisms are future transport/distribution concerns. Whatever mechanism is selected MUST preserve issuer/authority scope, monotonic epoch semantics, missed-update recovery, and rollback detection.
+Full and differential update transport/distribution mechanisms remain future work, but their normalized composition semantics are now constrained by `revocation-view-representation.md`: authority scope must match, epochs are monotonic, a DIFF applies only to its exact incorporated `base_epoch`, missed-update recovery cannot guess across gaps, and version-1 DIFFs cannot express implicit unrevocation or trust repair.
+
+Whatever ingestion mechanism is selected MUST preserve issuer/authority scope, monotonic epoch semantics, missed-update recovery, rollback detection, and the distinction between structural validity and authenticated authority provenance.
 
 ## 5. Dependent-state invalidation
 
@@ -78,12 +82,14 @@ Core AUTH remains NO-LEARNING. Revocation processing cannot create trust. A comm
 
 Local trust remains non-transitive. Delegation remains explicit, scoped, bounded, revocable, and subject to the same freshness/epoch decision before it can make a holder eligible for authorization.
 
-## 7. Conformance corpus
+## 7. Conformance corpora
 
-`rust/test-vectors/state/revocation-freshness-v1.txt` is the canonical decision corpus for this bounded contract. It covers current authorization, explicit revocation, stale local views, rollback/old epochs, invalid view integrity, stale lineage, scope denial, and an offline-but-within-bound case.
+`rust/test-vectors/state/revocation-freshness-v1.txt` is the canonical decision corpus for the bounded freshness contract. It covers current authorization, explicit revocation, stale local views, rollback/old epochs, invalid view integrity, stale lineage, scope denial, and an offline-but-within-bound case.
 
-The corpus is specification/qualification evidence. It MUST NOT be described as runtime Rust/C interoperability until both implementations consume the same cases and retained exact-head execution evidence exists.
+`rust/test-vectors/state/revocation-view-v1.txt` is the canonical structural/composition corpus for the version-1 normalized revocation-view representation. It covers full/differential forms plus unknown versions, invalid epochs/base epochs, future-effective revocations, unknown actions, and duplicate entries.
+
+These corpora are specification/qualification evidence. They MUST NOT be described as runtime Rust/C interoperability until both implementations consume the same cases and retained exact-head execution evidence exists.
 
 ## 8. Evidence still required
 
-This contract does not close zk214. Remaining evidence includes an actual versioned revocation-view representation, authenticated update ingestion, Rust/C shared evaluator semantics, full/differential reconciliation, restart/rollback persistence, session/resumption/delegation invalidation, disconnected-peer convergence tests, target-specific storage evidence where required, formal lifecycle coverage, and external review where applicable.
+This contract does not close zk214. The versioned revocation-view representation is now defined, but remaining evidence includes authenticated update ingestion, Rust/C shared parser/evaluator semantics for the representation and freshness decision, executable full/differential reconciliation, restart/rollback persistence, session/resumption/delegation invalidation, disconnected-peer convergence tests, target-specific storage evidence where required, formal lifecycle coverage, and external review where applicable.

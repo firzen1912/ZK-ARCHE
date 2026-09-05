@@ -1,0 +1,15 @@
+# ZKREVVIEW/1
+# id|format_version|authority_ref|view_epoch|update_kind|base_epoch|entries|expected
+full-empty|1|auth-A|7|FULL|0|-|ACCEPT
+full-revoked|1|auth-A|8|FULL|0|holder-1,lineage-3,8,REVOKE|ACCEPT
+diff-next|1|auth-A|9|DIFF|8|holder-2,lineage-5,9,REVOKE|ACCEPT
+diff-multiple|1|auth-A|10|DIFF|9|holder-3,lineage-7,9,REVOKE;holder-4,lineage-8,10,REVOKE|ACCEPT
+unknown-version|2|auth-A|11|FULL|0|-|REJECT
+empty-authority|1|-|11|FULL|0|-|REJECT
+zero-epoch|1|auth-A|0|FULL|0|-|REJECT
+full-nonzero-base|1|auth-A|11|FULL|10|-|REJECT
+diff-zero-base|1|auth-A|11|DIFF|0|-|REJECT
+diff-base-not-older|1|auth-A|11|DIFF|11|-|REJECT
+future-effective-epoch|1|auth-A|11|FULL|0|holder-5,lineage-9,12,REVOKE|REJECT
+unknown-action|1|auth-A|11|FULL|0|holder-5,lineage-9,11,UNREVOKE|REJECT
+duplicate-entry|1|auth-A|11|FULL|0|holder-5,lineage-9,11,REVOKE;holder-5,lineage-9,11,REVOKE|REJECT
