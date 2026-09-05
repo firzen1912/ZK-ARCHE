@@ -1,5 +1,5 @@
 {
-  "schema": "ZKARCHE-CONSTRAINED-TARGET/1",
+  "schema": "ZKARCHE-CONSTRAINED-TARGET/2",
   "evidence_status": "unmeasured",
   "physical_target_executed": false,
   "target": {
@@ -7,16 +7,26 @@
     "board": "",
     "board_revision": "",
     "architecture": "",
-    "execution_environment": ""
+    "cpu_clock_hz": null,
+    "ram_bytes": null,
+    "flash_bytes_available": null,
+    "execution_environment": "",
+    "power_mode": ""
   },
   "implementation": {
     "commit_sha": "",
     "lane": "",
+    "protocol_operation": "",
+    "profile": "",
     "toolchain": "",
-    "build_profile": ""
+    "compiler_version": "",
+    "compiler_flags": [],
+    "build_profile": "",
+    "firmware_artifact_sha256": ""
   },
   "crypto_context": {
     "backend": "",
+    "backend_version": "",
     "accelerator_used": false,
     "entropy_source": "",
     "drbg_reseed_posture": "",
@@ -29,16 +39,54 @@
     "restart": "",
     "rollback": "",
     "clone": "",
-    "reprovision": ""
+    "reprovision": "",
+    "persistent_state_backend": "",
+    "rollback_protection_mechanism": ""
+  },
+  "measurement_method": {
+    "instrumentation": "",
+    "timer_or_counter": "",
+    "memory_method": "",
+    "warmup_iterations": 0,
+    "sample_count": 0,
+    "cold_boot_each_sample": false,
+    "transport_context": "",
+    "notes": ""
   },
   "measurements": {
-    "wire_bytes": null,
+    "wire_bytes": {
+      "request": null,
+      "response": null,
+      "total": null
+    },
     "static_ram_bytes": null,
     "peak_stack_bytes": null,
     "peak_heap_bytes": null,
     "flash_bytes": null,
-    "latency_us": null,
-    "cpu_cycles": null
+    "latency_us": {
+      "min": null,
+      "median": null,
+      "p95": null,
+      "max": null
+    },
+    "cpu_cycles": {
+      "min": null,
+      "median": null,
+      "p95": null,
+      "max": null
+    }
   },
-  "notes": "Template only; no physical-target evidence is claimed."
+  "qualification": {
+    "restart_test_executed": false,
+    "rollback_test_executed": false,
+    "replay_rejection_test_executed": false,
+    "rng_health_or_failure_test_executed": false,
+    "result": "UNMEASURED"
+  },
+  "provenance": {
+    "operator": "",
+    "measured_at_utc": "",
+    "raw_evidence_refs": [],
+    "notes": "Template only; no physical-target evidence is claimed. Null/false values MUST NOT be interpreted as measurements or passes."
+  }
 }
