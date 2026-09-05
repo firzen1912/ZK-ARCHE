@@ -47,16 +47,32 @@ The shared Rust/C classifier applies this precedence:
 14. forbidden redelegation;
 15. otherwise `ACCEPT`.
 
-## 5. Infrastructure independence and constrained floor
+## 5. Retained authority and lifecycle re-evaluation
+
+`ACCEPT` authorizes only the bounded delegation decision evaluated against the lifecycle facts supplied to that decision. It MUST NOT be interpreted as an indefinitely valid capability merely because the authenticated association, transport connection, session keys, or a cached grant remain present.
+
+Before a retained association uses delegated authority for new security-sensitive application traffic, the owning authorization/association lifecycle MUST re-establish the freshness conditions required by that operation. In particular, authorization-generation currentness, revocation currentness, lineage currentness, and any replay/restart/key-usage continuity required by the association-admission contract MUST remain current.
+
+If re-evaluation fails closed, delegated authority for new protected application use is immediately invalid. An implementation MUST NOT continue to authorize application traffic from the earlier delegation `ACCEPT` solely because cryptographic session material or a transport connection still exists. Reauthentication by itself MUST NOT repair stale authorization generation, revocation, lineage, replay, restart, key-usage, or rollback state.
+
+This contract does not create a second lifecycle authority. The bounded-delegation classifier continues to consume delegation-local facts; association admission and the existing authorization lifecycle own their respective continuity/freshness facts. Implementations MAY retain key material transiently for bounded shutdown or cleanup when another normative profile permits that behavior, but such retention MUST NOT confer application authority.
+
+## 6. Infrastructure independence and constrained floor
 
 The decision consumes already-verified local facts. Evaluating the mandatory decision MUST NOT require CA, DNS, Internet access, manufacturer cloud, blockchain, central registry lookup, or gateway approval when the verifier already has sufficient authorized local state.
 
 Infrastructure MAY distribute or refresh trust, grants, revocation state, authorization-generation state, or policy state outside this decision. Loss of infrastructure does not convert unbound or stale state into current state and does not authorize transitive trust inference. A higher-capability peer MAY perform additional optional work, but it MUST NOT become authorization-generation authority for a constrained peer merely because it has more compute or connectivity.
 
-## 6. Canonical conformance corpus
+The same retained-authority rule applies to constrained↔constrained and constrained↔higher-capability peers. A higher-capability peer MUST NOT preserve delegated application authority for a constrained peer by substituting cloud, gateway, transport, or cached assertions for locally required lifecycle freshness.
 
-`rust/test-vectors/p2p/bounded-delegation-v3.txt` is the current canonical decision corpus and is consumed by both Rust and C implementations. Version 3 adds independent negative decisions for unbound and stale authorization generations. Versions 1 and 2 remain historical evidence for earlier decision surfaces.
+## 7. Canonical conformance corpora
 
-## 7. Evidence boundary
+`rust/test-vectors/p2p/bounded-delegation-v3.txt` is the current canonical bounded-delegation decision corpus and is consumed by both Rust and C implementations. Version 3 adds independent negative decisions for unbound and stale authorization generations. Versions 1 and 2 remain historical evidence for earlier decision surfaces.
 
-This contract and corpus demonstrate wire-neutral decision semantics and deterministic Rust/C decision parity when their respective tests execute. They do not establish a cryptographic delegation-token encoding, physical constrained-target interoperability, secure storage, formal proof, independent cryptographic review, RFC/IETF status, or deployment qualification.
+The separate `rust/test-vectors/p2p/common-contract-lifecycle-v4.txt` corpus exercises Common Contract association-lifecycle composition across constrained and higher-capability peer classes, including authorization-generation, revocation, lineage, replay, restart, and key-usage continuity. It does not replace the bounded-delegation corpus and MUST NOT be read as proof of a delegation credential wire protocol.
+
+A future executable retained-delegation lifecycle corpus SHOULD demonstrate at least the temporal sequence `delegation accepted -> association established -> required lifecycle fact becomes stale/revoked -> authority invalidated -> subsequent protected application use rejected` in both Rust and C. Until such evidence exists, this section is a normative lifecycle requirement rather than a claim that temporal delegated-authority invalidation is independently qualified.
+
+## 8. Evidence boundary
+
+This contract and the bounded-delegation corpus demonstrate wire-neutral decision semantics and deterministic Rust/C decision parity when their respective tests execute. The Common Contract lifecycle corpus provides separate cross-class decision evidence for association lifecycle prerequisites. Together they define composition requirements; they do not establish a cryptographic delegation-token encoding, temporal retained-delegation qualification, physical constrained-target interoperability, secure storage, formal proof of the composed lifecycle, independent cryptographic review, RFC/IETF status, or deployment qualification.
