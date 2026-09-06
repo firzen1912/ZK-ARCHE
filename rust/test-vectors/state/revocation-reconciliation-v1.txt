@@ -1,0 +1,16 @@
+# ZKREVRECON/1
+# id|local_authority|local_epoch|update_authority|update_epoch|update_kind|base_epoch|authenticated|same_object|expected|result_epoch
+bootstrap-full|-|0|auth-A|1|FULL|0|1|0|APPLY|1
+bootstrap-diff|-|0|auth-A|1|DIFF|0|1|0|REJECT_BASE_EPOCH|0
+full-advance|auth-A|4|auth-A|7|FULL|0|1|0|APPLY|7
+diff-next|auth-A|7|auth-A|8|DIFF|7|1|0|APPLY|8
+diff-gap-ahead|auth-A|7|auth-A|9|DIFF|8|1|0|REJECT_BASE_EPOCH|7
+diff-old-base|auth-A|7|auth-A|9|DIFF|6|1|0|REJECT_BASE_EPOCH|7
+wrong-authority-full|auth-A|7|auth-B|8|FULL|0|1|0|REJECT_AUTHORITY|7
+wrong-authority-diff|auth-A|7|auth-B|8|DIFF|7|1|0|REJECT_AUTHORITY|7
+rollback-full|auth-A|7|auth-A|6|FULL|0|1|0|REJECT_ROLLBACK|7
+rollback-diff|auth-A|7|auth-A|6|DIFF|5|1|0|REJECT_ROLLBACK|7
+duplicate-identical|auth-A|7|auth-A|7|FULL|0|1|1|NOOP_DUPLICATE|7
+same-epoch-conflict|auth-A|7|auth-A|7|FULL|0|1|0|REJECT_CONFLICT|7
+unauthenticated-full|auth-A|7|auth-A|8|FULL|0|0|0|REJECT_UNAUTHENTICATED|7
+unauthenticated-diff|auth-A|7|auth-A|8|DIFF|7|0|0|REJECT_UNAUTHENTICATED|7
