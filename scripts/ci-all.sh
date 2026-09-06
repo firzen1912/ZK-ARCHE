@@ -19,6 +19,10 @@ fi
   date -u +"timestamp_utc=%Y-%m-%dT%H:%M:%SZ"
   echo "root=$ROOT"
   echo
+  echo "== constrained-target evidence contract =="
+  python3 "$ROOT/scripts/check-constrained-target-manifest.py" \
+    "$ROOT/evidence/constrained-target/manifest-template.json"
+  echo
   echo "== rust lane =="
   bash "$ROOT/scripts/ci-rust.sh"
   echo
