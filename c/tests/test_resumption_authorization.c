@@ -97,12 +97,12 @@ int main(void) {
     }
     fclose(fp);
     assert(saw_version == 1);
-    assert(cases == 24u);
+    assert(cases == 30u);
     {
         resumption_authorization_decision_t got = resumption_authorization_classify(NULL);
         assert(got.action == RESUMPTION_ACTION_REJECT);
         assert(got.reason == RESUMPTION_REASON_INVALID_FACTS);
     }
-    puts("resumption authorization corpus v5: ok cases=24");
+    puts("resumption authorization corpus v5: ok cases=30");
     return EXIT_SUCCESS;
 }

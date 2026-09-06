@@ -247,6 +247,6 @@ mod tests {
             );
             n += 1;
         }
-        assert_eq!(n, 24);
+        assert_eq!(n, 30);
     }
 }

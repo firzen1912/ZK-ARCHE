@@ -24,3 +24,10 @@ case=deployment-mismatch|1|1|1|0|0|4|1|1|1|1|1|1|0|1|1|1|0|1|0|1|0|1|1|0|FULL_AU
 case=audience-mismatch|1|1|1|0|0|4|1|1|1|1|1|1|0|1|1|1|0|1|0|1|1|0|1|0|FULL_AUTH_REQUIRED|AUDIENCE_MISMATCH
 case=profile-mismatch|1|1|1|0|0|4|1|1|1|1|1|1|0|1|1|1|0|1|0|1|1|1|0|0|FULL_AUTH_REQUIRED|PROFILE_MISMATCH
 case=authz-generation-unbound|1|1|1|0|0|4|1|1|1|0|1|1|0|1|1|1|0|1|0|1|1|1|1|0|FULL_AUTH_REQUIRED|AUTHORIZATION_GENERATION_UNBOUND
+# Privacy/linkability precedence: retained identifiers MUST fail before ordinary credential reuse/fallback checks.
+case=privacy-stale-at-reuse-limit|1|1|1|0|4|4|1|1|1|1|1|1|0|1|1|1|0|0|0|1|1|1|1|0|FULL_AUTH_REQUIRED|PRIVACY_IDENTIFIER_STATE_STALE
+case=repeated-id-at-reuse-limit|1|1|1|0|4|4|1|1|1|1|1|1|0|1|1|1|0|1|1|1|1|1|1|0|FULL_AUTH_REQUIRED|REPEATED_IDENTIFIER_LINKABLE
+case=privacy-stale-with-epoch-stale|1|1|1|0|0|4|1|1|1|1|1|1|0|1|1|0|0|0|0|1|1|1|1|0|FULL_AUTH_REQUIRED|PRIVACY_IDENTIFIER_STATE_STALE
+case=repeated-id-with-epoch-stale|1|1|1|0|0|4|1|1|1|1|1|1|0|1|1|0|0|1|1|1|1|1|1|0|FULL_AUTH_REQUIRED|REPEATED_IDENTIFIER_LINKABLE
+case=privacy-stale-with-binding-mismatch|1|1|0|0|0|4|1|1|1|1|1|1|0|1|1|1|0|0|0|1|1|1|1|0|FULL_AUTH_REQUIRED|PRIVACY_IDENTIFIER_STATE_STALE
+case=repeated-id-with-profile-mismatch|1|1|1|0|0|4|1|1|1|1|1|1|0|1|1|1|0|1|1|1|1|1|0|0|FULL_AUTH_REQUIRED|REPEATED_IDENTIFIER_LINKABLE
