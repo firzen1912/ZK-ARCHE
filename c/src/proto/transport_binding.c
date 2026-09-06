@@ -17,6 +17,10 @@ transport_binding_decision_t transport_binding_classify(const transport_binding_
     if (facts->transport_metadata_as_authority)
         return decision(TRANSPORT_BINDING_REJECT,
                         TRANSPORT_BINDING_REASON_TRANSPORT_METADATA_AS_AUTHORITY);
+    if (!facts->binding_present &&
+        (facts->binding_integrity_valid || facts->binding_fresh || facts->auth_instance_match ||
+         facts->peer_context_match || facts->profile_context_match))
+        return decision(TRANSPORT_BINDING_REJECT, TRANSPORT_BINDING_REASON_INVALID_FACTS);
     if (!facts->binding_present) {
         if (facts->profile_requires_binding)
             return decision(TRANSPORT_BINDING_REJECT, TRANSPORT_BINDING_REASON_BINDING_MISSING);

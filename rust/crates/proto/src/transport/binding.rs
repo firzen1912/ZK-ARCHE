@@ -70,6 +70,18 @@ pub fn classify_transport_binding(facts: &TransportBindingFacts) -> TransportBin
             TransportBindingReason::TransportMetadataAsAuthority,
         );
     }
+    if !facts.binding_present
+        && (facts.binding_integrity_valid
+            || facts.binding_fresh
+            || facts.auth_instance_match
+            || facts.peer_context_match
+            || facts.profile_context_match)
+    {
+        return decision(
+            TransportBindingDisposition::Reject,
+            TransportBindingReason::InvalidFacts,
+        );
+    }
     if !facts.binding_present {
         if facts.profile_requires_binding {
             return decision(
@@ -190,6 +202,6 @@ mod tests {
             );
             count += 1;
         }
-        assert_eq!(count, 12);
+        assert_eq!(count, 17);
     }
 }
