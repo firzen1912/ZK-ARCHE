@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 from typing import Any, NoReturn
 
-SCHEMA = "ZKARCHE-CONSTRAINED-LIFECYCLE-STORAGE/4"
+SCHEMA = "ZKARCHE-CONSTRAINED-LIFECYCLE-STORAGE/5"
 
 OBSERVATION_KEYS = (
     "wire_bytes_auth_exchange",
@@ -19,6 +19,9 @@ OBSERVATION_KEYS = (
     "flash_text_rodata_bytes",
     "persistent_state_bytes",
     "revocation_view_bytes",
+    "revocation_view_capacity_entries",
+    "revocation_reconciliation_scratch_bytes",
+    "revocation_update_payload_max_bytes",
     "authorization_view_bytes",
     "authorization_generation_state_bytes",
     "enrollment_replay_state_bytes",
@@ -26,10 +29,13 @@ OBSERVATION_KEYS = (
     "auth_latency_us",
     "update_latency_us",
     "restart_recovery_us",
+    "revocation_full_apply_latency_us",
+    "revocation_diff_apply_latency_us",
     "authorization_generation_update_latency_us",
     "enrollment_consume_latency_us",
     "enrollment_nonce_generation_us",
     "bytes_written_per_update",
+    "revocation_bytes_written_per_update",
 )
 
 REQUIRED_CONTEXT = (
@@ -62,6 +68,12 @@ REQUIRED_CONTEXT = (
     ("storage", "monotonic_freshness_source"),
     ("storage", "rollback_detection"),
     ("storage", "power_loss_model"),
+    ("storage", "revocation_view_record_format"),
+    ("storage", "revocation_view_scope"),
+    ("storage", "revocation_view_atomicity"),
+    ("storage", "revocation_view_restart_policy"),
+    ("storage", "revocation_view_rollback_policy"),
+    ("storage", "revocation_reconciliation_policy"),
     ("storage", "authorization_generation_record_format"),
     ("storage", "authorization_generation_source"),
     ("storage", "authorization_generation_atomicity"),
@@ -135,6 +147,9 @@ def main() -> None:
         "rollback_test_executed",
         "entropy_path_exercised",
         "key_storage_path_exercised",
+        "revocation_reconciliation_test_executed",
+        "revocation_restart_test_executed",
+        "revocation_power_loss_test_executed",
         "authorization_generation_test_executed",
         "authorization_generation_power_loss_test_executed",
         "enrollment_replay_test_executed",
@@ -178,15 +193,22 @@ def main() -> None:
         "static_ram_bytes",
         "flash_text_rodata_bytes",
         "persistent_state_bytes",
+        "revocation_view_bytes",
+        "revocation_view_capacity_entries",
+        "revocation_reconciliation_scratch_bytes",
+        "revocation_update_payload_max_bytes",
         "authorization_generation_state_bytes",
         "enrollment_replay_state_bytes",
         "enrollment_replay_capacity_entries",
         "auth_latency_us",
         "update_latency_us",
         "restart_recovery_us",
+        "revocation_full_apply_latency_us",
+        "revocation_diff_apply_latency_us",
         "authorization_generation_update_latency_us",
         "enrollment_consume_latency_us",
         "enrollment_nonce_generation_us",
+        "revocation_bytes_written_per_update",
     ):
         if observations[key] <= 0:
             fail(f"observations.{key} must be greater than zero for measured evidence")
