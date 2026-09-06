@@ -14,6 +14,71 @@ fn known_peer(value: &str) -> bool {
     matches!(value, "mcu-core" | "linux-edge")
 }
 
+fn established_facts() -> AssociationAdmissionFacts {
+    AssociationAdmissionFacts {
+        auth_complete: true,
+        preexisting_trust_record: true,
+        authorization_present: true,
+        authorization_fresh: true,
+        authorization_generation_bound: true,
+        authorization_generation_current: true,
+        revocation_current: true,
+        explicitly_revoked: false,
+        lineage_current: true,
+        replay_continuity_current: true,
+        restart_continuity_current: true,
+        usage_counter_continuity_current: true,
+        binding_required: true,
+        binding_valid: true,
+        rollback_suspected: false,
+        trust_mutation_requested: false,
+    }
+}
+
+#[test]
+fn retained_cross_class_authority_fails_closed_after_lifecycle_loss() {
+    let baseline = established_facts();
+    assert_eq!(
+        classify_association_admission(&baseline).action,
+        AssociationAdmissionAction::Establish
+    );
+
+    let mut stale_generation = baseline;
+    stale_generation.authorization_generation_current = false;
+    assert_eq!(
+        classify_association_admission(&stale_generation).action,
+        AssociationAdmissionAction::FailClosed
+    );
+
+    let mut revoked = baseline;
+    revoked.explicitly_revoked = true;
+    assert_eq!(
+        classify_association_admission(&revoked).action,
+        AssociationAdmissionAction::FailClosed
+    );
+
+    let mut restart_lost = baseline;
+    restart_lost.restart_continuity_current = false;
+    assert_eq!(
+        classify_association_admission(&restart_lost).action,
+        AssociationAdmissionAction::FailClosed
+    );
+
+    let mut usage_lost = baseline;
+    usage_lost.usage_counter_continuity_current = false;
+    assert_eq!(
+        classify_association_admission(&usage_lost).action,
+        AssociationAdmissionAction::FailClosed
+    );
+
+    let mut binding_lost = baseline;
+    binding_lost.binding_valid = false;
+    assert_eq!(
+        classify_association_admission(&binding_lost).action,
+        AssociationAdmissionAction::FailClosed
+    );
+}
+
 #[test]
 fn canonical_p2p_common_contract_lifecycle_corpus() {
     let corpus = include_str!("../../../test-vectors/p2p/common-contract-lifecycle-v4.txt");
@@ -58,10 +123,6 @@ fn canonical_p2p_common_contract_lifecycle_corpus() {
             trust_mutation_requested: bit(fields[19]),
         };
 
-        // Every lifecycle fact above is decided by the CORE classifier, which is
-        // authoritative. Only `mandatory_floor_compatible` is a P2P
-        // common-contract fact the classifier does not own, so it is the only
-        // condition applied outside it.
         let mut action = classify_association_admission(&facts).action;
         if !mandatory_floor_compatible {
             action = AssociationAdmissionAction::FailClosed;
@@ -69,24 +130,14 @@ fn canonical_p2p_common_contract_lifecycle_corpus() {
 
         match fields[20] {
             "ESTABLISH" => {
-                assert_eq!(
-                    action,
-                    AssociationAdmissionAction::Establish,
-                    "{}",
-                    fields[0]
-                );
+                assert_eq!(action, AssociationAdmissionAction::Establish, "{}", fields[0]);
                 established += 1;
                 if !infrastructure_available {
                     offline_established += 1;
                 }
             }
             "FAIL_CLOSED" => {
-                assert_eq!(
-                    action,
-                    AssociationAdmissionAction::FailClosed,
-                    "{}",
-                    fields[0]
-                );
+                assert_eq!(action, AssociationAdmissionAction::FailClosed, "{}", fields[0]);
                 failed += 1;
             }
             other => panic!("invalid expected action: {other}"),

@@ -20,6 +20,52 @@ static bool known_peer(const char *v) {
     return strcmp(v, "mcu-core") == 0 || strcmp(v, "linux-edge") == 0;
 }
 
+static association_admission_facts_t established_facts(void) {
+    return (association_admission_facts_t){
+        .auth_complete = true,
+        .preexisting_trust_record = true,
+        .authorization_present = true,
+        .authorization_fresh = true,
+        .authorization_generation_bound = true,
+        .authorization_generation_current = true,
+        .revocation_current = true,
+        .explicitly_revoked = false,
+        .lineage_current = true,
+        .replay_continuity_current = true,
+        .restart_continuity_current = true,
+        .usage_counter_continuity_current = true,
+        .binding_required = true,
+        .binding_valid = true,
+        .rollback_suspected = false,
+        .trust_mutation_requested = false
+    };
+}
+
+static void test_retained_cross_class_authority_loss(void) {
+    association_admission_facts_t facts = established_facts();
+    assert(association_admission_classify(&facts).action == ASSOCIATION_ADMISSION_ESTABLISH);
+
+    facts = established_facts();
+    facts.authorization_generation_current = false;
+    assert(association_admission_classify(&facts).action == ASSOCIATION_ADMISSION_FAIL_CLOSED);
+
+    facts = established_facts();
+    facts.explicitly_revoked = true;
+    assert(association_admission_classify(&facts).action == ASSOCIATION_ADMISSION_FAIL_CLOSED);
+
+    facts = established_facts();
+    facts.restart_continuity_current = false;
+    assert(association_admission_classify(&facts).action == ASSOCIATION_ADMISSION_FAIL_CLOSED);
+
+    facts = established_facts();
+    facts.usage_counter_continuity_current = false;
+    assert(association_admission_classify(&facts).action == ASSOCIATION_ADMISSION_FAIL_CLOSED);
+
+    facts = established_facts();
+    facts.binding_valid = false;
+    assert(association_admission_classify(&facts).action == ASSOCIATION_ADMISSION_FAIL_CLOSED);
+}
+
 int main(void) {
     FILE *fp = fopen(VECTOR_PATH, "r");
     char line[1400];
@@ -29,6 +75,7 @@ int main(void) {
     unsigned offline_established = 0u;
     unsigned cross_class = 0u;
 
+    test_retained_cross_class_authority_loss();
     assert(fp != NULL);
     while (fgets(line, sizeof line, fp) != NULL) {
         char *f[21];
@@ -57,8 +104,6 @@ int main(void) {
         restart_continuity_current = bit(f[14]);
         mandatory_floor_compatible = bit(f[16]);
 
-        /* Designated initializers are mandatory here: a positional initializer
-           silently shifts every fact when a lifecycle fact is added. */
         facts = (association_admission_facts_t){
             .auth_complete = bit(f[4]),
             .preexisting_trust_record = bit(f[5]),
@@ -78,9 +123,6 @@ int main(void) {
             .trust_mutation_requested = bit(f[19])
         };
 
-        /* Every lifecycle fact above is decided by the CORE classifier, which is
-           authoritative. Only mandatory_floor_compatible is a P2P
-           common-contract fact the classifier does not own. */
         got = association_admission_classify(&facts);
         if (!mandatory_floor_compatible)
             got.action = ASSOCIATION_ADMISSION_FAIL_CLOSED;
@@ -107,6 +149,6 @@ int main(void) {
     assert(failed == 18u);
     assert(offline_established == 5u);
     assert(cross_class >= 19u);
-    puts("p2p common-contract C lifecycle qualification v4: ok cases=24 establish=6 fail_closed=18 offline_establish=5");
+    puts("p2p common-contract C lifecycle qualification v4: ok cases=24 establish=6 fail_closed=18 offline_establish=5 retained_authority_loss=5");
     return EXIT_SUCCESS;
 }
