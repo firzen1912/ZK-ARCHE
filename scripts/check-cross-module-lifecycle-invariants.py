@@ -51,7 +51,7 @@ def main() -> int:
     require_decision(enrollment, "ENR3-019", "DENY", "ROLLBACK_SUSPECTED")
     require_decision(enrollment, "ENR3-020", "DENY", "COMMISSIONER_AUTHORIZATION_GENERATION_STALE")
 
-    resumption = decision_rows("rust/test-vectors/state/resumption-authorization-v4.txt")
+    resumption = decision_rows("rust/test-vectors/state/resumption-authorization-v5.txt")
     require_decision(resumption, "current", "RESUME", "CURRENT")
     require_decision(resumption, "authz-stale", "FULL_AUTH_REQUIRED", "AUTHORIZATION_STALE")
     require_decision(resumption, "authz-generation-unbound", "FULL_AUTH_REQUIRED", "AUTHORIZATION_GENERATION_UNBOUND")
@@ -62,6 +62,14 @@ def main() -> int:
     require_decision(resumption, "restart-stale", "REJECT", "RESTART_CONTINUITY_STALE")
     require_decision(resumption, "usage-counter-continuity-stale", "REJECT", "USAGE_COUNTER_CONTINUITY_STALE")
     require_decision(resumption, "rollback", "REJECT", "ROLLBACK_SUSPECTED")
+    require_decision(resumption, "privacy-identifier-state-stale", "FULL_AUTH_REQUIRED", "PRIVACY_IDENTIFIER_STATE_STALE")
+    require_decision(resumption, "repeated-identifier-linkable", "FULL_AUTH_REQUIRED", "REPEATED_IDENTIFIER_LINKABLE")
+    require_decision(resumption, "privacy-stale-at-reuse-limit", "FULL_AUTH_REQUIRED", "PRIVACY_IDENTIFIER_STATE_STALE")
+    require_decision(resumption, "repeated-id-at-reuse-limit", "FULL_AUTH_REQUIRED", "REPEATED_IDENTIFIER_LINKABLE")
+    require_decision(resumption, "privacy-stale-with-epoch-stale", "FULL_AUTH_REQUIRED", "PRIVACY_IDENTIFIER_STATE_STALE")
+    require_decision(resumption, "repeated-id-with-epoch-stale", "FULL_AUTH_REQUIRED", "REPEATED_IDENTIFIER_LINKABLE")
+    require_decision(resumption, "privacy-stale-with-binding-mismatch", "FULL_AUTH_REQUIRED", "PRIVACY_IDENTIFIER_STATE_STALE")
+    require_decision(resumption, "repeated-id-with-profile-mismatch", "FULL_AUTH_REQUIRED", "REPEATED_IDENTIFIER_LINKABLE")
 
     transport = decision_rows("rust/test-vectors/state/transport-continuation-v3.txt")
     require_decision(transport, "steady", "CONTINUE", "CURRENT")
@@ -102,8 +110,6 @@ def main() -> int:
     for case in ("XC4-008", "XC4-009", "XC4-010", "XC4-011", "XC4-012", "XC4-013", "XC4-021"):
         assert p2p[case]["expected"] == "FAIL_CLOSED", f"{case}: delegation must not repair lifecycle state"
 
-    # Key-usage continuity must fail closed in every peer-class direction, so
-    # resource asymmetry cannot lower the mandatory floor.
     for case in ("XC4-022", "XC4-023", "XC4-024"):
         assert p2p[case]["usage_counter_continuity_current"] == "false", case
         assert p2p[case]["expected"] == "FAIL_CLOSED", f"{case}: usage-counter continuity must fail closed"
@@ -116,7 +122,7 @@ def main() -> int:
     assert online["infrastructure_available"] == "true"
     assert offline["expected"] == online["expected"] == "ESTABLISH"
 
-    print("cross-module-lifecycle-invariants: PASS surfaces=7 authz_generation=12 revocation=6 lineage=6 replay_restart=7 usage_counter=6 transport_non_authority=2 infrastructure_non_authority=1 delegation_non_repair=7")
+    print("cross-module-lifecycle-invariants: PASS surfaces=7 authz_generation=12 revocation=6 lineage=6 replay_restart=7 usage_counter=6 privacy_resumption=8 transport_non_authority=2 infrastructure_non_authority=1 delegation_non_repair=7")
     return 0
 
 if __name__ == "__main__":
