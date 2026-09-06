@@ -1,8 +1,8 @@
 //! Wire-neutral authorization-aware resumption decision core.
 //!
 //! A resumption secret is not authorization. Restart continuity loss, explicit
-//! invalidation, stale authority state, or rollback cannot be repaired by
-//! possession of a resumption credential.
+//! invalidation, stale authority/privacy state, forbidden identifier reuse, or
+//! rollback cannot be repaired by possession of a resumption credential.
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ResumptionAuthorizationFacts {
@@ -23,6 +23,8 @@ pub struct ResumptionAuthorizationFacts {
     pub restart_continuity_current: bool,
     pub credential_epoch_current: bool,
     pub session_invalidated: bool,
+    pub privacy_identifier_state_current: bool,
+    pub repeated_identifier_linkable: bool,
     pub peer_match: bool,
     pub deployment_match: bool,
     pub audience_match: bool,
@@ -62,6 +64,8 @@ pub enum ResumptionReason {
     DeploymentMismatch,
     AudienceMismatch,
     ProfileMismatch,
+    PrivacyIdentifierStateStale,
+    RepeatedIdentifierLinkable,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -90,6 +94,12 @@ pub fn classify_resumption_authorization(
     }
     if f.session_invalidated {
         return d(Reject, SessionInvalidated);
+    }
+    if !f.privacy_identifier_state_current {
+        return d(FullAuthRequired, PrivacyIdentifierStateStale);
+    }
+    if f.repeated_identifier_linkable {
+        return d(FullAuthRequired, RepeatedIdentifierLinkable);
     }
     if !f.credential_epoch_current {
         return d(FullAuthRequired, CredentialEpochStale);
@@ -188,16 +198,18 @@ mod tests {
             "DEPLOYMENT_MISMATCH" => DeploymentMismatch,
             "AUDIENCE_MISMATCH" => AudienceMismatch,
             "PROFILE_MISMATCH" => ProfileMismatch,
+            "PRIVACY_IDENTIFIER_STATE_STALE" => PrivacyIdentifierStateStale,
+            "REPEATED_IDENTIFIER_LINKABLE" => RepeatedIdentifierLinkable,
             _ => panic!("bad reason"),
         }
     }
     #[test]
     fn canonical_corpus() {
-        let corpus = include_str!("../../../test-vectors/state/resumption-authorization-v4.txt");
+        let corpus = include_str!("../../../test-vectors/state/resumption-authorization-v5.txt");
         let mut n = 0;
         for line in corpus.lines().filter(|l| l.starts_with("case=")) {
             let x: Vec<&str> = line[5..].split('|').collect();
-            assert_eq!(x.len(), 25);
+            assert_eq!(x.len(), 27);
             let f = ResumptionAuthorizationFacts {
                 credential_present: b(x[1]),
                 credential_integrity_valid: b(x[2]),
@@ -216,23 +228,25 @@ mod tests {
                 restart_continuity_current: b(x[15]),
                 credential_epoch_current: b(x[16]),
                 session_invalidated: b(x[17]),
-                peer_match: b(x[18]),
-                deployment_match: b(x[19]),
-                audience_match: b(x[20]),
-                profile_match: b(x[21]),
-                rollback_suspected: b(x[22]),
+                privacy_identifier_state_current: b(x[18]),
+                repeated_identifier_linkable: b(x[19]),
+                peer_match: b(x[20]),
+                deployment_match: b(x[21]),
+                audience_match: b(x[22]),
+                profile_match: b(x[23]),
+                rollback_suspected: b(x[24]),
             };
             assert_eq!(
                 classify_resumption_authorization(&f),
                 ResumptionAuthorizationDecision {
-                    action: a(x[23]),
-                    reason: r(x[24])
+                    action: a(x[25]),
+                    reason: r(x[26])
                 },
                 "{}",
                 x[0]
             );
             n += 1;
         }
-        assert_eq!(n, 22);
+        assert_eq!(n, 24);
     }
 }

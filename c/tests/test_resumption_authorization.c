@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define VECTOR_PATH "../rust/test-vectors/state/resumption-authorization-v4.txt"
+#define VECTOR_PATH "../rust/test-vectors/state/resumption-authorization-v5.txt"
 
 static bool bit(const char *value) {
     assert(value != NULL);
@@ -39,7 +39,8 @@ static resumption_reason_t reason(const char *value) {
         "AUTHORIZATION_GENERATION_UNBOUND", "AUTHORIZATION_GENERATION_STALE",
         "REVOCATION_STALE", "REVOKED", "LINEAGE_STALE", "RESTART_CONTINUITY_STALE",
         "CREDENTIAL_EPOCH_STALE", "SESSION_INVALIDATED", "PEER_MISMATCH",
-        "DEPLOYMENT_MISMATCH", "AUDIENCE_MISMATCH", "PROFILE_MISMATCH"};
+        "DEPLOYMENT_MISMATCH", "AUDIENCE_MISMATCH", "PROFILE_MISMATCH",
+        "PRIVACY_IDENTIFIER_STATE_STALE", "REPEATED_IDENTIFIER_LINKABLE"};
     size_t i;
     for (i = 0u; i < sizeof(names) / sizeof(names[0]); ++i)
         if (strcmp(value, names[i]) == 0) return (resumption_reason_t)i;
@@ -54,36 +55,54 @@ int main(void) {
     int saw_version = 0;
     assert(fp != NULL);
     while (fgets(line, sizeof(line), fp) != NULL) {
-        char *fields[25];
+        char *fields[27];
         size_t i;
         resumption_authorization_facts_t facts;
         resumption_authorization_decision_t got;
         line[strcspn(line, "\r\n")] = '\0';
-        if (strcmp(line, "version=4") == 0) { saw_version = 1; continue; }
+        if (strcmp(line, "version=5") == 0) { saw_version = 1; continue; }
         if (strncmp(line, "case=", 5u) != 0) continue;
         fields[0] = strtok(line + 5u, "|");
-        for (i = 1u; i < 25u; ++i) fields[i] = strtok(NULL, "|");
-        assert(fields[24] != NULL && strtok(NULL, "|") == NULL);
+        for (i = 1u; i < 27u; ++i) fields[i] = strtok(NULL, "|");
+        assert(fields[26] != NULL && strtok(NULL, "|") == NULL);
         facts = (resumption_authorization_facts_t){
-            bit(fields[1]), bit(fields[2]), bit(fields[3]), bit(fields[4]),
-            count(fields[5]), count(fields[6]), bit(fields[7]), bit(fields[8]),
-            bit(fields[9]), bit(fields[10]), bit(fields[11]), bit(fields[12]),
-            bit(fields[13]), bit(fields[14]), bit(fields[15]), bit(fields[16]),
-            bit(fields[17]), bit(fields[18]), bit(fields[19]), bit(fields[20]),
-            bit(fields[21]), bit(fields[22])};
+            .credential_present = bit(fields[1]),
+            .credential_integrity_valid = bit(fields[2]),
+            .binding_valid = bit(fields[3]),
+            .expired = bit(fields[4]),
+            .usage_count = count(fields[5]),
+            .usage_limit = count(fields[6]),
+            .usage_counter_continuity_current = bit(fields[7]),
+            .authorization_context_present = bit(fields[8]),
+            .authorization_context_fresh = bit(fields[9]),
+            .authorization_generation_bound = bit(fields[10]),
+            .authorization_generation_current = bit(fields[11]),
+            .revocation_current = bit(fields[12]),
+            .explicitly_revoked = bit(fields[13]),
+            .lineage_current = bit(fields[14]),
+            .restart_continuity_current = bit(fields[15]),
+            .credential_epoch_current = bit(fields[16]),
+            .session_invalidated = bit(fields[17]),
+            .privacy_identifier_state_current = bit(fields[18]),
+            .repeated_identifier_linkable = bit(fields[19]),
+            .peer_match = bit(fields[20]),
+            .deployment_match = bit(fields[21]),
+            .audience_match = bit(fields[22]),
+            .profile_match = bit(fields[23]),
+            .rollback_suspected = bit(fields[24])};
         got = resumption_authorization_classify(&facts);
-        assert(got.action == action(fields[23]));
-        assert(got.reason == reason(fields[24]));
+        assert(got.action == action(fields[25]));
+        assert(got.reason == reason(fields[26]));
         cases += 1u;
     }
     fclose(fp);
     assert(saw_version == 1);
-    assert(cases == 22u);
+    assert(cases == 24u);
     {
         resumption_authorization_decision_t got = resumption_authorization_classify(NULL);
         assert(got.action == RESUMPTION_ACTION_REJECT);
         assert(got.reason == RESUMPTION_REASON_INVALID_FACTS);
     }
-    puts("resumption authorization corpus v4: ok cases=22");
+    puts("resumption authorization corpus v5: ok cases=24");
     return EXIT_SUCCESS;
 }

@@ -20,6 +20,12 @@ resumption_authorization_decision_t resumption_authorization_classify(
         return decision(RESUMPTION_ACTION_REJECT, RESUMPTION_REASON_USAGE_COUNTER_CONTINUITY_STALE);
     if (facts->session_invalidated)
         return decision(RESUMPTION_ACTION_REJECT, RESUMPTION_REASON_SESSION_INVALIDATED);
+    if (!facts->privacy_identifier_state_current)
+        return decision(RESUMPTION_ACTION_FULL_AUTH_REQUIRED,
+                        RESUMPTION_REASON_PRIVACY_IDENTIFIER_STATE_STALE);
+    if (facts->repeated_identifier_linkable)
+        return decision(RESUMPTION_ACTION_FULL_AUTH_REQUIRED,
+                        RESUMPTION_REASON_REPEATED_IDENTIFIER_LINKABLE);
     if (!facts->credential_epoch_current)
         return decision(RESUMPTION_ACTION_FULL_AUTH_REQUIRED, RESUMPTION_REASON_CREDENTIAL_EPOCH_STALE);
     if (!facts->credential_present)

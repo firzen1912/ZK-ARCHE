@@ -22,6 +22,8 @@ typedef struct {
     bool restart_continuity_current;
     bool credential_epoch_current;
     bool session_invalidated;
+    bool privacy_identifier_state_current;
+    bool repeated_identifier_linkable;
     bool peer_match;
     bool deployment_match;
     bool audience_match;
@@ -58,7 +60,9 @@ typedef enum {
     RESUMPTION_REASON_PEER_MISMATCH = 19,
     RESUMPTION_REASON_DEPLOYMENT_MISMATCH = 20,
     RESUMPTION_REASON_AUDIENCE_MISMATCH = 21,
-    RESUMPTION_REASON_PROFILE_MISMATCH = 22
+    RESUMPTION_REASON_PROFILE_MISMATCH = 22,
+    RESUMPTION_REASON_PRIVACY_IDENTIFIER_STATE_STALE = 23,
+    RESUMPTION_REASON_REPEATED_IDENTIFIER_LINKABLE = 24
 } resumption_reason_t;
 
 typedef struct {
