@@ -25,7 +25,10 @@ fi
 
 (
   cd "$ROOT/rust"
-  cargo test -p proto --test p2p_common_contract_lifecycle -- --exact canonical_p2p_common_contract_lifecycle_corpus
+  cargo test -p proto --test p2p_common_contract_lifecycle -- \
+    --exact canonical_p2p_common_contract_lifecycle_corpus
+  cargo test -p proto --test p2p_common_contract_lifecycle -- \
+    --exact retained_cross_class_authority_fails_closed_after_lifecycle_loss
 )
 
-echo "p2p-common-contract-cross-language: PASS corpus=common-contract-lifecycle-v4 mutations=pass C=pass Rust=pass"
+echo "p2p-common-contract-cross-language: PASS corpus=common-contract-lifecycle-v4 mutations=pass retained_authority_loss=pass C=pass Rust=pass"
