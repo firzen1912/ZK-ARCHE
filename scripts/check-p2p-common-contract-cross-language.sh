@@ -31,4 +31,12 @@ fi
     --exact retained_cross_class_authority_fails_closed_after_lifecycle_loss
 )
 
-echo "p2p-common-contract-cross-language: PASS corpus=common-contract-lifecycle-v4 mutations=pass retained_authority_loss=pass C=pass Rust=pass"
+# A Common Contract association is not sufficient authority for indefinite
+# protected application use. Qualify the DATA release boundary in the same
+# repository-owned lane so cross-class/offline establishment cannot be called
+# complete while release authorization would survive revocation, generation,
+# lineage, replay/restart/usage continuity, binding, or rollback loss.
+echo "[p2p-common-contract] protected DATA retained-authority qualification"
+"$ROOT/scripts/check-data-release-retained-authority.sh"
+
+echo "p2p-common-contract-cross-language: PASS corpus=common-contract-lifecycle-v4 mutations=pass retained_authority_loss=pass protected_data_release=pass C=pass Rust=pass"
