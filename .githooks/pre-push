@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+TARGET_MAIN=0
+TARGET_DEV=0
+MAIN_OID=""
+
+while read -r _local_ref local_oid remote_ref _remote_oid; do
+  case "$remote_ref" in
+    refs/heads/main)
+      TARGET_MAIN=1
+      MAIN_OID="$local_oid"
+      ;;
+    refs/heads/dev) TARGET_DEV=1 ;;
+  esac
+done
+
+if [ "$TARGET_MAIN" -eq 1 ]; then
+  ZERO_OID="0000000000000000000000000000000000000000"
+  if [ "$MAIN_OID" = "$ZERO_OID" ]; then
+    echo "refusing to delete stable branch main" >&2
+    exit 1
+  fi
+  HEAD_OID="$(git -C "$ROOT" rev-parse HEAD)"
+  if [ "$MAIN_OID" != "$HEAD_OID" ]; then
+    echo "refusing to qualify non-HEAD revision $MAIN_OID for main (HEAD is $HEAD_OID)" >&2
+    exit 1
+  fi
+  echo "== ZK-ARCHE pre-push: full main release qualification =="
+  exec bash "$ROOT/scripts/ci-release-qualification.sh"
+fi
+
+if [ "$TARGET_DEV" -eq 1 ]; then
+  echo "== ZK-ARCHE pre-push: dev core qualification =="
+  exec bash "$ROOT/scripts/ci-all.sh"
+fi
+
+echo "ZK-ARCHE pre-push: no protected branch target; skipping repository qualification."
