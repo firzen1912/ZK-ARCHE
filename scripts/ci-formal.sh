@@ -134,6 +134,11 @@ run_model \
   "$ROOT/rust/models/proverif/zk_arche_association_admission_draft.pv" \
   16
 
+run_model \
+  "retained-authority" \
+  "$ROOT/rust/models/proverif/zk_arche_retained_authority_draft.pv" \
+  7
+
 echo
 echo "formal evidence manifest: $MANIFEST"
 echo "formal qualification: PASS"

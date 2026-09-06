@@ -1,0 +1,62 @@
+(* ZK-ARCHE retained-association authority-loss symbolic model.
+   Scope: the temporal CORE/LINK rule that an association established under
+   current authority must fail closed before the next protected application use
+   when an owning lifecycle fact becomes unsafe. This is a non-normative
+   abstraction over authoritative lifecycle decisions. It does not model proof
+   soundness, parsers, revocation distribution, persistence physics, key
+   erasure, transport security, memory safety, or computational security. *)
+
+free c: channel.
+free cmd_current: bitstring.
+free cmd_generation_stale: bitstring.
+free cmd_revoked: bitstring.
+free cmd_restart_lost: bitstring.
+free cmd_usage_lost: bitstring.
+free cmd_binding_lost: bitstring.
+
+type association.
+set preciseActions = true.
+
+event AssociationEstablished(association).
+event AuthorityCurrent(association).
+event AuthorizationGenerationStale(association).
+event ExplicitRevocationObserved(association).
+event RestartContinuityLost(association).
+event UsageCounterContinuityLost(association).
+event RequiredBindingLost(association).
+event ProtectedUseAllowed(association).
+event ProtectedUseRejected(association).
+
+query a:association; event(ProtectedUseAllowed(a)) ==> event(AssociationEstablished(a)).
+query a:association; event(ProtectedUseAllowed(a)) ==> event(AuthorityCurrent(a)).
+query a:association; event(ProtectedUseAllowed(a)) && event(AuthorizationGenerationStale(a)) ==> false.
+query a:association; event(ProtectedUseAllowed(a)) && event(ExplicitRevocationObserved(a)) ==> false.
+query a:association; event(ProtectedUseAllowed(a)) && event(RestartContinuityLost(a)) ==> false.
+query a:association; event(ProtectedUseAllowed(a)) && event(UsageCounterContinuityLost(a)) ==> false.
+query a:association; event(ProtectedUseAllowed(a)) && event(RequiredBindingLost(a)) ==> false.
+
+let RetainedAssociationUse(a:association) =
+  event AssociationEstablished(a);
+  in(c, lifecycle:bitstring);
+  if lifecycle = cmd_current then
+    event AuthorityCurrent(a);
+    event ProtectedUseAllowed(a)
+  else if lifecycle = cmd_generation_stale then
+    event AuthorizationGenerationStale(a);
+    event ProtectedUseRejected(a)
+  else if lifecycle = cmd_revoked then
+    event ExplicitRevocationObserved(a);
+    event ProtectedUseRejected(a)
+  else if lifecycle = cmd_restart_lost then
+    event RestartContinuityLost(a);
+    event ProtectedUseRejected(a)
+  else if lifecycle = cmd_usage_lost then
+    event UsageCounterContinuityLost(a);
+    event ProtectedUseRejected(a)
+  else if lifecycle = cmd_binding_lost then
+    event RequiredBindingLost(a);
+    event ProtectedUseRejected(a)
+  else
+    event ProtectedUseRejected(a).
+
+process !(new a:association; RetainedAssociationUse(a))
