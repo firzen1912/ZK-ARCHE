@@ -37,6 +37,9 @@ fi
     echo "C vector test binary not found after C CI; run make in c/ and retry." >&2
     exit 1
   fi
+  echo
+  echo "== P2P Common Contract cross-language qualification =="
+  bash "$ROOT/scripts/check-p2p-common-contract-cross-language.sh"
 } 2>&1 | tee "$LOG"
 
 if [ -n "$QUALIFICATION_HEAD" ]; then
