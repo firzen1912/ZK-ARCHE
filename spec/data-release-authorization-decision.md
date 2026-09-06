@@ -36,10 +36,49 @@ Fail-closed precedence is: rollback; authentication; device-local release author
 
 `RELEASE` authorizes only the bounded release represented by the inputs. It is not persistent trust, enrollment, arbitrary application authorization, permission to release other data, or permission to persist plaintext. The surrounding DATA lifecycle must atomically bind release-key use and release-operation consumption so a crash or rollback cannot recover a consumed operation as reusable; that persistence mechanism remains outside this wire-neutral classifier.
 
+## Composition with retained association authority
+
+The classifier's `authenticated` fact means **currently security-authoritative authentication context**, not merely evidence that an AUTH exchange succeeded at some earlier time or that transport/session keys still exist.
+
+When a DATA release request is carried by a retained ZK-ARCHE secure association, the caller MUST re-use the current CORE/LINK association-admission result as part of establishing this fact. If `core-association-admission.md` returns `FAIL_CLOSED` for the association, the DATA caller MUST NOT treat the association as authenticated authority for a new release merely because:
+
+- the peer completed AUTH earlier;
+- traffic keys remain resident;
+- the underlying transport connection is still open;
+- a cached release authorization was previously valid; or
+- a previous DATA release under the association succeeded.
+
+A retained association that has lost authority therefore cannot carry a new protected-data release. The implementation MUST first restore every owning lifecycle fact required by the common contract and obtain a fresh successful association-admission decision where an association is required by the selected DATA profile.
+
+Fresh AUTH alone is insufficient to repair stale authorization generation, revocation, lineage, replay continuity, restart continuity, key-usage continuity, rollback suspicion, or required channel binding. Those facts remain owned by their respective CORE/TRUST/LINK/BIND lifecycle authorities.
+
+This composition rule deliberately does **not** add a second revocation, replay, restart, key-usage, or association classifier inside ZK-ARCHE-DATA. DATA consumes the authoritative result of those layers and then applies its additional device-local sovereignty checks. This preserves one lifecycle authority per fact while ensuring that DATA cannot continue using an association after CORE has removed its authority.
+
+For profiles that permit a local/offline DATA operation without a retained secure association, `authenticated` MUST still be established by the profile's explicitly defined local authenticated context; transport presence or cached remote identity cannot synthesize it. Such a profile does not bypass the remaining release-authority, authorization-generation, revocation, lineage, replay, rollback, policy, or one-time-release checks.
+
+### Required temporal qualification
+
+Executable qualification should include at least the following cross-module sequence in both Rust and C harnesses:
+
+```text
+AUTH succeeds
+→ association admission = ESTABLISH
+→ DATA release decision = RELEASE for operation N
+→ authoritative lifecycle fact becomes unsafe
+→ association re-evaluation = FAIL_CLOSED
+→ new DATA release attempt N+1 under retained keys/transport is not RELEASE
+```
+
+The unsafe lifecycle mutations should cover, at minimum, authorization-generation advance, explicit revocation, stale lineage, restart-continuity loss, key-usage-continuity loss, rollback suspicion, and required-binding invalidation where applicable. Reusing operation N must remain independently rejected by the DATA one-time-release rule.
+
+This section is normative composition semantics. Until that temporal sequence is represented in executable Rust/C qualification, it MUST NOT be reported as new cross-module TESTED evidence.
+
 ## Conformance evidence
 
 The current canonical corpus is `rust/test-vectors/state/data-release-authorization-v4.txt`. Rust and C implementations claiming the current contract MUST reproduce its action/reason outputs. Version 3 remains historical evidence for the earlier generation-currentness surface that did not independently represent authenticated generation provenance.
 
+The v4 corpus validates the DATA-local classifier inputs. It does not by itself establish the retained-association temporal composition above; that remains an explicit qualification gap until a cross-module executable sequence exists.
+
 ## Evidence boundary
 
-This demonstrates wire-neutral decision semantics and deterministic negative evidence. It is **not** evidence that DATA wire messages, durable release-operation storage, cryptographic release-token verification, key wrapping, encrypted-storage implementation, audit chaining, target budgets, physical rollback resistance, formal analysis, independent review, or deployment qualification are complete.
+This demonstrates wire-neutral decision semantics and deterministic negative evidence. It is **not** evidence that DATA wire messages, durable release-operation storage, cryptographic release-token verification, key wrapping, encrypted-storage implementation, audit chaining, target budgets, physical rollback resistance, formal analysis, independent review, retained-association temporal qualification, or deployment qualification are complete.
