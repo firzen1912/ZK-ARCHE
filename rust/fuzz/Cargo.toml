@@ -1,3 +1,5 @@
+[workspace]
+
 [package]
 name = "zk-arche-rust-fuzz"
 version = "0.0.0"

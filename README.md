@@ -137,6 +137,10 @@ Run both active implementation lanes from the repository root:
 ./scripts/ci-all.sh
 ```
 
+When this command starts and finishes on the same clean Git HEAD, it also
+retains an exact-HEAD manifest and log under `evidence/qualification/`. Dirty
+development runs still execute, but do not create qualification evidence.
+
 Rust only:
 
 ```bash
@@ -148,6 +152,18 @@ C only:
 ```bash
 ./scripts/ci-c.sh
 ```
+
+Bounded parser fuzz qualification (requires Rust nightly and `cargo-fuzz`):
+
+```bash
+ZK_ARCHE_FUZZ_SECONDS=60 ./scripts/ci-fuzz.sh
+```
+
+The fuzz duration is per target. New coverage inputs remain in the versioned
+seed corpus under `rust/fuzz/corpus/`; crash reproducers remain under
+`rust/fuzz/artifacts/` and fail the command. This bounded parser lane disables
+LeakSanitizer for compatibility with ptrace-based runners; the sanitizer lanes
+remain the leak-qualification authority.
 
 Formal qualification for the currently governed ProVerif models:
 

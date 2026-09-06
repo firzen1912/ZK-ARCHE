@@ -12,6 +12,9 @@
 *.json text eol=lf
 *.txt  text eol=lf
 
+# Fuzz seeds are opaque byte strings even when a sample happens to look textual.
+/rust/fuzz/corpus/** binary
+
 # Binary assets must never be line-ending converted.
 *.docx binary
 *.png  binary

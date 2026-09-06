@@ -1,7 +1,10 @@
-.PHONY: ci release-qualification release-qual rust-ci c-ci c-vectors clean
+.PHONY: ci fuzz release-qualification release-qual rust-ci c-ci c-vectors clean
 
 ci:
 	bash ./scripts/ci-all.sh
+
+fuzz:
+	bash ./scripts/ci-fuzz.sh
 
 release-qualification:
 	bash ./scripts/ci-release-qualification.sh

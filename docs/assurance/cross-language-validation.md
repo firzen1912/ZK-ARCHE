@@ -55,6 +55,30 @@ Combined:
 ./scripts/ci-all.sh
 ```
 
+When the combined command starts from a clean Git HEAD, it verifies that the
+same HEAD and clean worktree remain after validation, then writes:
+
+```text
+evidence/qualification/<head>-qualification-manifest.tsv
+evidence/qualification/<head>-ci-all.log
+```
+
+A dirty development run still executes the validation lanes but does not
+produce an exact-HEAD qualification record.
+
+Bounded Rust parser fuzzing is an explicit opt-in lane because it requires a
+nightly toolchain and `cargo-fuzz` and consumes a configured time budget per
+target:
+
+```bash
+ZK_ARCHE_FUZZ_SECONDS=60 ./scripts/ci-fuzz.sh
+```
+
+Its minimized seed inputs are retained in `rust/fuzz/corpus/`. Any crash
+reproducer under `rust/fuzz/artifacts/` makes the lane fail. The bounded fuzz
+lane disables LeakSanitizer because ptrace-based runners cannot execute it;
+repository sanitizer lanes remain responsible for leak qualification.
+
 ## Evidence policy
 
 A passing vector test demonstrates agreement for the checked vector cases only. It does not prove complete cryptographic security, side-channel resistance, complete replay resistance, or production readiness.
