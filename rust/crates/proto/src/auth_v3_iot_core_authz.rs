@@ -137,6 +137,10 @@ pub fn resolve_iot_core_attribution<'a>(
     expected_peer_identity: &[u8; 32],
     context: &IotCoreAuthorizationContextV1,
 ) -> Result<&'a IotCoreAttributionRecordV1, IotCoreAttributionError> {
+    if validate_iot_core_authorization_context(context).is_err() {
+        return Err(IotCoreAttributionError::AuthorizationMismatch);
+    }
+
     let mut candidates = records
         .iter()
         .filter(|record| &record.credential_reference == credential_reference);

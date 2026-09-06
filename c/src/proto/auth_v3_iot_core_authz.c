@@ -263,6 +263,10 @@ int auth_v3_iot_core_attribution_resolve(
     }
     *record_out = NULL;
 
+    if (auth_v3_iot_core_authz_validate(context) != AUTH_V3_IOT_CORE_AUTHZ_OK) {
+        return AUTH_V3_IOT_CORE_ATTRIBUTION_AUTHORIZATION_MISMATCH;
+    }
+
     for (i = 0u; i < record_count; ++i) {
         if (memcmp(records[i].credential_reference, credential_reference, 32u) == 0) {
             if (match != NULL) {
