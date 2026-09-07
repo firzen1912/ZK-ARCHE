@@ -9,12 +9,12 @@ The two documents are complementary. The improvement roadmap owns the canonical 
 
 ## Roadmap progress
 
-> **Current evidence-based completion: 45.12%**<br>
-> **Remaining to full roadmap: 54.88%**<br>
-> Progress snapshot reviewed: **2026-09-05**<br>
-> Evidence basis: clean exact-head `dev` validation at `01d89d3` on 2026-09-05, using the local ProVerif 2.05 lane.
+> **Current evidence-based completion: 46.34%**<br>
+> **Remaining to full roadmap: 53.66%**<br>
+> Progress snapshot reviewed: **2026-09-06**<br>
+> Evidence basis: exact-current `dev` repository evidence through `eaf9222`; executable cloud-runner qualification unavailable in this run; user-confirmed local validation baseline remains green.
 
-`45.12%` is a roadmap-tracking metric, **not** a claim that ZK-ARCHE is 45.12% secure, production-ready, RFC-standardized, externally reviewed, or deployment-qualified.
+`46.34%` is a roadmap-tracking metric, **not** a claim that ZK-ARCHE is 46.34% secure, production-ready, RFC-standardized, externally reviewed, or deployment-qualified.
 
 The score is the arithmetic mean of the evidence-completion scores for canonical phases `zk201`–`zk241`. Each phase is evaluated only against its declared exit evidence.
 
@@ -25,13 +25,11 @@ The score is the arithmetic mean of the evidence-completion scores for canonical
 | Enrollment / authorization / lifecycle | `zk211`–`zk215` | **45.00%** |
 | AUTH hardening / IoT profiles | `zk216`–`zk224` | **36.11%** |
 | Interop / RFC / transport / decomposition | `zk225`–`zk230` | **50.00%** |
-| Data sovereignty | `zk231`–`zk238` | **25.00%** |
+| Data sovereignty | `zk231`–`zk238` | **31.25%** |
 | Infrastructure-independent P2P Common Contract | `zk239`–`zk241` | **33.33%** |
-| **Overall** | `zk201`–`zk241` | **45.12%** |
+| **Overall** | `zk201`–`zk241` | **46.34%** |
 
 ### Scoring rubric
-
-Each phase is scored using the same evidence rubric:
 
 | Score | Meaning |
 |---:|---|
@@ -41,13 +39,11 @@ Each phase is scored using the same evidence rubric:
 | **75%** | Substantially implemented; most exit evidence exists, with bounded qualification/evidence gaps remaining. |
 | **100%** | The phase's declared exit evidence actually exists and repository claim language matches that evidence. |
 
-Scores are **not** based on commit count, lines of code, document count, elapsed time, or implementation effort. A phase does not reach 100% merely because code exists.
-
-Required independent review, physical-target measurements, formal results, interoperability evidence, RFC-class documentation, field evidence, or other declared exit artifacts must actually exist before the associated phase receives credit for them.
+Scores are not based on commit count, lines of code, elapsed time, or effort. Required independent review, physical-target measurements, formal results, interoperability evidence, RFC-class documentation, field evidence, and other declared exit artifacts must actually exist before the associated phase receives credit.
 
 ### Phase scorecard
 
-This scorecard makes the grouped arithmetic reproducible. Each phase is scored against the declared exit evidence in [`improvement-roadmap.md`](./improvement-roadmap.md), not against implementation effort. The 41 phase scores sum to `1850`; `1850 / 41 = 45.12%`.
+The 41 phase scores now sum to `1900`; `1900 / 41 = 46.34%`.
 
 | Roadmap group | Phase scores |
 |---|---|
@@ -56,120 +52,83 @@ This scorecard makes the grouped arithmetic reproducible. Each phase is scored a
 | Enrollment / authorization / lifecycle | `zk211=50`, `zk212=50`, `zk213=75`, `zk214=50`, `zk215=0` |
 | AUTH hardening / IoT profiles | `zk216=25`, `zk217=75`, `zk218=75`, `zk219=25`, `zk220=0`, `zk221=75`, `zk222=50`, `zk223=0`, `zk224=0` |
 | Interop / RFC / transport / decomposition | `zk225=75`, `zk226=50`, `zk227=25`, `zk228=50`, `zk229=25`, `zk230=75` |
-| Data sovereignty | `zk231=50`, `zk232=0`, `zk233=25`, `zk234=75`, `zk235=0`, `zk236=25`, `zk237=25`, `zk238=0` |
+| Data sovereignty | `zk231=50`, `zk232=0`, `zk233=25`, `zk234=75`, `zk235=50`, `zk236=25`, `zk237=25`, `zk238=0` |
 | Infrastructure-independent P2P Common Contract | `zk239=50`, `zk240=25`, `zk241=25` |
 
-The 2026-09-01 decision checkpoints justify the threshold increases for lifecycle, DATA, and local P2P decision surfaces: they contain Rust/C classifiers and deterministic corpora, not full wire protocols, target evidence, or independent qualification. In particular, `p2p-iot-core` remains draft and the qualification corpus intentionally retains unexecuted/blocked cross-class cases; that evidence does not promote `zk240` or `zk241` beyond 25%.
+### 2026-09-06 score change
 
-### 2026-09-05 re-score rationale
+`zk235` moved from **0 → 50**. Exact-current `dev` now contains a bounded, domain-separated local DATA audit-chain primitive in both Rust and C plus a normative local-chain contract and matching deterministic continuity/tamper fixtures. The primitive commits only to release-context/lifecycle state and is explicitly non-authoritative for release or trust decisions.
 
-The prior snapshot was scored at `a7e9ff8` (2026-09-02 02:01). Thirty-five substantive commits landed after it — the authorization-generation lifecycle series, the key-usage-continuity work, and the associated corpora — none of which had been evaluated. Five phases crossed a rubric threshold. Every other phase is unchanged.
+`zk235` remains below 75 because durable restart recovery, rollback-resistant persistence anchoring, power-loss evidence, transparency publication/bridge behavior, constrained target measurements, and an executed exact-head Rust/C qualification result for this new surface are still absent.
 
-| Phase | Old | New | Basis for crossing the threshold |
-|---|---:|---:|---|
-| `zk211` late-enrollment grants | 25 | **50** | `enrollment-grant-v4` corpus plus Rust/C classifier now bind holder possession, nonce/replay, scope, audience, deployment, validity, epoch, revocation, lineage, and delegation depth. Moves past "initial implementation" into material implementation with tests. Held below 75: no suite/profile compatibility binding, and grant *issuance* remains decision-level rather than a signed wire artifact with vectors. |
-| `zk212` commissioner enrollment | 25 | **50** | Commissioner authority is gated and tested — authentication, authorization, freshness, generation binding/currentness, revocation, and requested-authority-within-scope, with corpus coverage. Held below 75: the declared **audit evidence** leg does not exist anywhere in the tree. |
-| `zk221` authorization-aware resumption | 50 | **75** | The resumption classifier now binds 9 of the 10 declared record elements — peer, deployment, audience, profile, security context, lineage/generation, credential epoch, expiry, and reuse limits with counter continuity — and covers 6 of 7 declared negative tests. Held below 100: privacy-relevant identifier state and repeated-identifier linkability are absent. |
-| `zk230` CORE/AUTH/LINK/TRUST/BIND/ENROLL/DATA decomposition | 50 | **75** | All three declared legs now have evidence: module ownership (per-module `spec/` contracts), adapter boundary (BIND contract plus transport address/metadata non-authority tests), and cross-module lifecycle contracts (an invariant audit binding 7 surfaces, with authorization generation on 12 assertions and key-usage continuity on 6). Held below 100: RFC-class normative completeness remains TD-004. |
-| `zk234` policy-bound release tokens | 50 | **75** | `data-release-authorization-v4` covers every element the exit criterion names — holder, audience, purpose, epoch, lineage, and revocation — plus policy, data type, channel binding, and release-replay. Held below 100: decision-level only; no release-token wire artifact, no target evidence. |
+No other phase crosses a rubric threshold in this snapshot. Recent work inside unchanged phases remains bounded by its prior score until the corresponding declared exit evidence exists.
 
-Phases with real progress that did **not** cross a threshold, recorded here per update rule 6 rather than inflating the score:
+## Validation and evidence posture
 
-- **`zk207` formal traceability (holds at 50).** The association-admission model now mirrors every mandatory fact as a correspondence query (16 of 41 total true queries) and the gate pins the model blob to exact HEAD, so a fact cannot be dropped from the classifier without failing the formal lane. But the property/attacker matrix, explicit compromise models, anonymity/unlinkability properties, and downgrade-resistance properties remain absent. TD-003 stays open.
-- **`zk214` revocation as convergence (holds at 50).** The "invalidate dependent state" leg is now genuinely strong: an advancing authorization generation invalidates associations, resumption, transport continuation, DATA release, enrollment, and delegation. `spec/revocation-convergence-and-stale-authorization.md` itself still declares the phase open, listing a versioned revocation-view representation, authenticated update ingestion, full/differential reconciliation, and disconnected-peer convergence tests as missing.
-- **`zk239` P2P trust (holds at 50).** This is the closest call. The cross-class corpus reached 24 cases in both peer-class directions with 92 mutations across 16 dimensions, 8192 exhaustive decision states, and delegation-cannot-repair-lifecycle tests. Three of the nine declared exit bullets are still materially absent: formal/model traceability for trust and authorization decisions, a credential/reference-mapping threat model, and revocation/epoch convergence (blocked behind `zk214`). Consistent with the note above on `zk240`/`zk241`, decision-corpus breadth alone is not promoted.
-- **`zk237` channel-bound sovereignty (holds at 25).** Channel binding to release context is enforced at decision level, but the exit criterion names *exporter* binding, and `zk228` exporter derivation does not exist.
+The latest retained clean executable qualification predates this exact head. In this run the cloud execution environment could not clone `github.com`, so Cargo/C/ProVerif and the repository-wide qualification wrappers were not executed against `eaf9222`.
 
-No phase decreased. `zk240` and `zk241` remain at 25 because both depend on TD-001 independent review and TD-002 target measurement, and `p2p-iot-core` remains draft and non-selectable.
+Record this state as:
 
-### Exact-current validation status
+`cloud-runner validation unavailable; user-confirmed local baseline green`
 
-On 2026-09-05, `scripts/ci-all.sh` and `scripts/ci-formal.sh` passed at exact head `01d89d3`. The run covered Rust formatting, check, tests, Clippy, dependency audit; C normal, clang, ASan, and UBSan builds/tests; vector regeneration/drift; contract/corpus checks; and all scoped ProVerif models (**41** true queries: AUTH-v3 10, replay continuity 9, lineage replacement 6, association admission 16).
+This is **not** a RED result and does not weaken the user-confirmed local baseline. It also does not permit a fresh TESTED/INTEROPERABLE/FORMALLY ANALYZED claim for the new exact head.
 
-`zk202` holds at 100% and the baseline group at 85%. This does not close the roadmap's independent-review, constrained-target, comprehensive formal-traceability, or RFC-class evidence gaps.
-
-#### Regression window 2026-09-03 → 2026-09-05
-
-Recorded because the previous snapshot's "clean exact-head" basis did not hold for the whole interval between snapshots.
-
-Commit `251c987` (2026-09-03 00:44) added the `authorization_generation_bound` fact to the CORE association-admission classifier but updated only the CORE consumers. Both P2P common-contract harnesses were left behind, and exact-head `dev` stopped building:
-
-- the Rust harness omitted the new field (`E0063`), so `cargo test --workspace` could not compile;
-- the C harness used a positional initializer, which shifted every fact after `authorization_fresh` by one and failed `-Wmissing-field-initializers`.
-
-The break was introduced after the 2026-09-02 qualification, so that qualification was valid when recorded, but `dev` was not executably qualifiable from 2026-09-03 00:44 until `339f31b` restored it on 2026-09-05 01:52. Everything committed in that window — including two daily research reports asserting exact-head health — was recorded against a non-building tree.
-
-Three process facts made this possible and remain true:
-
-1. The pre-commit gate checks formatting, wire-registry parity, and formal-model mirrors. **It does not compile either lane**, so a non-building commit can be created locally.
-2. The pre-push hook *does* run `scripts/ci-all.sh` for `dev`, but it is local, per-clone configuration (`core.hooksPath`), and `.githooks/` is tracked only on `main` — a `dev` checkout installs no gate by default. Any commit reaching `dev` through the GitHub API or web editor bypasses it entirely.
-3. `dev` intentionally has no hosted Actions, so no independent path re-runs the wrappers.
-
-The `scripts/ci-all.sh` wrapper itself was never at fault — it detected the break immediately when finally run, which is why `zk202` is not reduced. The gap is enforcement coverage rather than the wrapper, and it is now tracked as **TD-005** in the [technical debt register](../technical-debt/README.md).
-
-## Current evidence posture
-
-ZK-ARCHE deliberately keeps maturity states separate. Evidence for one state must not be used to imply another.
+ZK-ARCHE deliberately keeps maturity states separate:
 
 | State | Current posture |
 |---|---|
-| `IMPLEMENTED` | Material Rust/C protocol implementation exists for the current baseline, but the full roadmap is not implemented. |
-| `TESTED` | Strong automated Rust/C, deterministic-vector, negative-path, formal-model, and qualification coverage exists for implemented surfaces, and passed at the exact head recorded above. Coverage is only as current as the last recorded run: TD-005 tracks the absence of per-HEAD enforcement. Future roadmap surfaces remain incomplete. |
-| `INTEROPERABLE` | Rust/C interoperability evidence exists for shared implemented behavior; this does not cover every future profile, transport, lifecycle, or P2P requirement. |
-| `FORMALLY ANALYZED` | Scoped formal properties have retained evidence; TD-003 remains open because full property coverage and model-to-spec/code traceability are incomplete. |
-| `MEASURED` | Available software/environment evidence exists, but required physical STM32/ESP32-S3-class evidence remains incomplete under TD-002. |
+| `IMPLEMENTED` | Material Rust/C protocol implementation exists for the current baseline, including initial DATA audit-chain semantics; the full roadmap is not implemented. |
+| `TESTED` | Strong automated Rust/C, deterministic-vector, negative-path, formal-model, and qualification coverage exists for previously executed surfaces. Exact-current execution is not independently retained for this head. |
+| `INTEROPERABLE` | Rust/C interoperability evidence exists for shared implemented behavior; it does not yet cover every profile, transport, lifecycle, sovereignty, or P2P requirement. |
+| `FORMALLY ANALYZED` | Scoped formal properties have retained evidence; TD-003 remains open because complete property coverage and model→spec→code traceability are incomplete. |
+| `MEASURED` | Required physical STM32/ESP32-S3-class evidence remains incomplete under TD-002. |
 | `EXTERNALLY REVIEWED` | **Not complete.** TD-001 independent cryptographic review remains an external evidence blocker. |
 | `RFC-CLASS DOCUMENTED` | **Not complete.** TD-004 and the RFC-class evidence gate remain open. |
 | `COMMON-CONFORMANT` | **Not complete.** The complete constrained Common Contract and executable P2P qualification matrix remain unfinished. |
-| `DEPLOYMENT-QUALIFIED` | **Not claimed.** Protocol conformance is intentionally distinct from field/product readiness. |
+| `DEPLOYMENT-QUALIFIED` | **Not claimed.** Protocol conformance remains distinct from field/product readiness. |
 
 ## Principal blockers
 
-The main evidence ceilings remain:
-
 1. **TD-001 — independent cryptographic review**  
-   The custom role-membership proof can be prepared for review and regression-tested internally, but independent review cannot be self-declared complete.
+   Custom role-membership proof behavior still requires actual independent review and dispositioned findings.
 
 2. **TD-002 — constrained-target evidence**  
-   Reproducible STM32/ESP32-S3-class execution-context, wire, RAM, flash, CPU/latency, entropy/key-storage, restart/rollback, and related target evidence remains required. Unavailable physical measurements must not be invented.
+   Reproducible STM32/ESP32-S3-class execution-context, wire, RAM, flash, CPU/latency, entropy/key-storage, restart/rollback, revocation, and sovereignty evidence remains required. No physical evidence may be inferred from host-side tests.
 
 3. **TD-003 — formal traceability**  
-   Scoped formal analysis is advancing, including retained AUTH-v3/FM-06 evidence, but the canonical/synchronized model, property/attacker matrix, privacy/lifecycle coverage, and model→spec→code traceability are not yet complete.
+   Scoped formal analysis exists, but the canonical/synchronized model, property/attacker matrix, privacy/lifecycle coverage, compromise models, and complete model→spec→Rust/C→test traceability remain unfinished.
 
 4. **TD-004 — RFC-class normative specification**  
-   The normative grammar, complete state machines, registries, requirement language, Security/Privacy Considerations, annotated traces, conformance/change-control package, and independent-implementation evidence remain incomplete.
+   Normative grammar, complete state machines, registries/change control, requirement language, Security/Privacy Considerations, annotated traces, and independent-implementation conformance evidence remain incomplete.
 
-5. **TD-005 — exact-head qualification enforcement**<br>
-   `scripts/ci-all.sh` is sound, but nothing guarantees it ran for a given `dev` HEAD. The pre-commit gate does not compile either lane, the pre-push gate is per-clone local configuration whose source is tracked only on `main`, API/web commits bypass local hooks, and `dev` runs no hosted Actions. Until an unqualified HEAD is detectable, "exact-current `dev` health" is an assumption rather than retained evidence.
+5. **TD-005 — exact-head qualification enforcement**  
+   Repository-owned qualification exists, but `dev` intentionally has no hosted Actions and API/web updates bypass local hooks. A given `dev` HEAD must not be described as freshly qualified unless repository-owned validation actually ran for that head.
 
-6. **P2P Common Contract qualification**<br>
-   `p2p-iot-core` remains draft/non-selectable. The repository now owns a fail-closed cross-class qualification corpus, but executable constrained↔constrained and constrained↔higher-capability evidence, bounded stale-authorization semantics, target budgets, and no-infrastructure runtime evidence remain unfinished.
+6. **Data-sovereignty qualification**  
+   Policy-bound release decisions and the initial local audit chain now exist, but the full `DATA_COMMIT` / `RELEASE_REQUEST` / `RELEASE_PROOF` / `RELEASE_KEY` / `AUDIT_APPEND` lifecycle, recovery/rollback persistence, target footprint evidence, and transparency bridge remain incomplete.
 
-## Current execution priority
-
-Roadmap execution uses the repository's balanced lane rotation. Every run first establishes exact-current `dev` health using executable repository-owned validation available in the environment. Hosted GitHub Actions are intentionally absent from `dev` and are not a development qualification authority.
-
-Within the designated dependency-ready lane, preserve the bottom-up Common Contract and evidence rules: do not promote a draft profile, invent hardware/formal/external-review evidence, or weaken mandatory security to obtain a green result.
+7. **P2P Common Contract qualification**  
+   `p2p-iot-core` remains draft/non-selectable. Executable constrained↔constrained and constrained↔higher-capability evidence, bounded stale-authorization semantics, target budgets, and no-infrastructure runtime evidence remain unfinished.
 
 ## Bottom-up Common Contract
 
-The roadmap's interoperability north star is:
+The roadmap's interoperability north star remains:
 
 > **The least-capable supported conformant peer defines the resource envelope, not a weaker security model.**
 
 A high-capability peer must adapt to the constrained mandatory floor without lowering assurance. A constrained peer must locally verify the mandatory authentication decision. Core AUTH between already-authorized peers must not depend on a CA, cloud identity provider, central registry lookup, DNS, Internet connectivity, blockchain, manufacturer cloud, or gateway/controller approval.
 
-Trust is local and non-transitive by default. Delegation is explicit, bounded, revocable, and scoped. Normal AUTH is NO-LEARNING. Optional higher-end functionality may scale upward, but it must remain isolated from the mandatory constrained security floor.
+Trust is local and non-transitive by default. Delegation is explicit, bounded, revocable, and scoped. Normal AUTH is NO-LEARNING. Optional higher-end functionality may scale upward but must remain isolated from the mandatory constrained security floor.
 
 ## Updating this progress snapshot
 
 When roadmap progress is recalculated:
 
-1. Resolve exact current `dev` HEAD and establish development health using repository-owned validation executable in the available environment; unavailable lanes remain explicitly unavailable.
-2. Re-evaluate every canonical phase `zk201`–`zk241` against its declared exit criteria using the 0/25/50/75/100 rubric above.
+1. Resolve exact-current `dev` HEAD and establish development health using repository-owned validation executable in the available environment; unavailable lanes remain explicitly unavailable rather than RED.
+2. Re-evaluate every canonical phase `zk201`–`zk241` against its declared exit criteria using the 0/25/50/75/100 rubric.
 3. Reconcile phase scores with the RFC-class exit requirements in [`rfc-evolution-plan.md`](./rfc-evolution-plan.md).
-4. Update the overall arithmetic mean, grouped percentages, evidence-basis commit, blockers, and evidence posture in this README when those materially change.
-5. Record score decreases when newer evidence invalidates an older claim; do not preserve a percentage merely for monotonic appearance.
-6. If useful work occurs inside a phase without crossing a 25-point threshold, record that progress in the run report without inflating this completion score.
+4. Update the arithmetic mean, grouped percentages, evidence basis, blockers, and evidence posture only when materially changed.
+5. Record score decreases when newer evidence invalidates an older claim; do not preserve a percentage for monotonic appearance.
+6. Record useful within-phase work in run reports without inflating scores when a 25-point evidence threshold is not crossed.
 
 For normative requirements and detailed exit criteria, the roadmap documents remain authoritative over this dashboard.
