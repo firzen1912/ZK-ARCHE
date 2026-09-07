@@ -26,3 +26,10 @@ path = "fuzz_targets/auth_payloads.rs"
 test = false
 doc = false
 bench = false
+
+[[bin]]
+name = "data_audit_chain"
+path = "fuzz_targets/data_audit_chain.rs"
+test = false
+doc = false
+bench = false
