@@ -27,6 +27,9 @@ fi
   python3 "$ROOT/scripts/check-constrained-data-audit-storage.py" \
     "$ROOT/evidence/constrained-target/data-audit-storage-template.json"
   echo
+  echo "== fuzz target/corpus provenance =="
+  python3 "$ROOT/scripts/check-fuzz-provenance.py"
+  echo
   echo "== rust lane =="
   bash "$ROOT/scripts/ci-rust.sh"
   echo
