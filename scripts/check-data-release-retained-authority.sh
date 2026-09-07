@@ -21,10 +21,25 @@ echo "[data-release-retained-authority] Rust DATA release authorization"
   cargo test -p proto data_release_authorization::tests::canonical_v4_corpus_matches_classifier -- --exact
 )
 
-echo "[data-release-retained-authority] C association admission + DATA release authorization"
-make -C c build/tests/test_association_admission build/tests/test_data_release_authorization
+# Qualify the temporal composition, not only the two classifiers in isolation:
+# establish a retained association, permit one protected release, invalidate an
+# authoritative lifecycle fact, require association FAIL_CLOSED, then require
+# the next DATA decision to remain non-RELEASE.  Both implementations own this
+# executable sequence so a retained channel cannot outlive current authority.
+echo "[data-release-retained-authority] Rust retained-association temporal lifecycle"
+(
+  cd rust
+  cargo test -p proto --test data_release_retained_association_temporal
+)
+
+echo "[data-release-retained-authority] C association admission + DATA release authorization + retained temporal lifecycle"
+make -C c \
+  build/tests/test_association_admission \
+  build/tests/test_data_release_authorization \
+  build/tests/test_data_release_retained_association_temporal
 ./c/build/tests/test_association_admission
 ./c/build/tests/test_data_release_authorization
+./c/build/tests/test_data_release_retained_association_temporal
 
 # Guard the cross-layer fail-closed facts that DATA release depends on. The
 # association corpus owns restart/replay/usage continuity; the DATA-release
@@ -70,4 +85,4 @@ do
   }
 done
 
-echo "data-release retained-authority qualification: pass"
+echo "data-release retained-authority qualification: pass temporal_lifecycle=pass"
