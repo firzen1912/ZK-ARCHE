@@ -23,6 +23,7 @@
 //! | `replay_continuity`       | Draft fail-closed replay restart state           |
 //! | `resumption_authorization` | Wire-neutral authorization-aware resumption classifier |
 //! | `data_release_authorization` | Wire-neutral policy-bound DATA release classifier |
+//! | `data_audit_chain`        | Bounded local DATA release audit hash chain      |
 //! | `lineage_replace`         | Wire-neutral lifecycle replacement decisions     |
 //! | `lineage_replace_auth_context` | Concrete `iot-core` lifecycle authorization binding |
 //! | `lineage_replace_session_binding` | AUTH-v3 lifecycle session/context binding       |
@@ -65,6 +66,7 @@ pub mod auth_v3_context_parser;
 pub mod auth_v3_iot_core_authz;
 pub mod caps;
 pub mod crypto;
+pub mod data_audit_chain;
 pub mod data_release_authorization;
 pub mod enrollment_grant;
 pub mod error;
