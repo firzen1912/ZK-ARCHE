@@ -18,6 +18,15 @@ cc -std=c11 -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Werror \
 
 python3 "$ROOT/scripts/check-p2p-common-contract-mutations.py"
 
+# The Common Contract is a composition boundary, not an isolated admission
+# predicate. Require the repository-wide lifecycle invariant audit in the same
+# lane so bounded delegation cannot repair stale authorization/revocation/
+# lineage state, infrastructure availability cannot become authority, and the
+# P2P decision remains aligned with enrollment, resumption, transport, and DATA
+# release lifecycle semantics.
+echo "[p2p-common-contract] cross-module lifecycle invariant qualification"
+python3 "$ROOT/scripts/check-cross-module-lifecycle-invariants.py"
+
 if ! command -v cargo >/dev/null 2>&1; then
   echo "p2p-common-contract-cross-language: UNAVAILABLE: cargo not found" >&2
   exit 2
@@ -47,4 +56,4 @@ python3 "$ROOT/scripts/check-revocation-view-reconciliation.py"
 echo "[p2p-common-contract] protected DATA retained-authority qualification"
 "$ROOT/scripts/check-data-release-retained-authority.sh"
 
-echo "p2p-common-contract-cross-language: PASS corpus=common-contract-lifecycle-v4 mutations=pass retained_authority_loss=pass revocation_reconciliation=pass protected_data_release=pass C=pass Rust=pass"
+echo "p2p-common-contract-cross-language: PASS corpus=common-contract-lifecycle-v4 mutations=pass cross_module_lifecycle=pass retained_authority_loss=pass revocation_reconciliation=pass protected_data_release=pass C=pass Rust=pass"
