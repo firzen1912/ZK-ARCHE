@@ -54,13 +54,34 @@ A DIFF view may be incorporated only when:
 
 If a DIFF skips the current base epoch, the receiver MUST NOT guess missing updates or apply the DIFF speculatively. It must request or obtain a FULL view or an authenticated chain of updates sufficient to close the gap.
 
-## 5. Fail-closed result classes
+## 5. Bounded-resource admission
 
-An implementation claiming this contract MUST distinguish at least these ingestion outcomes:
+Revocation ingestion is part of the constrained Common Contract and therefore MUST have an explicit local resource envelope before an update is admitted for authoritative processing.
+
+Every selectable profile that supports revocation ingestion MUST define at least:
+
+```text
+max_entries_per_view
+max_update_payload_bytes   (once a concrete wire encoding exists)
+max_reconciliation_scratch_bytes
+```
+
+Until a concrete revocation-view wire encoding exists, `max_update_payload_bytes` is an implementation/evidence bound rather than a wire-format constant. Implementations MUST NOT infer a protocol-wide byte limit from this document.
+
+An implementation MUST reject an update before incorporation when any applicable local bound would be exceeded. A higher-capability sender, commissioner, cache, gateway, transport, or negotiated optional feature MUST NOT cause a constrained verifier to allocate beyond its selected profile bound. High-end peers adapt downward; the resource envelope does not authorize weaker revocation semantics.
+
+Exceeding a resource bound MUST NOT partially apply a FULL or DIFF, truncate entries, discard unknown suffix data and continue, split one authoritative update into unauthenticated sub-updates, or silently reinterpret an oversized FULL as a partial snapshot.
+
+A resource-limit rejection MUST leave the previously accepted authority-scoped state unchanged. Resource exhaustion, allocator failure, or storage-capacity failure during staging MUST be treated equivalently to an admission failure unless the implementation has already atomically committed a complete authenticated state according to Section 8.
+
+## 6. Fail-closed result classes and deterministic precedence
+
+An implementation claiming this contract MUST distinguish at least these local ingestion outcomes:
 
 ```text
 INCORPORATE
 IDEMPOTENT
+REJECT_RESOURCE_LIMIT
 REJECT_UNSUPPORTED_VERSION
 REJECT_UNAUTHENTICATED
 REJECT_WRONG_AUTHORITY
@@ -75,27 +96,58 @@ REJECT_MALFORMED
 REJECT_ROLLBACK_SUSPECTED
 ```
 
+For deterministic Rust/C qualification, overlapping faults MUST be classified in this precedence order:
+
+1. `REJECT_RESOURCE_LIMIT` when the object cannot be processed within the selected profile's pre-authoritative resource envelope;
+2. `REJECT_UNSUPPORTED_VERSION` for a recognized framing/container carrying an unsupported revocation-view version;
+3. `REJECT_MALFORMED` for structurally invalid data under a supported version;
+4. `REJECT_UNAUTHENTICATED` when integrity/authenticity evidence is absent or invalid;
+5. `REJECT_WRONG_AUTHORITY`, then `REJECT_WRONG_SCOPE`, then `REJECT_WRONG_DEPLOYMENT`, then `REJECT_PROFILE_MISMATCH`;
+6. `REJECT_ROLLBACK_SUSPECTED`, then `REJECT_TIME_POLICY`;
+7. `REJECT_ROLLBACK_OR_OLD_EPOCH`, `REJECT_BASE_EPOCH_MISMATCH`, or `REJECT_SAME_EPOCH_CONFLICT` according to the authoritative epoch/reconciliation fault;
+8. `IDEMPOTENT` only for an already-incorporated authenticated identical object;
+9. `INCORPORATE` only when every required admission condition succeeds.
+
+This precedence defines local conformance decisions, not a requirement to reveal detailed rejection reasons to an unauthenticated sender. A transport or wire-error mapping MAY intentionally collapse multiple local rejection classes to reduce oracle surface, but it MUST NOT alter the underlying admission result or permit a rejected update to mutate state.
+
 A reject result MUST leave the previously accepted authority-scoped revocation view unchanged. Parsing success, network success, retry, resumption, cached authorization, or commissioner reachability MUST NOT turn a reject into incorporation.
 
-## 6. Atomicity and persistence boundary
+## 7. Non-downgradable reconciliation semantics
+
+Resource pressure, stale connectivity, peer asymmetry, or missing infrastructure MUST NOT weaken FULL/DIFF reconciliation rules.
+
+In particular:
+
+- a DIFF whose `base_epoch` does not exactly equal the incorporated epoch MUST be rejected rather than rebased locally;
+- an older FULL MUST NOT replace a newer accepted view;
+- a same-epoch conflicting authenticated object MUST be rejected rather than resolved by arrival order;
+- an unauthenticated update MUST NOT be cached as authoritative pending later validation;
+- an oversized update MUST NOT be treated as a partial authoritative view;
+- absence of a CA, cloud, DNS, gateway, or central registry MUST NOT change the local accept/reject semantics when sufficient local authority state exists.
+
+These requirements preserve identical security semantics across constrained and higher-capability peers. A constrained peer may support a smaller bounded view, but not a weaker interpretation of epochs, authority, authenticity, or revocation actions under the same profile.
+
+## 8. Atomicity and persistence boundary
 
 An accepted update MUST become visible to authorization decisions atomically with its new incorporated epoch. Implementations MUST NOT expose the new epoch while retaining only part of its revocation set, nor expose new entries while reporting the previous epoch.
 
 Crash/restart behavior must preserve either the complete prior accepted view or the complete newly accepted view. Partial-write recovery, anti-rollback storage, and target-specific durability are implementation/evidence requirements and are not claimed complete by this specification.
 
-## 7. Dependent-state invalidation
+Staging an update for authentication/reconciliation MUST NOT make it authoritative. Any temporary representation used before commit MUST be discarded or recoverably marked non-authoritative after a rejection or interrupted staging operation.
+
+## 9. Dependent-state invalidation
 
 After incorporation, any newly revoked holder, stale lineage, or advanced authority epoch MUST be propagated to the existing lifecycle authorities before affected protected operations are authorized again. At minimum, affected authorization caches, retained associations, resumption state, delegation, and DATA-release authority must be re-evaluated under the current lifecycle contracts.
 
 Revocation ingestion MUST NOT create a second authorization-generation, replay, session, or DATA authority. It updates the authoritative revocation view; owning modules consume that result through their existing fail-closed lifecycle decisions.
 
-## 8. Offline and infrastructure-independent operation
+## 10. Offline and infrastructure-independent operation
 
 A conformant peer MAY ingest authenticated revocation state from any transport or synchronization mechanism. No particular CA, cloud service, DNS service, gateway, blockchain, registry server, or Internet connection is mandatory.
 
 Two already-authorized peers may continue mandatory-core authentication without external infrastructure when their local state is sufficient. Authorization remains subject to the profile freshness bound in `revocation-convergence-and-stale-authorization.md`; inability to obtain a sufficiently fresh view never makes stale authority current.
 
-## 9. Qualification requirements
+## 11. Qualification requirements
 
 Future Rust/C qualification for this contract MUST use a shared deterministic corpus covering at least:
 
@@ -113,12 +165,18 @@ Future Rust/C qualification for this contract MUST use a shared deterministic co
 - malformed entry;
 - rollback suspicion;
 - failed ingestion leaves previous state unchanged;
-- newly incorporated revocation forces dependent-state re-evaluation.
+- newly incorporated revocation forces dependent-state re-evaluation;
+- entry-count or applicable byte/scratch bound exceeded;
+- overlapping-fault cases that prove the Section 6 precedence order;
+- oversized FULL/DIFF rejection leaves the previous view unchanged;
+- constrained and higher-capability peers produce the same semantic decision when both operate under the same selected profile bounds.
 
 Where both Rust and C claim support, they MUST produce the same admission decision and resulting normalized authority-scoped state for the corpus. Restart/partial-write qualification requires persistent-state tests rather than decision-only vectors.
 
-## 10. Evidence boundary
+The deterministic reconciliation corpus at `rust/test-vectors/state/revocation-reconciliation-v1.txt` and its repository-owned checker are qualification scaffolding for epoch/authority/reconciliation behavior. They do not by themselves establish Rust/C ingestion parity, physical constrained-target behavior, or wire-format interoperability.
 
-This file closes specification ambiguity around authenticated ingestion but does not itself establish IMPLEMENTED, TESTED, INTEROPERABLE, FORMALLY ANALYZED, MEASURED, EXTERNALLY REVIEWED, COMMON-CONFORMANT, or DEPLOYMENT-QUALIFIED status.
+## 12. Evidence boundary
+
+This file closes specification ambiguity around authenticated ingestion, bounded-resource admission, deterministic rejection precedence, and non-downgradable reconciliation semantics. It does not itself establish IMPLEMENTED, TESTED, INTEROPERABLE, FORMALLY ANALYZED, MEASURED, EXTERNALLY REVIEWED, COMMON-CONFORMANT, or DEPLOYMENT-QUALIFIED status.
 
 zk214 remains open until shared Rust/C ingestion/reconciliation behavior, persistent restart/rollback evidence, disconnected-peer convergence tests, dependent-state invalidation evidence, and the other declared roadmap exits exist. The representation namespace and change-control rules remain owned by `revocation-view-representation.md`; this contract MUST NOT silently renumber or redefine them.
