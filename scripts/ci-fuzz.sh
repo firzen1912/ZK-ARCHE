@@ -13,7 +13,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-TARGETS=("wire_parse" "auth_payloads")
+TARGETS=("wire_parse" "auth_payloads" "data_audit_chain")
 MAX_TOTAL_TIME="${ZK_ARCHE_FUZZ_SECONDS:-60}"
 EVIDENCE="${ZK_ARCHE_FUZZ_EVIDENCE_DIR:-$ROOT/evidence/fuzz}"
 
