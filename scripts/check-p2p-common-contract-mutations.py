@@ -45,6 +45,11 @@ FAIL_CLOSED_MUTATIONS = {
     "trust_mutation_requested": True,
 }
 
+CROSS_CLASS_DIRECTIONS = {
+    ("mcu-core", "linux-edge"),
+    ("linux-edge", "mcu-core"),
+}
+
 
 def parse_bool(value: str) -> bool:
     if value == "true":
@@ -107,9 +112,27 @@ def main() -> int:
     positive = [row for row in rows if row["expected"] == "ESTABLISH"]
     assert positive, "canonical corpus has no establishment baseline"
 
+    # Symmetric assurance requires executable mutation baselines in both
+    # constrained<->higher-capability directions. A one-way positive corpus
+    # could otherwise keep the aggregate mutation count green while silently
+    # dropping reverse-role Common Contract qualification.
+    positive_directions = {
+        (str(row["peer_a"]), str(row["peer_b"]))
+        for row in positive
+        if row["peer_a"] != row["peer_b"]
+    }
+    assert CROSS_CLASS_DIRECTIONS <= positive_directions, (
+        "missing positive cross-class direction(s): "
+        f"{sorted(CROSS_CLASS_DIRECTIONS - positive_directions)}"
+    )
+
     mutation_count = 0
     dimensions: set[str] = set()
+    direction_dimensions: dict[tuple[str, str], set[str]] = {
+        direction: set() for direction in CROSS_CLASS_DIRECTIONS
+    }
     for base in positive:
+        direction = (str(base["peer_a"]), str(base["peer_b"]))
         for field, value in FAIL_CLOSED_MUTATIONS.items():
             mutated = dict(base)
             mutated[field] = value
@@ -118,6 +141,8 @@ def main() -> int:
             )
             mutation_count += 1
             dimensions.add(field)
+            if direction in direction_dimensions:
+                direction_dimensions[direction].add(field)
 
         if base["binding_required"]:
             mutated = dict(base)
@@ -127,6 +152,8 @@ def main() -> int:
             )
             mutation_count += 1
             dimensions.add("binding_valid_when_required")
+            if direction in direction_dimensions:
+                direction_dimensions[direction].add("binding_valid_when_required")
 
         infrastructure_flip = dict(base)
         infrastructure_flip["infrastructure_available"] = not bool(base["infrastructure_available"])
@@ -135,17 +162,24 @@ def main() -> int:
         )
         mutation_count += 1
         dimensions.add("infrastructure_non_authority")
+        if direction in direction_dimensions:
+            direction_dimensions[direction].add("infrastructure_non_authority")
 
     expected_dimensions = set(FAIL_CLOSED_MUTATIONS) | {
         "binding_valid_when_required",
         "infrastructure_non_authority",
     }
     assert dimensions == expected_dimensions, f"mutation dimension drift: {sorted(dimensions)}"
+    for direction, covered in direction_dimensions.items():
+        assert covered == expected_dimensions, (
+            f"cross-class direction {direction[0]}->{direction[1]} missing mutation dimensions: "
+            f"{sorted(expected_dimensions - covered)}"
+        )
     assert mutation_count >= 92, f"insufficient mutation breadth: {mutation_count}"
     print(
         "p2p-common-contract-mutations: PASS "
         f"canonical={len(rows)} positive={len(positive)} mutations={mutation_count} "
-        f"dimensions={len(dimensions)}"
+        f"dimensions={len(dimensions)} cross_class_directions={len(direction_dimensions)}"
     )
     return 0
 
