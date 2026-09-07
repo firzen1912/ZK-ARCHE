@@ -75,7 +75,7 @@ A repository issue, benchmark screenshot, blog post, or single implementation be
 
 Future daily reports follow [`daily/README.md`](daily/README.md). Each material finding should record:
 
-1. stable per-report ID and novelty class (`new`, `corroborates`, `refines`, `contradicts`, `supersedes`);
+1. stable per-report finding ID and novelty class (`new`, `corroborates`, `refines`, `contradicts`, `supersedes`);
 2. source, publication/release date, source type, and primary link;
 3. verified source-supported claim;
 4. exact existing owner when one exists (`R-*`, `TD-*`, phase/spec section, or `none`);
@@ -173,6 +173,7 @@ The historical 2026-08-15 through 2026-08-25 reports remain valid provenance. Fu
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-09-07 | [Daily research](daily/2026-09-07.md) | DATA audit claim boundary: local hash-chain integrity vs durable rollback resistance/external consistency; privacy-minimized audit/transparency evidence | reproduce / investigate; explicit review required |
 | 2026-09-06 | [Daily research](daily/2026-09-06.md) | association-scoped resumption privacy epochs, authorization/channel-authority non-substitution and observable-failure separation, optional attested-key PoP binding | reproduce / research-only; explicit review required |
 | 2026-09-05 | [Daily research](daily/2026-09-05.md) | AEAD key-usage continuity semantics: directional q/v budgets and message-length bound, conservative monotonic sender-use estimation, exact-attempt ENROLL authorization binding | reproduce / benchmark; explicit review required |
 | 2026-09-04 | [Daily research](daily/2026-09-04.md) | IESG-approved TLS/DTLS IoT profile: constrained resource ceilings, resumption/0-RTT separation, application/service-context binding, target hardware evidence boundary | benchmark / reproduce / investigate; explicit review required |
