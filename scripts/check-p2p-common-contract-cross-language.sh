@@ -31,6 +31,14 @@ fi
     --exact retained_cross_class_authority_fails_closed_after_lifecycle_loss
 )
 
+# Offline Common Contract establishment depends on a locally incorporated,
+# authority-scoped revocation view. Require the deterministic FULL/DIFF
+# reconciliation oracle in the same qualification lane so stale, gapped,
+# conflicting, rollback, authority-substituted, or unauthenticated updates
+# cannot drift independently from cross-class P2P qualification.
+echo "[p2p-common-contract] revocation-view reconciliation qualification"
+python3 "$ROOT/scripts/check-revocation-view-reconciliation.py"
+
 # A Common Contract association is not sufficient authority for indefinite
 # protected application use. Qualify the DATA release boundary in the same
 # repository-owned lane so cross-class/offline establishment cannot be called
@@ -39,4 +47,4 @@ fi
 echo "[p2p-common-contract] protected DATA retained-authority qualification"
 "$ROOT/scripts/check-data-release-retained-authority.sh"
 
-echo "p2p-common-contract-cross-language: PASS corpus=common-contract-lifecycle-v4 mutations=pass retained_authority_loss=pass protected_data_release=pass C=pass Rust=pass"
+echo "p2p-common-contract-cross-language: PASS corpus=common-contract-lifecycle-v4 mutations=pass retained_authority_loss=pass revocation_reconciliation=pass protected_data_release=pass C=pass Rust=pass"
