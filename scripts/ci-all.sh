@@ -30,6 +30,9 @@ fi
   echo "== fuzz target/corpus provenance =="
   python3 "$ROOT/scripts/check-fuzz-provenance.py"
   echo
+  echo "== AUTH trust-mutation boundary =="
+  python3 "$ROOT/scripts/check-auth-trust-boundary.py"
+  echo
   echo "== rust lane =="
   bash "$ROOT/scripts/ci-rust.sh"
   echo
