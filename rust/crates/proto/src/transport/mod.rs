@@ -80,6 +80,7 @@ pub trait ClientTransport {
 
 pub mod binding;
 pub mod continuation;
+pub mod tls_exporter_context;
 
 #[cfg(feature = "udp-transport")]
 pub mod udp;
