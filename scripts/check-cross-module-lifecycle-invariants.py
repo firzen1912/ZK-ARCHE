@@ -30,6 +30,32 @@ def load_p2p() -> dict[str, dict[str, str]]:
     return {row["case_id"]: row for row in csv.DictReader(lines, delimiter="|")}
 
 
+def load_revocation_reconciliation() -> dict[str, dict[str, str]]:
+    path = ROOT / "rust/test-vectors/state/revocation-reconciliation-v1.txt"
+    lines = [
+        line
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line and not line.startswith("#")
+    ]
+    fields = (
+        "case_id",
+        "local_authority",
+        "local_epoch",
+        "update_authority",
+        "update_epoch",
+        "update_kind",
+        "base_epoch",
+        "authenticated",
+        "same_object",
+        "expected",
+        "result_epoch",
+    )
+    return {
+        row["case_id"]: row
+        for row in csv.DictReader(lines, fieldnames=fields, delimiter="|")
+    }
+
+
 def main() -> int:
     association = decision_rows("rust/test-vectors/state/association-admission-v4.txt")
     require_decision(association, "ASC4-001", "ESTABLISH", "CURRENT")
@@ -102,6 +128,29 @@ def main() -> int:
     require_decision(delegation, "DEL3-016", "DENY", "LINEAGE_STALE")
     require_decision(delegation, "DEL3-020", "DENY", "ROLLBACK_SUSPECTED")
 
+    revocation = load_revocation_reconciliation()
+    for case in ("bootstrap-full", "full-advance", "diff-next"):
+        row = revocation[case]
+        assert row["authenticated"] == "1", f"{case}: incorporated update must be authenticated"
+        assert row["expected"] == "APPLY", f"{case}: expected authoritative incorporation"
+        assert int(row["result_epoch"]) > int(row["local_epoch"]), f"{case}: epoch must advance"
+
+    for case in ("unauthenticated-full", "unauthenticated-diff"):
+        row = revocation[case]
+        assert row["expected"] == "REJECT_UNAUTHENTICATED", case
+        assert row["result_epoch"] == row["local_epoch"], f"{case}: rejection must preserve epoch"
+
+    # A newly incorporated revocation epoch must not be a bookkeeping-only event:
+    # every retained-authority surface must already have a fail-closed path for
+    # stale/revoked lifecycle state before it can authorize protected work again.
+    require_decision(association, "ASC4-008", "FAIL_CLOSED", "REVOCATION_STALE")
+    require_decision(enrollment, "ENR3-016", "DENY", "REVOCATION_STALE")
+    require_decision(resumption, "revocation-stale", "REJECT", "REVOCATION_STALE")
+    require_decision(resumption, "revoked", "REJECT", "REVOKED")
+    require_decision(data, "revocation-stale", "DENY", "REVOCATION_STALE")
+    require_decision(data, "revoked", "DENY", "REVOKED")
+    require_decision(delegation, "DEL3-014", "DENY", "REVOCATION_STALE")
+
     p2p = load_p2p()
     assert p2p["XC4-001"]["expected"] == "ESTABLISH"
     for case in ("XC4-008", "XC4-009", "XC4-010", "XC4-011", "XC4-012", "XC4-013", "XC4-017", "XC4-021"):
@@ -122,8 +171,9 @@ def main() -> int:
     assert online["infrastructure_available"] == "true"
     assert offline["expected"] == online["expected"] == "ESTABLISH"
 
-    print("cross-module-lifecycle-invariants: PASS surfaces=7 authz_generation=12 revocation=6 lineage=6 replay_restart=7 usage_counter=6 privacy_resumption=8 transport_non_authority=2 infrastructure_non_authority=1 delegation_non_repair=7")
+    print("cross-module-lifecycle-invariants: PASS surfaces=8 authz_generation=12 revocation=13 revocation_ingestion=5 lineage=6 replay_restart=7 usage_counter=6 privacy_resumption=8 transport_non_authority=2 infrastructure_non_authority=1 delegation_non_repair=7")
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())
