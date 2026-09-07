@@ -291,6 +291,6 @@ mod tests {
             );
             count += 1;
         }
-        assert_eq!(count, 21);
+        assert_eq!(count, 28);
     }
 }

@@ -48,11 +48,13 @@ A conformant implementation applies the following fail-closed order:
 14. bounded delegation depth;
 15. otherwise `ISSUE`.
 
+When multiple facts are unsafe simultaneously, the earliest applicable condition in this order is authoritative. A later recoverable or narrower failure MUST NOT mask rollback suspicion, normal-AUTH misuse, missing commissioner authority/provenance, revocation, replay, authority escalation, or stale lifecycle state.
+
 ## Conformance evidence
 
 `rust/test-vectors/state/enrollment-grant-v4.txt` is the current canonical decision corpus. Rust and C implementations claiming the current contract MUST reproduce its `ISSUE`/`DENY` result and reason precedence. Versions 1 through 3 remain historical evidence for earlier decision surfaces.
 
-The v4 corpus adds dedicated negative evidence for missing commissioner authorization-generation provenance while retaining v3's stale-generation case and the prior stale-authorization, replay, normal-AUTH, commissioner, possession, scope, epoch, revocation, lineage, delegation-depth, and rollback cases.
+The v4 corpus contains dedicated negative evidence for missing commissioner authorization-generation provenance and stale generations, and now includes compound-fault precedence cases spanning rollback versus normal AUTH, commissioner authentication versus stale authority, generation provenance versus stale generation, revocation versus replay, authority escalation versus delegation depth, and epoch/revocation/lineage ordering. It retains the prior stale-authorization, replay, normal-AUTH, commissioner, possession, scope, epoch, revocation, lineage, delegation-depth, and rollback cases.
 
 ## Evidence boundary
 

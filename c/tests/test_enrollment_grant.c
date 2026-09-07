@@ -78,13 +78,13 @@ int main(void) {
 
     fclose(fp);
     assert(saw_version == 1);
-    assert(cases == 21u);
+    assert(cases == 28u);
 
     {
         zk_enrollment_grant_decision_t got = zk_enrollment_grant_classify(NULL);
         assert(got.action == ZK_ENROLLMENT_GRANT_DENY);
     }
 
-    puts("enrollment grant corpus v4: ok cases=21");
+    puts("enrollment grant corpus v4: ok cases=28");
     return EXIT_SUCCESS;
 }
