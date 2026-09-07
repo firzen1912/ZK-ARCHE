@@ -1,0 +1,35 @@
+{
+  "schema": "ZKARCHE-CONSTRAINED-DATA-AUDIT-STORAGE/1",
+  "evidence_status": "unmeasured",
+  "physical_target_executed": false,
+  "audit_append_test_executed": false,
+  "audit_restart_test_executed": false,
+  "audit_rollback_test_executed": false,
+  "audit_power_loss_test_executed": false,
+  "target": {
+    "family": "",
+    "board": ""
+  },
+  "implementation": {
+    "commit_sha": "",
+    "lane": ""
+  },
+  "storage": {
+    "backend": "",
+    "persistence_medium": "",
+    "audit_record_format": "",
+    "audit_atomicity": "",
+    "audit_restart_policy": "",
+    "audit_rollback_anchor": "",
+    "audit_rollback_policy": "",
+    "audit_power_loss_model": ""
+  },
+  "observations": {
+    "audit_state_bytes": null,
+    "audit_append_scratch_bytes": null,
+    "audit_bytes_written_per_append": null,
+    "audit_append_latency_us": null,
+    "audit_restart_recovery_us": null
+  },
+  "notes": "Template only. No physical DATA audit-chain persistence, power-loss recovery, rollback resistance, write cost, memory cost, or latency evidence is claimed."
+}

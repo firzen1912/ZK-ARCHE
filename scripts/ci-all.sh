@@ -23,6 +23,10 @@ fi
   python3 "$ROOT/scripts/check-constrained-target-manifest.py" \
     "$ROOT/evidence/constrained-target/manifest-template.json"
   echo
+  echo "== constrained DATA audit-chain storage evidence contract =="
+  python3 "$ROOT/scripts/check-constrained-data-audit-storage.py" \
+    "$ROOT/evidence/constrained-target/data-audit-storage-template.json"
+  echo
   echo "== rust lane =="
   bash "$ROOT/scripts/ci-rust.sh"
   echo
