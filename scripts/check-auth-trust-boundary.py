@@ -16,6 +16,30 @@ REQUIRED_CASES = {
     "setup3_accept": ("setup", "explicit_mutation", "registry_persist"),
 }
 
+RUST_PERSISTENT_TRUST_MUTATION_MARKERS = (
+    "&mut state.registry",
+    "state.registry.insert(",
+    "state.registry.remove(",
+    "state.registry.clear(",
+    "state.registry.extend(",
+    "state.registry.push(",
+    "state.registry.retain(",
+    "state.registry.save(",
+    "state.registry.persist(",
+)
+
+C_PERSISTENT_TRUST_MUTATION_MARKERS = (
+    "auth_registry_put(",
+    "auth_registry_save(",
+    "auth_registry_delete(",
+    "auth_registry_remove(",
+    "auth_registry_clear(",
+    "auth_registry_reset(",
+    "auth_registry_replace(",
+    "auth_registry_upsert(",
+    "auth_registry_insert(",
+)
+
 
 def fail(msg: str) -> None:
     print(f"auth-trust-boundary: FAIL: {msg}", file=sys.stderr)
@@ -55,6 +79,12 @@ def parse_corpus(text: str):
     return cases
 
 
+def reject_markers(owner: str, block: str, markers) -> None:
+    for marker in markers:
+        if marker in block:
+            fail(f"{owner}: persistent trust mutation marker {marker!r} appeared in normal AUTH")
+
+
 def main() -> None:
     corpus = parse_corpus(read(CORPUS))
     if set(corpus) != set(REQUIRED_CASES):
@@ -74,8 +104,8 @@ def main() -> None:
 
     if "&state.registry" not in rust_auth1:
         fail("rust AUTH_1: expected immutable registry lookup owner")
-    if "&mut state.registry" in rust_auth1 or "&mut state.registry" in rust_auth3:
-        fail("rust AUTH: persistent registry became mutable in normal AUTH")
+    reject_markers("rust AUTH_1", rust_auth1, RUST_PERSISTENT_TRUST_MUTATION_MARKERS)
+    reject_markers("rust AUTH_3", rust_auth3, RUST_PERSISTENT_TRUST_MUTATION_MARKERS)
     if "handle_auth_3(" not in rust_auth3:
         fail("rust AUTH_3: terminal handler marker missing")
     if "handle_setup_3(" not in rust_setup3 or "&mut state.registry" not in rust_setup3:
@@ -87,9 +117,7 @@ def main() -> None:
     c_scan = between(c, "static int try_handle_auth1(", "/* ---- Dispatch one incoming packet ---- */", "c AUTH_1 scan")
 
     for owner, block in (("c AUTH_1", c_auth1), ("c AUTH_3", c_auth3), ("c AUTH_1 scan", c_scan)):
-        for marker in ("auth_registry_put(", "auth_registry_save("):
-            if marker in block:
-                fail(f"{owner}: trust mutation marker {marker!r} appeared in normal AUTH")
+        reject_markers(owner, block, C_PERSISTENT_TRUST_MUTATION_MARKERS)
     if "try_handle_auth1(" not in c_auth1 or "auth_server_handle_auth1_guarded(" not in c_scan:
         fail("c AUTH_1: guarded read-only candidate-scan path drifted")
     if "auth_server_handle_auth3(" not in c_auth3:
