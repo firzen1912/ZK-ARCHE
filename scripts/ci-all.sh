@@ -37,6 +37,9 @@ fi
   echo "== AUTH trust-mutation boundary =="
   python3 "$ROOT/scripts/check-auth-trust-boundary.py"
   echo
+  echo "== AUTH terminal-flight contract =="
+  python3 "$ROOT/scripts/check-auth-terminal-flight-contract.py"
+  echo
   echo "== rust lane =="
   bash "$ROOT/scripts/ci-rust.sh"
   echo
