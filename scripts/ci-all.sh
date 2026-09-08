@@ -55,6 +55,9 @@ fi
   echo "== cross-module lifecycle invariant audit =="
   python3 "$ROOT/scripts/check-cross-module-lifecycle-invariants.py"
   echo
+  echo "== lineage replacement dependent-state lifecycle audit =="
+  python3 "$ROOT/scripts/check-lineage-replace-lifecycle-invariants.py"
+  echo
   echo "== P2P Common Contract cross-language qualification =="
   bash "$ROOT/scripts/check-p2p-common-contract-cross-language.sh"
 } 2>&1 | tee "$LOG"
