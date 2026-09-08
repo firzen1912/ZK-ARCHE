@@ -19,6 +19,12 @@ SCALAR_MEASUREMENTS = (
 RANGE_MEASUREMENTS = ("latency_us", "cpu_cycles")
 RANGE_KEYS = ("min", "median", "p95", "max")
 WIRE_KEYS = ("request", "response", "total")
+QUALIFICATION_FLAGS = (
+    "restart_test_executed",
+    "rollback_test_executed",
+    "replay_rejection_test_executed",
+    "rng_health_or_failure_test_executed",
+)
 NONEMPTY_PATHS = (
     ("target", "family"),
     ("target", "board"),
@@ -93,6 +99,36 @@ def require_null_measurements(measurements: dict[str, Any]) -> None:
             fail(f"unmeasured manifest must keep all measurements.{key} values null")
 
 
+def validate_unmeasured(doc: dict[str, Any], measurements: dict[str, Any]) -> None:
+    if doc.get("physical_target_executed") is not False:
+        fail("unmeasured manifest must set physical_target_executed=false")
+    require_null_measurements(measurements)
+
+    method = section(doc, "measurement_method")
+    for key in ("warmup_iterations", "sample_count"):
+        value = method.get(key)
+        if value != 0 or isinstance(value, bool):
+            fail(f"unmeasured manifest must keep measurement_method.{key}=0")
+    if method.get("cold_boot_each_sample") is not False:
+        fail("unmeasured manifest must keep measurement_method.cold_boot_each_sample=false")
+
+    qualification = section(doc, "qualification")
+    for key in QUALIFICATION_FLAGS:
+        if qualification.get(key) is not False:
+            fail(f"unmeasured manifest must keep qualification.{key}=false")
+    if qualification.get("result") != "UNMEASURED":
+        fail("unmeasured qualification.result must be UNMEASURED")
+
+    provenance = section(doc, "provenance")
+    if provenance.get("measured_at_utc") not in {"", None}:
+        fail("unmeasured manifest must not claim provenance.measured_at_utc")
+    refs = provenance.get("raw_evidence_refs")
+    if refs != []:
+        fail("unmeasured manifest must keep provenance.raw_evidence_refs empty")
+
+    print("constrained-target-manifest: PASS status=unmeasured measurements=0 qualification=0 provenance=0")
+
+
 def validate_measured(doc: dict[str, Any], measurements: dict[str, Any]) -> None:
     if doc.get("physical_target_executed") is not True:
         fail("measured manifest requires physical_target_executed=true")
@@ -146,12 +182,7 @@ def validate_measured(doc: dict[str, Any], measurements: dict[str, Any]) -> None
         fail("measurements.latency_us.median must be greater than zero")
 
     qualification = section(doc, "qualification")
-    for key in (
-        "restart_test_executed",
-        "rollback_test_executed",
-        "replay_rejection_test_executed",
-        "rng_health_or_failure_test_executed",
-    ):
+    for key in QUALIFICATION_FLAGS:
         if not isinstance(qualification.get(key), bool):
             fail(f"qualification.{key} must be boolean")
     if qualification.get("result") not in {"PASS", "FAIL"}:
@@ -186,13 +217,7 @@ def main() -> None:
     measurements = section(doc, "measurements")
     status = doc.get("evidence_status")
     if status == "unmeasured":
-        if doc.get("physical_target_executed") is not False:
-            fail("unmeasured manifest must set physical_target_executed=false")
-        require_null_measurements(measurements)
-        qualification = section(doc, "qualification")
-        if qualification.get("result") != "UNMEASURED":
-            fail("unmeasured qualification.result must be UNMEASURED")
-        print("constrained-target-manifest: PASS status=unmeasured measurements=0")
+        validate_unmeasured(doc, measurements)
         return
     if status != "measured":
         fail("evidence_status must be 'unmeasured' or 'measured'")
