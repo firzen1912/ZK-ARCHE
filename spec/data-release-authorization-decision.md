@@ -58,7 +58,7 @@ For profiles that permit a local/offline DATA operation without a retained secur
 
 ### Required temporal qualification
 
-Executable qualification should include at least the following cross-module sequence in both Rust and C harnesses:
+Repository-owned executable qualification MUST include at least the following cross-module sequence in both Rust and C harnesses:
 
 ```text
 AUTH succeeds
@@ -69,16 +69,16 @@ AUTH succeeds
 → new DATA release attempt N+1 under retained keys/transport is not RELEASE
 ```
 
-The unsafe lifecycle mutations should cover, at minimum, authorization-generation advance, explicit revocation, stale lineage, restart-continuity loss, key-usage-continuity loss, rollback suspicion, and required-binding invalidation where applicable. Reusing operation N must remain independently rejected by the DATA one-time-release rule.
+The unsafe lifecycle mutations MUST cover, at minimum, authorization-generation advance, explicit revocation, stale lineage, restart-continuity loss, key-usage-continuity loss, rollback suspicion, and required-binding invalidation where applicable. Reusing operation N must remain independently rejected by the DATA one-time-release rule.
 
-This section is normative composition semantics. Until that temporal sequence is represented in executable Rust/C qualification, it MUST NOT be reported as new cross-module TESTED evidence.
+This temporal sequence is represented by `rust/crates/proto/tests/data_release_retained_association_temporal.rs` and `c/tests/test_data_release_retained_association_temporal.c`. `scripts/check-data-release-retained-authority.sh` executes both language harnesses together with the authoritative association-admission and DATA-release classifiers. The existence and wiring of those tests establishes an executable qualification surface; a TESTED claim for a particular revision still requires that repository-owned lane to be executed successfully for that revision.
 
 ## Conformance evidence
 
 The current canonical corpus is `rust/test-vectors/state/data-release-authorization-v4.txt`. Rust and C implementations claiming the current contract MUST reproduce its action/reason outputs. Version 3 remains historical evidence for the earlier generation-currentness surface that did not independently represent authenticated generation provenance.
 
-The v4 corpus validates the DATA-local classifier inputs. It does not by itself establish the retained-association temporal composition above; that remains an explicit qualification gap until a cross-module executable sequence exists.
+The v4 corpus validates the DATA-local classifier inputs. Retained-association temporal composition is qualified separately by the matched Rust/C temporal harnesses above and by `scripts/check-data-release-retained-authority.sh`; corpus parity alone MUST NOT be reported as evidence that the cross-module temporal lane executed successfully for a particular revision.
 
 ## Evidence boundary
 
-This demonstrates wire-neutral decision semantics and deterministic negative evidence. It is **not** evidence that DATA wire messages, durable release-operation storage, cryptographic release-token verification, key wrapping, encrypted-storage implementation, audit chaining, target budgets, physical rollback resistance, formal analysis, independent review, retained-association temporal qualification, or deployment qualification are complete.
+This demonstrates wire-neutral decision semantics, deterministic negative evidence, and a repository-owned Rust/C qualification surface for retained-association temporal composition. It is **not** evidence that DATA wire messages, durable release-operation storage, cryptographic release-token verification, key wrapping, encrypted-storage implementation, audit chaining, target budgets, physical rollback resistance, formal analysis, independent review, exact-revision execution of the temporal qualification lane, or deployment qualification are complete.
