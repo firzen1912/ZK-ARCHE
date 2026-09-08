@@ -85,6 +85,12 @@ def reject_markers(owner: str, block: str, markers) -> None:
             fail(f"{owner}: persistent trust mutation marker {marker!r} appeared in normal AUTH")
 
 
+def require_markers(owner: str, block: str, markers) -> None:
+    for marker in markers:
+        if marker not in block:
+            fail(f"{owner}: expected ephemeral AUTH lifecycle marker {marker!r} missing")
+
+
 def main() -> None:
     corpus = parse_corpus(read(CORPUS))
     if set(corpus) != set(REQUIRED_CASES):
@@ -106,6 +112,8 @@ def main() -> None:
         fail("rust AUTH_1: expected immutable registry lookup owner")
     reject_markers("rust AUTH_1", rust_auth1, RUST_PERSISTENT_TRUST_MUTATION_MARKERS)
     reject_markers("rust AUTH_3", rust_auth3, RUST_PERSISTENT_TRUST_MUTATION_MARKERS)
+    require_markers("rust AUTH_1", rust_auth1, ("state.auth_sessions.insert(",))
+    require_markers("rust AUTH_3", rust_auth3, ("take_terminal_session(&mut state.auth_sessions",))
     if "handle_auth_3(" not in rust_auth3:
         fail("rust AUTH_3: terminal handler marker missing")
     if "handle_setup_3(" not in rust_setup3 or "&mut state.registry" not in rust_setup3:
@@ -118,6 +126,8 @@ def main() -> None:
 
     for owner, block in (("c AUTH_1", c_auth1), ("c AUTH_3", c_auth3), ("c AUTH_1 scan", c_scan)):
         reject_markers(owner, block, C_PERSISTENT_TRUST_MUTATION_MARKERS)
+    require_markers("c AUTH_1 scan", c_scan, ("auth_session_table_activate_auth(",))
+    require_markers("c AUTH_3", c_auth3, ("auth_session_table_release(",))
     if "try_handle_auth1(" not in c_auth1 or "auth_server_handle_auth1_guarded(" not in c_scan:
         fail("c AUTH_1: guarded read-only candidate-scan path drifted")
     if "auth_server_handle_auth3(" not in c_auth3:
