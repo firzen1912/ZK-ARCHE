@@ -51,6 +51,27 @@ require_or_skip_sanitizer() {
   return 1
 }
 
+clang_has_libfuzzer() {
+  local src="$TMPDIR_ABS/libfuzzer-probe.c"
+  local exe="$TMPDIR_ABS/libfuzzer-probe"
+
+  cat > "$src" <<'EOF'
+#include <stddef.h>
+#include <stdint.h>
+int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+    (void)data;
+    (void)size;
+    return 0;
+}
+EOF
+  if clang -std=c11 -fsanitize=fuzzer,address,undefined "$src" -o "$exe" >/dev/null 2>&1; then
+    rm -f "$src" "$exe" "$exe.exe"
+    return 0
+  fi
+  rm -f "$src" "$exe" "$exe.exe"
+  return 1
+}
+
 {
   echo "== ZK-ARCHE C CI =="
   date -u +"timestamp_utc=%Y-%m-%dT%H:%M:%SZ"
@@ -82,8 +103,29 @@ require_or_skip_sanitizer() {
     make clean
     make -j"$JOBS" CC=clang CFLAGS="$BASE_CFLAGS" all
     make CC=clang CFLAGS="$BASE_CFLAGS" test
+
+    echo "== clang libFuzzer smoke qualification =="
+    if clang_has_libfuzzer; then
+      SODIUM_CFLAGS="$(pkg-config --cflags libsodium)"
+      SODIUM_LIBS="$(pkg-config --libs libsodium)"
+      clang -std=c11 -g -O1 -fsanitize=fuzzer,address,undefined \
+        -Iinclude $SODIUM_CFLAGS -o build/fuzz_wire \
+        fuzz/fuzz_wire.c build/libauth.a $SODIUM_LIBS -lpthread
+      clang -std=c11 -g -O1 -fsanitize=fuzzer,address,undefined \
+        -Iinclude $SODIUM_CFLAGS -o build/fuzz_payloads \
+        fuzz/fuzz_payloads.c build/libauth.a $SODIUM_LIBS -lpthread
+      ASAN_OPTIONS=abort_on_error=1:detect_leaks=1 \
+        ./build/fuzz_wire -runs="${FUZZ_SMOKE_RUNS:-1000}"
+      ASAN_OPTIONS=abort_on_error=1:detect_leaks=1 \
+        ./build/fuzz_payloads -runs="${FUZZ_SMOKE_RUNS:-1000}"
+    elif [ "${REQUIRE_FUZZ_SMOKE:-0}" = "1" ]; then
+      echo "clang libFuzzer probe failed and REQUIRE_FUZZ_SMOKE=1" >&2
+      exit 1
+    else
+      echo "clang libFuzzer unavailable; skipping bounded C fuzz smoke qualification"
+    fi
   else
-    echo "clang not installed; skipping secondary clang build"
+    echo "clang not installed; skipping secondary clang build and C fuzz smoke qualification"
   fi
   echo "== ASan build/tests =="
   if require_or_skip_sanitizer "ASan" "-fsanitize=address"; then
