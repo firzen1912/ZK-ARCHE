@@ -31,6 +31,7 @@ NONEMPTY_PATHS = (
     ("target", "board_revision"),
     ("target", "architecture"),
     ("target", "execution_environment"),
+    ("target", "power_mode"),
     ("implementation", "commit_sha"),
     ("implementation", "lane"),
     ("implementation", "protocol_operation"),
@@ -137,12 +138,21 @@ def validate_measured(doc: dict[str, Any], measurements: dict[str, Any]) -> None
         if not isinstance(value, str) or not value.strip():
             fail("measured manifest requires non-empty " + ".".join(field_path))
 
+    target = section(doc, "target")
+    for key in ("cpu_clock_hz", "ram_bytes", "flash_bytes_available"):
+        numeric(target.get(key), f"target.{key}", positive=True)
+
     commit_sha = get_path(doc, ("implementation", "commit_sha"))
     if not re.fullmatch(r"[0-9a-f]{40}", commit_sha):
         fail("implementation.commit_sha must be a full lowercase 40-hex Git SHA")
     artifact_sha = get_path(doc, ("implementation", "firmware_artifact_sha256"))
     if not re.fullmatch(r"[0-9a-f]{64}", artifact_sha):
         fail("implementation.firmware_artifact_sha256 must be lowercase 64-hex")
+
+    implementation = section(doc, "implementation")
+    compiler_flags = implementation.get("compiler_flags")
+    if not isinstance(compiler_flags, list) or not all(isinstance(item, str) for item in compiler_flags):
+        fail("implementation.compiler_flags must be an array of strings")
 
     accel = get_path(doc, ("crypto_context", "accelerator_used"))
     if not isinstance(accel, bool):
@@ -169,6 +179,12 @@ def validate_measured(doc: dict[str, Any], measurements: dict[str, Any]) -> None
 
     for key in SCALAR_MEASUREMENTS:
         numeric(measurements.get(key), f"measurements.{key}", positive=(key == "flash_bytes"))
+
+    for key in ("static_ram_bytes", "peak_stack_bytes", "peak_heap_bytes"):
+        if measurements[key] > target["ram_bytes"]:
+            fail(f"measurements.{key} cannot exceed target.ram_bytes")
+    if measurements["flash_bytes"] > target["flash_bytes_available"]:
+        fail("measurements.flash_bytes cannot exceed target.flash_bytes_available")
 
     for key in RANGE_MEASUREMENTS:
         value = measurements.get(key)
