@@ -6,7 +6,7 @@ Status: **scoped TD-003 traceability evidence**. This record binds the existing 
 
 ```text
 branch = dev
-reconciliation_head = 177e6902cda828e0d1f9e2d4060afc2f7f531ca5
+reconciliation_head = a3bc5716bb6e46cf7ff86305bf30e642fd9184fa
 rust_model = rust/models/proverif/zk_arche_auth_v3_draft.pv
 c_model = c/models/proverif/zk_arche_auth_v3_draft.pv
 synchronized_model_blob = 2f3817b5fb847ef948e4effab4b7d9871adc2e14
@@ -45,9 +45,9 @@ Disallowed interpretations include:
 | Symbolic model | `rust/models/proverif/zk_arche_auth_v3_draft.pv`; synchronized C copy | `ServerCompleteV3 ==> TrustedRecordPresent`; modeled AUTH begins from local pre-existing trust | Model does not execute production registry/storage code or prove implementation equivalence |
 | Normative contract | `spec/auth-trust-mutation-boundary.md` | Normal `AUTH_1`/`AUTH_3` MUST NOT mutate persistent trust/enrollment state; successful AUTH is not implicit enrollment, trust grant, or application authorization | Contract is deliberately narrow and does not define every trust-management lifecycle operation |
 | Shared decision corpus | `rust/test-vectors/state/auth-trust-boundary-v1.txt` | Five canonical trust-effect cases distinguish normal AUTH unchanged-state outcomes from explicit `SETUP_3` mutation | Corpus is semantic qualification data, not formal proof or runtime persistence evidence |
-| Rust production ownership | `rust/crates/server/src/main.rs` inspected by `scripts/check-auth-trust-boundary.py` | Normal AUTH retains immutable registry ownership while `SETUP_3` is the explicit mutable registry control path | Structural inspection does not prove arbitrary callees side-effect free |
-| C production ownership | `c/bin/server.c` inspected by `scripts/check-auth-trust-boundary.py` | Normal AUTH dispatch/candidate scan rejects registry put/save markers while `SETUP_3` retains explicit persistence calls | Same structural/callee limitation as Rust |
-| Repository-owned qualification | `scripts/check-auth-trust-boundary.py`, now invoked by `scripts/ci-all.sh` | Unified local qualification fails closed if the declared Rust/C trust-mutation ownership or required normative markers drift | A result is evidence only when the checker actually executes for the exact head; TD-005 remains separate |
+| Rust production ownership | `rust/crates/server/src/main.rs` inspected by `scripts/check-auth-trust-boundary.py` | Normal AUTH retains immutable registry ownership and is rejected by qualification if the dispatch blocks acquire mutable registry ownership or use recognized insert/remove/clear/extend/push/retain/save/persist mutation forms; `SETUP_3` remains the explicit mutable registry control path | Structural inspection is intentionally conservative but does not prove arbitrary callees or unrecognized future mutation APIs side-effect free |
+| C production ownership | `c/bin/server.c` inspected by `scripts/check-auth-trust-boundary.py` | Normal AUTH dispatch and candidate scan are rejected by qualification if recognized put/save/delete/remove/clear/reset/replace/upsert/insert registry operations appear; `SETUP_3` retains explicit put/save persistence calls | Same structural/callee limitation as Rust; marker coverage must evolve with registry APIs |
+| Repository-owned qualification | `scripts/check-auth-trust-boundary.py`, invoked by `scripts/ci-all.sh` | Unified local qualification fails closed if the declared Rust/C trust-mutation ownership, recognized persistent-registry mutation surface, shared corpus, or required normative markers drift | A result is evidence only when the checker actually executes for the exact head; TD-005 remains separate |
 
 ## Attacker and lifecycle interpretation
 
@@ -63,14 +63,15 @@ normative NO-LEARNING contract
   says normal production AUTH must not mutate persistent trust
 
 Rust/C structural qualification
-  guards the current production ownership boundary against drift
+  guards the current production ownership boundary and recognized
+  persistent-registry mutation primitives against drift
 ```
 
-None of the three establishes the other two automatically. In particular, the structural checker is not a formal proof, and the symbolic model does not establish source-level side-effect freedom.
+None of the three establishes the other two automatically. In particular, the structural checker is not a formal proof, and the symbolic model does not establish source-level side-effect freedom. The checker is also not a substitute for an effect system or whole-program call-graph analysis: any future registry mutation API must be brought into the guard before it can be relied on as equivalent evidence.
 
 ## TD-003 effect
 
-This closes one narrow traceability omission: FM-09 now has explicit current model → normative contract → Rust/C ownership → corpus → unified-qualification anchors.
+FM-09 retains explicit model → normative contract → Rust/C ownership → corpus → unified-qualification anchors. The current qualification trace now also reflects the broadened production mutation guard introduced at `a3bc5716`, so the assurance record no longer understates which recognized Rust/C persistent-registry operations are fail-closed by repository-owned qualification.
 
 TD-003 remains **open** because complete property/attacker coverage, parser/runtime-to-model equivalence, privacy and compromise semantics, lifecycle/restart/rollback coverage, retained exact-model results for future model changes, and complete model→spec→Rust/C→test mappings remain unfinished.
 
@@ -79,7 +80,7 @@ TD-003 remains **open** because complete property/attacker coverage, parser/runt
 - IMPLEMENTED: unchanged; the production NO-LEARNING ownership boundary already existed.
 - TESTED: unchanged unless repository-owned validation is actually executed for the exact head.
 - INTEROPERABLE: unchanged.
-- FORMALLY ANALYZED: traceability improved; no new ProVerif execution/result is claimed.
+- FORMALLY ANALYZED: traceability is synchronized with the current structural guard; no new ProVerif execution/result is claimed.
 - MEASURED: unchanged.
 - EXTERNALLY REVIEWED: unchanged; TD-001 remains open.
 - RFC-CLASS DOCUMENTED: unchanged at rubric level.
