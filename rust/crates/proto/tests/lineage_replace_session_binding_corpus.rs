@@ -33,12 +33,38 @@ fn session_binding_rejects_stale_or_unbound_auth_context() {
         classify_lineage_replace_session_binding(Some(&context), Some(&e)),
         D::Bound
     );
+    assert_eq!(
+        classify_lineage_replace_session_binding(None, Some(&e)),
+        D::RejectCompletion
+    );
+    assert_eq!(
+        classify_lineage_replace_session_binding(Some(&context), None),
+        D::RejectCompletion
+    );
     e.auth_completion_verified = false;
     assert_eq!(
         classify_lineage_replace_session_binding(Some(&context), Some(&e)),
         D::RejectCompletion
     );
     e.auth_completion_verified = true;
+    e.expected_protocol_version = 2;
+    assert_eq!(
+        classify_lineage_replace_session_binding(Some(&context), Some(&e)),
+        D::RejectVersion
+    );
+    e.expected_protocol_version = 3;
+    e.expected_suite_id = 2;
+    assert_eq!(
+        classify_lineage_replace_session_binding(Some(&context), Some(&e)),
+        D::RejectSuite
+    );
+    e.expected_suite_id = 1;
+    e.expected_profile_id = 2;
+    assert_eq!(
+        classify_lineage_replace_session_binding(Some(&context), Some(&e)),
+        D::RejectProfile
+    );
+    e.expected_profile_id = 1;
     e.expected_session_id[0] = 9;
     assert_eq!(
         classify_lineage_replace_session_binding(Some(&context), Some(&e)),
