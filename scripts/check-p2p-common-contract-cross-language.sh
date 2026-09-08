@@ -16,6 +16,9 @@ cc -std=c11 -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Werror \
   "$BUILD_DIR/p2p-common-contract-c"
 )
 
+echo "[p2p-common-contract] decision matrix and normative-boundary qualification"
+python3 "$ROOT/scripts/check-p2p-common-contract-decision.py"
+
 python3 "$ROOT/scripts/check-p2p-common-contract-mutations.py"
 
 # The Common Contract is a composition boundary, not an isolated admission
@@ -56,4 +59,4 @@ python3 "$ROOT/scripts/check-revocation-view-reconciliation.py"
 echo "[p2p-common-contract] protected DATA retained-authority qualification"
 "$ROOT/scripts/check-data-release-retained-authority.sh"
 
-echo "p2p-common-contract-cross-language: PASS corpus=common-contract-lifecycle-v4 mutations=pass cross_module_lifecycle=pass retained_authority_loss=pass revocation_reconciliation=pass protected_data_release=pass C=pass Rust=pass"
+echo "p2p-common-contract-cross-language: PASS corpus=common-contract-lifecycle-v4 decision_matrix=pass mutations=pass cross_module_lifecycle=pass retained_authority_loss=pass revocation_reconciliation=pass protected_data_release=pass C=pass Rust=pass"
