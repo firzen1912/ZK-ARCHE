@@ -94,6 +94,25 @@ int main(void) {
     }
 
     {
+        association_admission_facts_t successor_association = current_association();
+        data_release_facts_t predecessor_release = current_release();
+        data_release_decision_t decision;
+
+        assert(association_admission_classify(&successor_association).action ==
+               ASSOCIATION_ADMISSION_ESTABLISH);
+        assert(data_release_authorization_classify(&predecessor_release).action ==
+               DATA_RELEASE_ACTION_RELEASE);
+
+        /* A valid successor AUTH/association after LINEAGE_REPLACE does not
+         * make predecessor-bound DATA release authority current again. */
+        predecessor_release.lineage_current = false;
+        predecessor_release.authenticated = true;
+        decision = data_release_authorization_classify(&predecessor_release);
+        assert(decision.action == DATA_RELEASE_ACTION_DENY);
+        assert(decision.reason == DATA_RELEASE_REASON_LINEAGE_STALE);
+    }
+
+    {
         data_release_facts_t release = current_release();
         data_release_decision_t replay;
         assert(data_release_authorization_classify(&release).action ==
@@ -104,6 +123,6 @@ int main(void) {
         assert(replay.reason == DATA_RELEASE_REASON_RELEASE_REPLAY_DETECTED);
     }
 
-    puts("DATA retained-association temporal qualification: ok mutations=7 replay=1");
+    puts("DATA retained-association temporal qualification: ok mutations=7 lineage_successor=1 replay=1");
     return EXIT_SUCCESS;
 }

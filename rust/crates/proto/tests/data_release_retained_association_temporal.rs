@@ -131,6 +131,29 @@ fn retained_association_loss_cannot_carry_new_data_release() {
 }
 
 #[test]
+fn successor_association_does_not_revive_predecessor_release_authority() {
+    let successor_association = current_association();
+    assert_eq!(
+        classify_association_admission(&successor_association).action,
+        AssociationAdmissionAction::Establish
+    );
+
+    let mut predecessor_release = current_release();
+    assert_eq!(
+        classify_data_release(&predecessor_release).action,
+        DataReleaseAction::Release
+    );
+
+    // A valid successor AUTH/association after LINEAGE_REPLACE does not make
+    // predecessor-bound DATA release authority current again.
+    predecessor_release.lineage_current = false;
+    predecessor_release.authenticated = true;
+    let decision = classify_data_release(&predecessor_release);
+    assert_eq!(decision.action, DataReleaseAction::Deny);
+    assert_eq!(decision.reason, DataReleaseReason::LineageStale);
+}
+
+#[test]
 fn consumed_operation_remains_rejected_after_successful_release() {
     let mut release = current_release();
     assert_eq!(classify_data_release(&release).action, DataReleaseAction::Release);

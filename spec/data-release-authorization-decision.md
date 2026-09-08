@@ -52,6 +52,8 @@ A retained association that has lost authority therefore cannot carry a new prot
 
 Fresh AUTH alone is insufficient to repair stale authorization generation, revocation, lineage, replay continuity, restart continuity, key-usage continuity, rollback suspicion, or required channel binding. Those facts remain owned by their respective CORE/TRUST/LINK/BIND lifecycle authorities.
 
+A successful successor AUTH or successor association after `LINEAGE_REPLACE` MUST NOT reactivate DATA release authority bound to the predecessor lineage. Predecessor-bound release authorization remains stale until the device has explicit current release authority and authorization state bound to the successor lineage under the selected DATA profile.
+
 This composition rule deliberately does **not** add a second revocation, replay, restart, key-usage, or association classifier inside ZK-ARCHE-DATA. DATA consumes the authoritative result of those layers and then applies its additional device-local sovereignty checks. This preserves one lifecycle authority per fact while ensuring that DATA cannot continue using an association after CORE has removed its authority.
 
 For profiles that permit a local/offline DATA operation without a retained secure association, `authenticated` MUST still be established by the profile's explicitly defined local authenticated context; transport presence or cached remote identity cannot synthesize it. Such a profile does not bypass the remaining release-authority, authorization-generation, revocation, lineage, replay, rollback, policy, or one-time-release checks.
@@ -70,6 +72,8 @@ AUTH succeeds
 ```
 
 The unsafe lifecycle mutations MUST cover, at minimum, authorization-generation advance, explicit revocation, stale lineage, restart-continuity loss, key-usage-continuity loss, rollback suspicion, and required-binding invalidation where applicable. Reusing operation N must remain independently rejected by the DATA one-time-release rule.
+
+Qualification MUST additionally cover successful establishment of a successor association after lineage replacement while predecessor-bound DATA release authority remains stale; successor authentication MUST NOT by itself make the predecessor release decision current.
 
 This temporal sequence is represented by `rust/crates/proto/tests/data_release_retained_association_temporal.rs` and `c/tests/test_data_release_retained_association_temporal.c`. `scripts/check-data-release-retained-authority.sh` executes both language harnesses together with the authoritative association-admission and DATA-release classifiers. The existence and wiring of those tests establishes an executable qualification surface; a TESTED claim for a particular revision still requires that repository-owned lane to be executed successfully for that revision.
 
