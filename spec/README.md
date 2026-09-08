@@ -20,6 +20,7 @@ Research or roadmap text does not override this package. If current implementati
 
 - `zk-arche-protocol.md` — protocol overview, message flows, state machines, cryptographic computations.
 - `registries.md` — version, suite, profile, extension, alert, and transport-binding registries.
+- `critical-extension-set-encoding.md` — canonical AUTH-v3 critical-extension-set encoding and empty representation; conformance evidence and production promotion remain separate gates.
 - `iot-profiles.md` — constrained and edge profile requirements.
 - `enrollment-grant-issuance.md` — wire-neutral explicit enrollment issuance decision and reason precedence.
 - `enroll-lifecycle-state-machine.md` — explicit ENROLL transition, one-time operation consumption, durable commit, restart, and rollback semantics.
