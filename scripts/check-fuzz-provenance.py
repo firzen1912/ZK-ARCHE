@@ -41,6 +41,23 @@ for name, relpath in sorted(registered.items()):
     expected = Path("fuzz_targets") / f"{name}.rs"
     if Path(relpath) != expected:
         fail(f"target {name} path must be {expected}, got {relpath}")
+
+    source_text = src.read_text(encoding="utf-8")
+    if not re.search(r"(?m)^\s*#!\[no_main\]\s*$", source_text):
+        fail(f"target {name} is not a no_main libFuzzer harness")
+    if not re.search(
+        r"(?m)^\s*use\s+libfuzzer_sys::fuzz_target\s*;\s*$", source_text
+    ):
+        fail(f"target {name} does not import libfuzzer_sys::fuzz_target")
+    fuzz_entries = re.findall(r"\bfuzz_target!\s*\(", source_text)
+    if len(fuzz_entries) != 1:
+        fail(
+            f"target {name} must contain exactly one fuzz_target! entry point, "
+            f"found {len(fuzz_entries)}"
+        )
+    if "proto::" not in source_text:
+        fail(f"target {name} does not reference production proto code")
+
     corpus_dir = CORPUS / name
     if not corpus_dir.is_dir():
         fail(f"target {name} missing corpus namespace")
