@@ -173,6 +173,7 @@ The historical 2026-08-15 through 2026-08-25 reports remain valid provenance. Fu
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-09-08 | [Daily research](daily/2026-09-08.md) | AUTH-v3 critical-extension semantic processing vs ID recognition; canonical singleton/order-independent occurrence boundary and versioning rule | reproduce; explicit review required |
 | 2026-09-07 | [Daily research](daily/2026-09-07.md) | DATA audit claim boundary: local hash-chain integrity vs durable rollback resistance/external consistency; privacy-minimized audit/transparency evidence | reproduce / investigate; explicit review required |
 | 2026-09-06 | [Daily research](daily/2026-09-06.md) | association-scoped resumption privacy epochs, authorization/channel-authority non-substitution and observable-failure separation, optional attested-key PoP binding | reproduce / research-only; explicit review required |
 | 2026-09-05 | [Daily research](daily/2026-09-05.md) | AEAD key-usage continuity semantics: directional q/v budgets and message-length bound, conservative monotonic sender-use estimation, exact-attempt ENROLL authorization binding | reproduce / benchmark; explicit review required |
