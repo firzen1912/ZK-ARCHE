@@ -126,6 +126,41 @@ def main() -> int:
         f"{sorted(CROSS_CLASS_DIRECTIONS - positive_directions)}"
     )
 
+    # Synthetic mutations are necessary but not sufficient evidence that the
+    # canonical Rust/C corpus directly exercises lifecycle loss in both role
+    # directions. Preserve explicit offline establishment, binding-required
+    # establishment, stale authorization-generation rejection, and key-usage
+    # continuity rejection for each constrained<->higher-capability direction.
+    # This prevents a future corpus edit from keeping generated mutations green
+    # while deleting the reverse-role executable evidence actually consumed by
+    # both language harnesses.
+    for direction in CROSS_CLASS_DIRECTIONS:
+        direct = [
+            row
+            for row in rows
+            if (str(row["peer_a"]), str(row["peer_b"])) == direction
+        ]
+        assert any(
+            row["expected"] == "ESTABLISH" and not row["infrastructure_available"]
+            for row in direct
+        ), f"{direction[0]}->{direction[1]} lacks direct offline establishment evidence"
+        assert any(
+            row["expected"] == "ESTABLISH"
+            and row["binding_required"]
+            and row["binding_valid"]
+            for row in direct
+        ), f"{direction[0]}->{direction[1]} lacks direct required-binding establishment evidence"
+        assert any(
+            row["expected"] == "FAIL_CLOSED"
+            and not row["authorization_generation_current"]
+            for row in direct
+        ), f"{direction[0]}->{direction[1]} lacks direct stale-generation rejection evidence"
+        assert any(
+            row["expected"] == "FAIL_CLOSED"
+            and not row["usage_counter_continuity_current"]
+            for row in direct
+        ), f"{direction[0]}->{direction[1]} lacks direct usage-continuity rejection evidence"
+
     mutation_count = 0
     dimensions: set[str] = set()
     direction_dimensions: dict[tuple[str, str], set[str]] = {
