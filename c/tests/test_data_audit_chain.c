@@ -36,10 +36,27 @@ int main(void) {
     changed_prev[0] = 1u;
     assert(!data_audit_verify_transition(changed_prev, 1u, &event, expected));
     assert(!data_audit_verify_transition((const uint8_t[32]){0}, 2u, &event, expected));
+
+    event.release_context_hash[0] ^= 1u;
+    assert(!data_audit_verify_transition((const uint8_t[32]){0}, 1u, &event, expected));
+    event.release_context_hash[0] ^= 1u;
+
+    event.authorization_generation = 8u;
+    assert(!data_audit_verify_transition((const uint8_t[32]){0}, 1u, &event, expected));
+    event.authorization_generation = 7u;
+
+    event.revocation_epoch = 12u;
+    assert(!data_audit_verify_transition((const uint8_t[32]){0}, 1u, &event, expected));
+    event.revocation_epoch = 11u;
+
     event.policy_epoch = 14u;
     assert(!data_audit_verify_transition((const uint8_t[32]){0}, 1u, &event, expected));
-
     event.policy_epoch = 13u;
+
+    event.kind = DATA_AUDIT_EVENT_RELEASE_DENIED;
+    assert(!data_audit_verify_transition((const uint8_t[32]){0}, 1u, &event, expected));
+    event.kind = DATA_AUDIT_EVENT_RELEASE_GRANTED;
+
     assert(data_audit_entry_digest(out, (const uint8_t[32]){0}, 0u, &event) == DATA_AUDIT_INVALID_SEQUENCE);
     state.next_sequence = UINT64_MAX;
     assert(data_audit_append(&state, &event, out) == DATA_AUDIT_SEQUENCE_EXHAUSTED);
