@@ -64,6 +64,9 @@ fi
   echo "== lineage replacement dependent-state lifecycle audit =="
   python3 "$ROOT/scripts/check-lineage-replace-lifecycle-invariants.py"
   echo
+  echo "== P2P Common Contract qualification corpus =="
+  python3 "$ROOT/scripts/check-p2p-common-contract-qualification.py"
+  echo
   echo "== P2P Common Contract cross-language qualification =="
   bash "$ROOT/scripts/check-p2p-common-contract-cross-language.sh"
 } 2>&1 | tee "$LOG"
