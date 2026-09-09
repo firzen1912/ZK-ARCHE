@@ -27,6 +27,9 @@ fi
   python3 "$ROOT/scripts/check-constrained-lifecycle-storage.py" \
     "$ROOT/evidence/constrained-target/lifecycle-storage-template.json"
   echo
+  echo "== constrained lifecycle/storage negative self-test =="
+  python3 "$ROOT/scripts/test-constrained-lifecycle-storage.py"
+  echo
   echo "== constrained DATA audit-chain storage evidence contract =="
   python3 "$ROOT/scripts/check-constrained-data-audit-storage.py" \
     "$ROOT/evidence/constrained-target/data-audit-storage-template.json"
@@ -37,11 +40,17 @@ fi
   echo "== fuzz harness compile integration =="
   cargo check --manifest-path "$ROOT/rust/fuzz/Cargo.toml" --locked --bins
   echo
+  echo "== wire error registry/corpus parity =="
+  python3 "$ROOT/scripts/check-error-registry-parity.py"
+  echo
   echo "== AUTH trust-mutation boundary =="
   python3 "$ROOT/scripts/check-auth-trust-boundary.py"
   echo
   echo "== AUTH terminal-flight contract =="
   python3 "$ROOT/scripts/check-auth-terminal-flight-contract.py"
+  echo
+  echo "== revocation convergence/stale-authorization contract =="
+  python3 "$ROOT/scripts/check-revocation-freshness-contract.py"
   echo
   echo "== rust lane =="
   bash "$ROOT/scripts/ci-rust.sh"
@@ -66,6 +75,12 @@ fi
   echo
   echo "== P2P Common Contract qualification corpus =="
   python3 "$ROOT/scripts/check-p2p-common-contract-qualification.py"
+  echo
+  echo "== P2P cross-class decision composition =="
+  python3 "$ROOT/scripts/check-p2p-common-contract-decision.py"
+  echo
+  echo "== P2P exhaustive decision properties =="
+  python3 "$ROOT/scripts/check-p2p-common-contract-properties.py"
   echo
   echo "== P2P Common Contract cross-language qualification =="
   bash "$ROOT/scripts/check-p2p-common-contract-cross-language.sh"
