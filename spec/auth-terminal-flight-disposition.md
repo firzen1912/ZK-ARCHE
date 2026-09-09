@@ -20,7 +20,50 @@ A failed `AUTH_3` therefore **MUST NOT** permit a corrected or modified `AUTH_3`
 
 A peer that wishes to retry AUTH after such a failure **MUST begin a fresh AUTH exchange from `AUTH_1` using a fresh `session_id`**.
 
-## 3. Retransmission and response-cache interaction
+## 3. Deterministic receiver state machine
+
+For the purposes of this contract, an implementation MUST be behaviorally equivalent to the following abstract states for each AUTH `session_id`:
+
+| State | Meaning |
+|---|---|
+| `NO_PENDING` | no pending AUTH exchange exists for the identifier |
+| `PENDING` | an accepted `AUTH_1` has created ephemeral AUTH state and terminal processing has not consumed it |
+| `TERMINAL_CONSUMED` | terminal processing has irreversibly consumed the pending AUTH state; no modified terminal flight may reuse it |
+
+`TERMINAL_CONSUMED` is an abstract disposition, not a requirement to retain a permanent tombstone. Replay/cache machinery MAY retain independently scoped metadata sufficient to recognize an exact duplicate according to Section 4.
+
+After header parsing and replay/cache handling applicable before pending-state lookup, receiver behavior for a non-cached terminal flight MUST be equivalent to:
+
+```text
+on AUTH_3(session_id, terminal_payload):
+    if pending_state(session_id) does not exist:
+        reject UNKNOWN_SESSION
+
+    s = remove_pending_state(session_id)   // irreversible for this exchange
+
+    result = verify_terminal(s, terminal_payload)
+    if result fails:
+        reject result.error
+
+    complete AUTH using s and terminal_payload
+```
+
+The `remove_pending_state` operation above MUST occur before any terminal verification whose failure would otherwise permit another attempt against the same pending state. Implementations MAY organize internal functions differently, but observable state-transition decisions MUST be equivalent.
+
+The required transition relation is:
+
+| Prior state | Input/condition | Required next disposition | Result |
+|---|---|---|---|
+| `PENDING` | valid terminal verification | `TERMINAL_CONSUMED` | AUTH completion may proceed |
+| `PENDING` | any terminal verification failure | `TERMINAL_CONSUMED` | fail closed; pending state is not restored |
+| `NO_PENDING` or consumed state without an exact cached response | non-cached `AUTH_3` | no pending state created | `UNKNOWN_SESSION` |
+| any state with an applicable exact cached response | exact duplicate `(session_id, seq)` | pending-state disposition unchanged | cached response MAY be replayed |
+
+A changed terminal payload, a changed sequence value, or any message that is not an exact cache hit MUST NOT use response caching to bypass the pending-state requirement. Terminal failure MUST NOT transition back to `PENDING`. Only a new accepted `AUTH_1` for a fresh `session_id` may create new pending AUTH state.
+
+This state machine specifies pending-session ownership only. It does not make response-cache state, replay state, transport state, or a `session_id` itself into protocol identity, trust, or authorization authority.
+
+## 4. Retransmission and response-cache interaction
 
 A receiver MAY replay an already-cached response for an exact duplicate `(session_id, seq)` according to its transport/retransmission cache rules. Returning that cached response does not recreate pending AUTH state and does not re-run terminal verification.
 
@@ -28,36 +71,37 @@ A changed terminal-flight payload under a consumed AUTH session MUST NOT be trea
 
 Reusing the consumed `session_id` for a new AUTH attempt is not conformant to this contract because response caches and replay state may still retain entries keyed to that identifier. A retry therefore uses a fresh `session_id` and executes the normal `AUTH_1` replay and authorization checks.
 
-## 4. Security rationale
+## 5. Security rationale
 
 Fail-closed terminal consumption prevents a peer from obtaining repeated cryptographic/context verification attempts against retained ephemeral server state after a terminal authenticator failure. It also bounds the lifetime of pending AUTH state under malformed or adversarial terminal flights.
 
 This rule does not make an `ERROR` response an authentication or authorization signal. It does not weaken replay handling, and it does not authorize trust learning.
 
-## 5. Privacy and observability
+## 6. Privacy and observability
 
 A receiver that can form a protocol response may return the applicable registered `ERROR` for the failed `AUTH_3`. A subsequent non-cached terminal-flight message for the consumed session is expected to fail as `UNKNOWN_SESSION` because no pending AUTH state remains.
 
 Those two observable error classes are not claimed to be privacy-equivalent. `spec/privacy-considerations.md` remains the privacy claim owner.
 
-## 6. Resource and availability boundary
+## 7. Resource and availability boundary
 
 Consuming pending state on terminal failure is a bounded-resource rule: invalid terminal flights cannot indefinitely retain the associated pending AUTH slot through repeated corrected attempts.
 
 This rule does not define session timeout values, global capacity policy, transport retry timers, or a general-purpose rate-limit mechanism. Those remain owned by their applicable profile/runtime specifications.
 
-## 7. Conformance evidence
+## 8. Conformance evidence
 
 Implementations claiming this behavior require evidence that:
 
 1. successful `AUTH_3` consumes the pending AUTH session;
 2. failed terminal verification consumes the pending AUTH session;
 3. a subsequent non-cached `AUTH_3` for that consumed session is rejected as unknown session;
-4. an exact cached duplicate may receive the cached prior response without recreating pending state; and
-5. a fresh AUTH retry proceeds through `AUTH_1` with a fresh session identifier and normal replay/authorization checks.
+4. an exact cached duplicate may receive the cached prior response without recreating pending state;
+5. a fresh AUTH retry proceeds through `AUTH_1` with a fresh session identifier and normal replay/authorization checks; and
+6. a changed terminal payload or sequence value cannot use the exact-response cache to bypass the pending-state requirement.
 
 Rust and C must produce equivalent state-transition decisions for these cases before this surface is reported as cross-language interoperable.
 
-## 8. Claim boundary
+## 9. Claim boundary
 
 This contract owns only terminal pending-session disposition. It does not establish complete replay/restart semantics, full observable-failure privacy equivalence, downgrade resistance, formal proof, external cryptographic review, Common Contract conformance, or deployment qualification.
