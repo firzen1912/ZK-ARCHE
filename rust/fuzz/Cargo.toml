@@ -33,3 +33,10 @@ path = "fuzz_targets/data_audit_chain.rs"
 test = false
 doc = false
 bench = false
+
+[[bin]]
+name = "p2p_delegation"
+path = "fuzz_targets/p2p_delegation.rs"
+test = false
+doc = false
+bench = false
