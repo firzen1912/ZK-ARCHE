@@ -34,6 +34,9 @@ fi
   echo "== fuzz target/corpus provenance =="
   python3 "$ROOT/scripts/check-fuzz-provenance.py"
   echo
+  echo "== fuzz harness compile integration =="
+  cargo check --manifest-path "$ROOT/rust/fuzz/Cargo.toml" --locked --bins
+  echo
   echo "== AUTH trust-mutation boundary =="
   python3 "$ROOT/scripts/check-auth-trust-boundary.py"
   echo
