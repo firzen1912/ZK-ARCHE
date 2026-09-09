@@ -80,8 +80,17 @@ def get_path(doc: dict[str, Any], path: tuple[str, str]) -> Any:
     return value[key]
 
 
-def numeric(value: Any, label: str, *, positive: bool = False) -> None:
-    if not isinstance(value, (int, float)) or isinstance(value, bool) or value < 0:
+def numeric(
+    value: Any,
+    label: str,
+    *,
+    positive: bool = False,
+    integral: bool = False,
+) -> None:
+    if integral:
+        if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+            fail(f"{label} must be a non-negative integer")
+    elif not isinstance(value, (int, float)) or isinstance(value, bool) or value < 0:
         fail(f"{label} must be a non-negative number")
     if positive and value <= 0:
         fail(f"{label} must be greater than zero")
@@ -140,7 +149,7 @@ def validate_measured(doc: dict[str, Any], measurements: dict[str, Any]) -> None
 
     target = section(doc, "target")
     for key in ("cpu_clock_hz", "ram_bytes", "flash_bytes_available"):
-        numeric(target.get(key), f"target.{key}", positive=True)
+        numeric(target.get(key), f"target.{key}", positive=True, integral=True)
 
     commit_sha = get_path(doc, ("implementation", "commit_sha"))
     if not re.fullmatch(r"[0-9a-f]{40}", commit_sha):
@@ -172,13 +181,18 @@ def validate_measured(doc: dict[str, Any], measurements: dict[str, Any]) -> None
     if not isinstance(wire, dict):
         fail("measurements.wire_bytes must be an object")
     for key in WIRE_KEYS:
-        numeric(wire.get(key), f"measurements.wire_bytes.{key}")
-    numeric(wire["total"], "measurements.wire_bytes.total", positive=True)
+        numeric(wire.get(key), f"measurements.wire_bytes.{key}", integral=True)
+    numeric(wire["total"], "measurements.wire_bytes.total", positive=True, integral=True)
     if wire["request"] + wire["response"] != wire["total"]:
         fail("measurements.wire_bytes.total must equal request + response")
 
     for key in SCALAR_MEASUREMENTS:
-        numeric(measurements.get(key), f"measurements.{key}", positive=(key == "flash_bytes"))
+        numeric(
+            measurements.get(key),
+            f"measurements.{key}",
+            positive=(key == "flash_bytes"),
+            integral=True,
+        )
 
     for key in ("static_ram_bytes", "peak_stack_bytes", "peak_heap_bytes"):
         if measurements[key] > target["ram_bytes"]:
@@ -191,7 +205,11 @@ def validate_measured(doc: dict[str, Any], measurements: dict[str, Any]) -> None
         if not isinstance(value, dict):
             fail(f"measurements.{key} must be an object")
         for item in RANGE_KEYS:
-            numeric(value.get(item), f"measurements.{key}.{item}")
+            numeric(
+                value.get(item),
+                f"measurements.{key}.{item}",
+                integral=(key == "cpu_cycles"),
+            )
         if not (value["min"] <= value["median"] <= value["p95"] <= value["max"]):
             fail(f"measurements.{key} must satisfy min <= median <= p95 <= max")
     if measurements["latency_us"]["median"] <= 0:
