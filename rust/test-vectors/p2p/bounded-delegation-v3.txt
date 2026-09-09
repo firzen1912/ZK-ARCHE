@@ -2,7 +2,7 @@ version=3
 # case|issuer_trusted|issuer_trust_local|holder_authenticated|grant_present|grant_integrity_valid|scope_match|audience_match|deployment_match|validity_current|authorization_generation_bound|authorization_generation_current|epoch_current|revocation_current|explicitly_revoked|lineage_current|depth_within_limit|redelegation_permitted|redelegation_requested|rollback_suspected|action|reason
 case=DEL3-001|1|1|1|1|1|1|1|1|1|1|1|1|1|0|1|1|0|0|0|ACCEPT|CURRENT
 case=DEL3-002|0|0|1|1|1|1|1|1|1|1|1|1|1|0|1|1|0|0|0|DENY|ISSUER_UNTRUSTED
-case=DEL3-003|1|0|1|1|1|1|1|1|1|1|1|1|1|0|1|1|0|0|0|DENY|ISSUER_TRUST_NOT_LOCAL
+case=DEL3-003|1|0|1|1|1|1|1|1|1|0|0|0|0|1|0|0|0|1|0|DENY|ISSUER_TRUST_NOT_LOCAL
 case=DEL3-004|1|1|0|1|1|1|1|1|1|1|1|1|1|0|1|1|0|0|0|DENY|HOLDER_UNAUTHENTICATED
 case=DEL3-005|1|1|1|0|1|1|1|1|1|1|1|1|1|0|1|1|0|0|0|DENY|GRANT_MISSING
 case=DEL3-006|1|1|1|1|0|1|1|1|1|1|1|1|1|0|1|1|0|0|0|DENY|GRANT_INVALID
