@@ -61,8 +61,13 @@ fuzz_target!(|data: &[u8]| {
         assert_eq!(decision.reason, P2pDelegationReason::RollbackSuspected);
     }
 
-    if !facts.issuer_trust_local {
+    // Third-party/transitive trust must never become a local delegation root.
+    // Once rollback and the earlier issuer-presence guard are clear, the exact
+    // fail-closed reason must remain ISSUER_TRUST_NOT_LOCAL regardless of any
+    // downstream grant/authorization/lifecycle facts.
+    if !facts.rollback_suspected && facts.issuer_trusted && !facts.issuer_trust_local {
         assert_eq!(decision.action, P2pDelegationAction::Deny);
+        assert_eq!(decision.reason, P2pDelegationReason::IssuerTrustNotLocal);
     }
 
     if facts.redelegation_requested && !facts.redelegation_permitted {
