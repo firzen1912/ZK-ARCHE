@@ -59,7 +59,7 @@ int main(void) {
         ++cases;
     }
     fclose(fp);
-    assert(cases == 17u);
+    assert(cases == 19u);
     puts("transport binding corpus: ok");
     return 0;
 }
