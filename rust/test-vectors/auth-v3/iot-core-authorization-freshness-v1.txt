@@ -1,0 +1,5 @@
+# Canonical Rust/C negative corpus for stale iot-core authorization authority.
+# Format: case=<name>|<mutation>|<expected>
+version=1
+case=stale_policy_epoch|record_policy_epoch_minus_1|AUTHORIZATION_MISMATCH
+case=stale_revocation_epoch|record_revocation_epoch_minus_1|AUTHORIZATION_MISMATCH
