@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 import json
 import re
 import sys
@@ -94,6 +95,18 @@ def numeric(
         fail(f"{label} must be a non-negative number")
     if positive and value <= 0:
         fail(f"{label} must be greater than zero")
+
+
+def require_utc_timestamp(value: Any, label: str) -> None:
+    if not isinstance(value, str) or not re.fullmatch(
+        r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z",
+        value,
+    ):
+        fail(f"{label} must be a UTC timestamp in YYYY-MM-DDTHH:MM:SS[.fraction]Z form")
+    try:
+        datetime.fromisoformat(value[:-1] + "+00:00")
+    except ValueError:
+        fail(f"{label} must contain a valid UTC calendar date and time")
 
 
 def require_null_measurements(measurements: dict[str, Any]) -> None:
@@ -223,10 +236,10 @@ def validate_measured(doc: dict[str, Any], measurements: dict[str, Any]) -> None
         fail("measured qualification.result must be PASS or FAIL")
 
     provenance = section(doc, "provenance")
-    for key in ("operator", "measured_at_utc"):
-        value = provenance.get(key)
-        if not isinstance(value, str) or not value.strip():
-            fail(f"measured manifest requires non-empty provenance.{key}")
+    operator = provenance.get("operator")
+    if not isinstance(operator, str) or not operator.strip():
+        fail("measured manifest requires non-empty provenance.operator")
+    require_utc_timestamp(provenance.get("measured_at_utc"), "provenance.measured_at_utc")
     refs = provenance.get("raw_evidence_refs")
     if not isinstance(refs, list) or not refs or not all(isinstance(item, str) and item.strip() for item in refs):
         fail("measured manifest requires at least one non-empty provenance.raw_evidence_refs entry")
@@ -256,7 +269,3 @@ def main() -> None:
     if status != "measured":
         fail("evidence_status must be 'unmeasured' or 'measured'")
     validate_measured(doc, measurements)
-
-
-if __name__ == "__main__":
-    main()
