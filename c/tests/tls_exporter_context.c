@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 
-static auth_tls_exporter_context_t fixture(const uint8_t transcript[32])
+static auth_tls_exporter_context_v1_t fixture(const uint8_t transcript[32])
 {
     static const uint8_t application_id[] = "zk-arche";
     static const uint8_t alpn[] = "zkarche/1";
@@ -13,7 +13,7 @@ static auth_tls_exporter_context_t fixture(const uint8_t transcript[32])
     static const uint8_t initiator_id[] = {0x01, 0x02};
     static const uint8_t responder_id[] = {0x03, 0x04};
     static const uint8_t auth_instance_id[] = "auth-0001";
-    auth_tls_exporter_context_t ctx = {
+    auth_tls_exporter_context_v1_t ctx = {
         application_id, sizeof application_id - 1u,
         alpn, sizeof alpn - 1u,
         deployment_id, sizeof deployment_id - 1u,
@@ -35,12 +35,12 @@ int main(void)
     uint8_t transcript[32];
     uint8_t digest[32];
     uint8_t changed[32];
-    auth_tls_exporter_context_t ctx;
+    auth_tls_exporter_context_v1_t ctx;
     size_t i;
 
     for (i = 0u; i < sizeof transcript; ++i) transcript[i] = (uint8_t)i;
     ctx = fixture(transcript);
-    assert(auth_tls_exporter_context_digest(&ctx, 0, digest) == AUTH_EXPORTER_CONTEXT_OK);
+    assert(auth_tls_exporter_context_v1_digest(digest, &ctx, false) == AUTH_TLS_EXPORTER_CONTEXT_OK);
     assert(memcmp(digest, expected, sizeof expected) == 0);
 
     {
@@ -48,23 +48,23 @@ int main(void)
         size_t saved_len = ctx.initiator_id_len;
         ctx.initiator_id = ctx.responder_id; ctx.initiator_id_len = ctx.responder_id_len;
         ctx.responder_id = saved; ctx.responder_id_len = saved_len;
-        assert(auth_tls_exporter_context_digest(&ctx, 0, changed) == AUTH_EXPORTER_CONTEXT_OK);
+        assert(auth_tls_exporter_context_v1_digest(changed, &ctx, false) == AUTH_TLS_EXPORTER_CONTEXT_OK);
         assert(memcmp(digest, changed, sizeof digest) != 0);
     }
 
     ctx = fixture(transcript);
     ctx.auth_instance_id = (const uint8_t *)"auth-0002";
-    assert(auth_tls_exporter_context_digest(&ctx, 0, changed) == AUTH_EXPORTER_CONTEXT_OK);
+    assert(auth_tls_exporter_context_v1_digest(changed, &ctx, false) == AUTH_TLS_EXPORTER_CONTEXT_OK);
     assert(memcmp(digest, changed, sizeof digest) != 0);
 
     ctx = fixture(transcript);
     ctx.application_id_len = 0u;
-    assert(auth_tls_exporter_context_digest(&ctx, 0, changed) == AUTH_EXPORTER_CONTEXT_EMPTY_REQUIRED_FIELD);
+    assert(auth_tls_exporter_context_v1_digest(changed, &ctx, false) == AUTH_TLS_EXPORTER_CONTEXT_EMPTY_REQUIRED);
 
     ctx = fixture(transcript);
     ctx.alpn = NULL; ctx.alpn_len = 0u;
-    assert(auth_tls_exporter_context_digest(&ctx, 0, changed) == AUTH_EXPORTER_CONTEXT_EMPTY_ALPN_NOT_PERMITTED);
-    assert(auth_tls_exporter_context_digest(&ctx, 1, changed) == AUTH_EXPORTER_CONTEXT_OK);
+    assert(auth_tls_exporter_context_v1_digest(changed, &ctx, false) == AUTH_TLS_EXPORTER_CONTEXT_EMPTY_ALPN);
+    assert(auth_tls_exporter_context_v1_digest(changed, &ctx, true) == AUTH_TLS_EXPORTER_CONTEXT_OK);
 
     puts("tls exporter context: ok");
     return 0;
