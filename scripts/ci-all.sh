@@ -76,6 +76,9 @@ fi
   echo "== lineage replacement dependent-state lifecycle audit =="
   python3 "$ROOT/scripts/check-lineage-replace-lifecycle-invariants.py"
   echo
+  echo "== DATA release retained-authority qualification =="
+  bash "$ROOT/scripts/check-data-release-retained-authority.sh"
+  echo
   echo "== P2P Common Contract qualification corpus =="
   python3 "$ROOT/scripts/check-p2p-common-contract-qualification.py"
   echo
