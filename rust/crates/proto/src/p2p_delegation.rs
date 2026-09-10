@@ -40,6 +40,7 @@ pub enum P2pDelegationAction {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum P2pDelegationReason {
     Current,
+    InvalidFacts,
     RollbackSuspected,
     IssuerUntrusted,
     IssuerTrustNotLocal,
@@ -71,6 +72,9 @@ fn decision(action: P2pDelegationAction, reason: P2pDelegationReason) -> P2pDele
 }
 
 pub fn classify_p2p_delegation(f: &P2pDelegationFacts) -> P2pDelegationDecision {
+    if f.issuer_trust_local && !f.issuer_trusted {
+        return decision(P2pDelegationAction::Deny, P2pDelegationReason::InvalidFacts);
+    }
     if f.rollback_suspected {
         return decision(
             P2pDelegationAction::Deny,
@@ -187,6 +191,7 @@ mod tests {
     fn reason(value: &str) -> P2pDelegationReason {
         match value {
             "CURRENT" => P2pDelegationReason::Current,
+            "INVALID_FACTS" => P2pDelegationReason::InvalidFacts,
             "ROLLBACK_SUSPECTED" => P2pDelegationReason::RollbackSuspected,
             "ISSUER_UNTRUSTED" => P2pDelegationReason::IssuerUntrusted,
             "ISSUER_TRUST_NOT_LOCAL" => P2pDelegationReason::IssuerTrustNotLocal,
@@ -252,6 +257,6 @@ mod tests {
             );
             count += 1;
         }
-        assert_eq!(count, 20);
+        assert_eq!(count, 21);
     }
 }

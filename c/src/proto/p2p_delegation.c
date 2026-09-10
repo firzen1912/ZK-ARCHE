@@ -3,6 +3,7 @@
 static p2p_delegation_decision_t decision(p2p_delegation_action_t a, p2p_delegation_reason_t r) { p2p_delegation_decision_t out={a,r}; return out; }
 p2p_delegation_decision_t p2p_delegation_classify(const p2p_delegation_facts_t *f) {
     if (f==NULL) return decision(P2P_DELEGATION_DENY,P2P_DELEGATION_REASON_INVALID_FACTS);
+    if (f->issuer_trust_local && !f->issuer_trusted) return decision(P2P_DELEGATION_DENY,P2P_DELEGATION_REASON_INVALID_FACTS);
     if (f->rollback_suspected) return decision(P2P_DELEGATION_DENY,P2P_DELEGATION_REASON_ROLLBACK_SUSPECTED);
     if (!f->issuer_trusted) return decision(P2P_DELEGATION_DENY,P2P_DELEGATION_REASON_ISSUER_UNTRUSTED);
     if (!f->issuer_trust_local) return decision(P2P_DELEGATION_DENY,P2P_DELEGATION_REASON_ISSUER_TRUST_NOT_LOCAL);
