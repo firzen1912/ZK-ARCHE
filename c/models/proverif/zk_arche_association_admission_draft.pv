@@ -9,6 +9,7 @@
 free c: channel.
 free cmd_establish: bitstring.
 free cmd_trust_mutation: bitstring.
+free cmd_auth_incomplete: bitstring.
 free cmd_revoked: bitstring.
 free cmd_other_failure: bitstring.
 
@@ -16,6 +17,7 @@ type evaluation.
 set preciseActions = true.
 
 event AuthComplete(evaluation).
+event AuthIncomplete(evaluation).
 event PreexistingTrustRecord(evaluation).
 event AuthorizationPresent(evaluation).
 event AuthorizationFresh(evaluation).
@@ -35,6 +37,7 @@ event AssociationRejected(evaluation).
 event AssociationEstablished(evaluation).
 
 query e:evaluation; event(AssociationEstablished(e)) ==> event(AuthComplete(e)).
+query e:evaluation; event(AssociationEstablished(e)) && event(AuthIncomplete(e)) ==> false.
 query e:evaluation; event(AssociationEstablished(e)) ==> event(PreexistingTrustRecord(e)).
 query e:evaluation; event(AssociationEstablished(e)) ==> event(AuthorizationPresent(e)).
 query e:evaluation; event(AssociationEstablished(e)) ==> event(AuthorizationFresh(e)).
@@ -71,6 +74,9 @@ let AdmissionEvaluation(e:evaluation) =
     event AssociationEstablished(e)
   else if command = cmd_trust_mutation then
     event TrustMutationRequested(e);
+    event AssociationRejected(e)
+  else if command = cmd_auth_incomplete then
+    event AuthIncomplete(e);
     event AssociationRejected(e)
   else if command = cmd_revoked then
     event ExplicitRevocationObserved(e);
