@@ -81,13 +81,7 @@ def get_path(doc: dict[str, Any], path: tuple[str, str]) -> Any:
     return value[key]
 
 
-def numeric(
-    value: Any,
-    label: str,
-    *,
-    positive: bool = False,
-    integral: bool = False,
-) -> None:
+def numeric(value: Any, label: str, *, positive: bool = False, integral: bool = False) -> None:
     if integral:
         if not isinstance(value, int) or isinstance(value, bool) or value < 0:
             fail(f"{label} must be a non-negative integer")
@@ -98,10 +92,7 @@ def numeric(
 
 
 def require_utc_timestamp(value: Any, label: str) -> None:
-    if not isinstance(value, str) or not re.fullmatch(
-        r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z",
-        value,
-    ):
+    if not isinstance(value, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z", value):
         fail(f"{label} must be a UTC timestamp in YYYY-MM-DDTHH:MM:SS[.fraction]Z form")
     try:
         datetime.fromisoformat(value[:-1] + "+00:00")
@@ -126,7 +117,6 @@ def validate_unmeasured(doc: dict[str, Any], measurements: dict[str, Any]) -> No
     if doc.get("physical_target_executed") is not False:
         fail("unmeasured manifest must set physical_target_executed=false")
     require_null_measurements(measurements)
-
     method = section(doc, "measurement_method")
     for key in ("warmup_iterations", "sample_count"):
         value = method.get(key)
@@ -134,21 +124,18 @@ def validate_unmeasured(doc: dict[str, Any], measurements: dict[str, Any]) -> No
             fail(f"unmeasured manifest must keep measurement_method.{key}=0")
     if method.get("cold_boot_each_sample") is not False:
         fail("unmeasured manifest must keep measurement_method.cold_boot_each_sample=false")
-
     qualification = section(doc, "qualification")
     for key in QUALIFICATION_FLAGS:
         if qualification.get(key) is not False:
             fail(f"unmeasured manifest must keep qualification.{key}=false")
     if qualification.get("result") != "UNMEASURED":
         fail("unmeasured qualification.result must be UNMEASURED")
-
     provenance = section(doc, "provenance")
     if provenance.get("measured_at_utc") not in {"", None}:
         fail("unmeasured manifest must not claim provenance.measured_at_utc")
     refs = provenance.get("raw_evidence_refs")
     if refs != []:
         fail("unmeasured manifest must keep provenance.raw_evidence_refs empty")
-
     print("constrained-target-manifest: PASS status=unmeasured measurements=0 qualification=0 provenance=0")
 
 
@@ -159,27 +146,22 @@ def validate_measured(doc: dict[str, Any], measurements: dict[str, Any]) -> None
         value = get_path(doc, field_path)
         if not isinstance(value, str) or not value.strip():
             fail("measured manifest requires non-empty " + ".".join(field_path))
-
     target = section(doc, "target")
     for key in ("cpu_clock_hz", "ram_bytes", "flash_bytes_available"):
         numeric(target.get(key), f"target.{key}", positive=True, integral=True)
-
     commit_sha = get_path(doc, ("implementation", "commit_sha"))
     if not re.fullmatch(r"[0-9a-f]{40}", commit_sha):
         fail("implementation.commit_sha must be a full lowercase 40-hex Git SHA")
     artifact_sha = get_path(doc, ("implementation", "firmware_artifact_sha256"))
     if not re.fullmatch(r"[0-9a-f]{64}", artifact_sha):
         fail("implementation.firmware_artifact_sha256 must be lowercase 64-hex")
-
     implementation = section(doc, "implementation")
     compiler_flags = implementation.get("compiler_flags")
     if not isinstance(compiler_flags, list) or not all(isinstance(item, str) for item in compiler_flags):
         fail("implementation.compiler_flags must be an array of strings")
-
     accel = get_path(doc, ("crypto_context", "accelerator_used"))
     if not isinstance(accel, bool):
         fail("crypto_context.accelerator_used must be boolean")
-
     method = section(doc, "measurement_method")
     for key in ("warmup_iterations", "sample_count"):
         value = method.get(key)
@@ -189,7 +171,6 @@ def validate_measured(doc: dict[str, Any], measurements: dict[str, Any]) -> None
         fail("measurement_method.sample_count must be greater than zero")
     if not isinstance(method.get("cold_boot_each_sample"), bool):
         fail("measurement_method.cold_boot_each_sample must be boolean")
-
     wire = measurements.get("wire_bytes")
     if not isinstance(wire, dict):
         fail("measurements.wire_bytes must be an object")
@@ -198,43 +179,29 @@ def validate_measured(doc: dict[str, Any], measurements: dict[str, Any]) -> None
     numeric(wire["total"], "measurements.wire_bytes.total", positive=True, integral=True)
     if wire["request"] + wire["response"] != wire["total"]:
         fail("measurements.wire_bytes.total must equal request + response")
-
     for key in SCALAR_MEASUREMENTS:
-        numeric(
-            measurements.get(key),
-            f"measurements.{key}",
-            positive=(key == "flash_bytes"),
-            integral=True,
-        )
-
+        numeric(measurements.get(key), f"measurements.{key}", positive=(key == "flash_bytes"), integral=True)
     for key in ("static_ram_bytes", "peak_stack_bytes", "peak_heap_bytes"):
         if measurements[key] > target["ram_bytes"]:
             fail(f"measurements.{key} cannot exceed target.ram_bytes")
     if measurements["flash_bytes"] > target["flash_bytes_available"]:
         fail("measurements.flash_bytes cannot exceed target.flash_bytes_available")
-
     for key in RANGE_MEASUREMENTS:
         value = measurements.get(key)
         if not isinstance(value, dict):
             fail(f"measurements.{key} must be an object")
         for item in RANGE_KEYS:
-            numeric(
-                value.get(item),
-                f"measurements.{key}.{item}",
-                integral=(key == "cpu_cycles"),
-            )
+            numeric(value.get(item), f"measurements.{key}.{item}", integral=(key == "cpu_cycles"))
         if not (value["min"] <= value["median"] <= value["p95"] <= value["max"]):
             fail(f"measurements.{key} must satisfy min <= median <= p95 <= max")
     if measurements["latency_us"]["median"] <= 0:
         fail("measurements.latency_us.median must be greater than zero")
-
     qualification = section(doc, "qualification")
     for key in QUALIFICATION_FLAGS:
         if not isinstance(qualification.get(key), bool):
             fail(f"qualification.{key} must be boolean")
     if qualification.get("result") not in {"PASS", "FAIL"}:
         fail("measured qualification.result must be PASS or FAIL")
-
     provenance = section(doc, "provenance")
     operator = provenance.get("operator")
     if not isinstance(operator, str) or not operator.strip():
@@ -243,14 +210,12 @@ def validate_measured(doc: dict[str, Any], measurements: dict[str, Any]) -> None
     refs = provenance.get("raw_evidence_refs")
     if not isinstance(refs, list) or not refs or not all(isinstance(item, str) and item.strip() for item in refs):
         fail("measured manifest requires at least one non-empty provenance.raw_evidence_refs entry")
-
     print(f"constrained-target-manifest: PASS status=measured target={get_path(doc, ('target', 'board'))} commit={commit_sha}")
 
 
 def main() -> None:
     if len(sys.argv) != 2:
         fail("usage: check-constrained-target-manifest.py MANIFEST.json")
-
     path = Path(sys.argv[1])
     try:
         doc = json.loads(path.read_text(encoding="utf-8"))
@@ -260,7 +225,6 @@ def main() -> None:
         fail("top-level JSON value must be an object")
     if doc.get("schema") != SCHEMA:
         fail(f"schema must be {SCHEMA}")
-
     measurements = section(doc, "measurements")
     status = doc.get("evidence_status")
     if status == "unmeasured":
@@ -269,3 +233,7 @@ def main() -> None:
     if status != "measured":
         fail("evidence_status must be 'unmeasured' or 'measured'")
     validate_measured(doc, measurements)
+
+
+if __name__ == "__main__":
+    main()
