@@ -43,6 +43,9 @@ fi
   echo "== wire error registry/corpus parity =="
   python3 "$ROOT/scripts/check-error-registry-parity.py"
   echo
+  echo "== core version/suite/capability registry parity =="
+  python3 "$ROOT/scripts/check-core-registry-parity.py"
+  echo
   echo "== AUTH trust-mutation boundary =="
   python3 "$ROOT/scripts/check-auth-trust-boundary.py"
   echo
