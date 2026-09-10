@@ -23,7 +23,7 @@ int main(void) {
         facts = (association_admission_facts_t){bit(fields[1]),bit(fields[2]),bit(fields[3]),bit(fields[4]),bit(fields[5]),bit(fields[6]),bit(fields[7]),bit(fields[8]),bit(fields[9]),bit(fields[10]),bit(fields[11]),bit(fields[12]),bit(fields[13]),bit(fields[14]),bit(fields[15]),bit(fields[16])};
         got = association_admission_classify(&facts); assert(got.action == action(fields[17])); assert(got.reason == reason(fields[18])); cases += 1u;
     }
-    fclose(fp); assert(saw_version == 1); assert(cases == 19u);
+    fclose(fp); assert(saw_version == 1); assert(cases == 20u);
     { association_admission_decision_t got = association_admission_classify(NULL); assert(got.action == ASSOCIATION_ADMISSION_FAIL_CLOSED); assert(got.reason == ASSOCIATION_ADMISSION_REASON_INVALID_FACTS); }
-    puts("association admission corpus v4: ok cases=19"); return EXIT_SUCCESS;
+    puts("association admission corpus v4: ok cases=20"); return EXIT_SUCCESS;
 }
