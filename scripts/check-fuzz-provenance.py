@@ -16,6 +16,15 @@ def fail(msg: str) -> None:
 
 
 text = CARGO.read_text(encoding="utf-8")
+metadata_m = re.search(
+    r"(?ms)^\[package\.metadata\]\s*$\n(.*?)(?=^\[|\Z)",
+    text,
+)
+if not metadata_m or not re.search(
+    r"(?m)^\s*cargo-fuzz\s*=\s*true\s*$", metadata_m.group(1)
+):
+    fail("fuzz package must declare [package.metadata] cargo-fuzz = true")
+
 blocks = re.split(r"(?=^\[\[bin\]\]\s*$)", text, flags=re.MULTILINE)
 registered = {}
 for block in blocks:
@@ -30,6 +39,10 @@ for block in blocks:
     if name in registered:
         fail(f"duplicate fuzz target registration: {name}")
     registered[name] = path
+
+    for key in ("test", "doc", "bench"):
+        if not re.search(rf"(?m)^\s*{key}\s*=\s*false\s*$", block):
+            fail(f"fuzz target {name} must declare {key} = false")
 
 if not registered:
     fail("no fuzz targets registered")
