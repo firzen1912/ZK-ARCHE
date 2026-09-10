@@ -173,6 +173,7 @@ The historical 2026-08-15 through 2026-08-25 reports remain valid provenance. Fu
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-09-10 | [Daily research](daily/2026-09-10.md) | dedicated per-AUTH TLS exporter binding vs RFC 9266 fixed channel binding; exporter-secret generation/currentness separation for long-lived connections | reproduce; explicit review required |
 | 2026-09-09 | [Daily research](daily/2026-09-09.md) | terminal AUTH consume-before-verify state-deletion DoS on spoofable transports; forgery-resistance-normalized terminal disposition | reproduce; explicit review required |
 | 2026-09-08 | [Daily research](daily/2026-09-08.md) | AUTH-v3 critical-extension semantic processing vs ID recognition; canonical singleton/order-independent occurrence boundary and versioning rule | reproduce; explicit review required |
 | 2026-09-07 | [Daily research](daily/2026-09-07.md) | DATA audit claim boundary: local hash-chain integrity vs durable rollback resistance/external consistency; privacy-minimized audit/transparency evidence | reproduce / investigate; explicit review required |
