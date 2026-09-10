@@ -12,6 +12,7 @@ case=authorization-generation-unbound|1|1|1|1|1|1|1|0|1|1|0|1|1|1|1|1|1|1|0|0|1|
 case=authorization-generation-stale|1|1|1|1|1|1|1|1|0|1|0|1|1|1|1|1|1|1|0|0|1|0|DENY|AUTHORIZATION_GENERATION_STALE
 case=revocation-stale|1|1|1|1|1|1|1|1|1|0|1|0|1|1|1|1|1|1|1|0|0|0|DENY|REVOCATION_STALE
 case=revoked|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|0|0|1|0|DENY|REVOKED
+case=revoked-with-downstream-state-invalid|1|1|1|1|1|1|1|1|1|1|1|0|0|0|0|0|0|0|1|0|0|0|DENY|REVOKED
 case=lineage-stale|1|1|1|1|1|1|1|1|1|1|0|0|1|1|1|1|1|1|1|0|0|0|DENY|LINEAGE_STALE
 case=holder-mismatch|1|1|1|1|1|1|1|1|1|1|0|1|0|1|1|1|1|1|0|0|1|0|DENY|HOLDER_MISMATCH
 case=audience-mismatch|1|1|1|1|1|1|1|1|1|1|0|1|1|0|1|1|1|1|0|0|1|0|DENY|AUDIENCE_MISMATCH
