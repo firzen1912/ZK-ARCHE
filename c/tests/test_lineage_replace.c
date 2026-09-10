@@ -60,6 +60,10 @@ static const lineage_replace_plan_t *plan_fixture(const char *marker, lineage_re
         plan->invalidate_replay_state = false;
         return plan;
     }
+    if (strcmp(marker, "resumption_not_invalidated") == 0) {
+        plan->invalidate_resumption = false;
+        return plan;
+    }
     assert(0 && "unknown lineage-replace plan marker");
     return NULL;
 }
@@ -212,7 +216,7 @@ static void test_state_corpus(void) {
 
     fclose(fp);
     assert(saw_version == 1);
-    assert(case_count == 14u);
+    assert(case_count == 16u);
 
     assert(!lineage_replace_advance(NULL, LINEAGE_REPLACE_EVENT_BEGIN, NULL));
 }

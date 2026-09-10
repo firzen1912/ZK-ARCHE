@@ -74,6 +74,11 @@ fn plan_fixture(marker: &str) -> Option<LineageReplacePlan> {
             plan.invalidate_replay_state = false;
             Some(plan)
         }
+        "resumption_not_invalidated" => {
+            let mut plan = plan_lineage_replace(LineageReplaceDecision::AcceptSuccessor).unwrap();
+            plan.invalidate_resumption = false;
+            Some(plan)
+        }
         "none" => None,
         other => panic!("unknown lineage-replace plan marker: {other}"),
     }
@@ -196,5 +201,5 @@ fn shared_lineage_replace_state_corpus_is_enforced() {
         case_count += 1;
     }
 
-    assert_eq!(case_count, 14);
+    assert_eq!(case_count, 16);
 }
