@@ -1,8 +1,8 @@
 # ZK-ARCHE Replay-Epoch Lineage Replacement State Owner
 
-Status: **draft normative state-owner contract / wire-unassigned / implementation-blocked**.
+Status: **draft normative state-owner contract / wire-unassigned / wire-neutral Rust/C implementation present**.
 
-This document defines the semantic state owner and canonical transition inputs for authenticated predecessor→successor replay-epoch replacement. It intentionally does **not** allocate a wire message, registry value, packet encoding, or production API. Rust and C do not yet implement this transition.
+This document defines the semantic state owner and canonical transition inputs for authenticated predecessor→successor replay-epoch replacement. It intentionally does **not** allocate a wire message, registry value, or packet encoding. Rust and C implement the wire-neutral decision predicate, dependent-state invalidation plan, and logical transition state machine described here; those implementations do not make `LINEAGE_REPLACE` a selectable wire operation or resolve the `iot-core` replay-epoch rule.
 
 Normative keywords **MUST**, **MUST NOT**, **SHOULD**, and **MAY** are used in the BCP 14 sense where behavior is precise and testable.
 
@@ -144,20 +144,11 @@ Trust remains local and non-transitive by default. Authority to replace one line
 
 ## 9. Required decision corpus
 
-The future shared Rust/C corpus MUST instantiate the `RE-01` through `RE-12` cases from `replay-epoch-recovery.md` using the canonical request fields above. Before claiming implementation, it MUST additionally demonstrate at least:
+The canonical shared Rust/C decision corpus MUST continue to instantiate the `RE-01` through `RE-20` semantic cases against the decision classes above. The current corpus contains those twenty cases, including competing successors, retired/wrong-generation predecessors, successor binding mismatch, downgrade and deployment-context rejection, stale revocation, rollback, replay, dependent-state invalidation, and storage ambiguity.
 
-```text
-RE-13 two competing successors cannot both commit
-RE-14 retired predecessor cannot authorize replacement of the active successor
-RE-15 wrong predecessor generation is rejected
-RE-16 wrong successor identity/authentication binding is rejected
-RE-17 version/suite/profile downgrade below policy is rejected
-RE-18 wrong audience/deployment-domain binding is rejected
-RE-19 stale policy/revocation freshness is rejected
-RE-20 crash/partial-write ambiguity remains CONTINUITY_BROKEN
-```
+Presence of the corpus is not by itself an exact-current execution result. A TESTED or INTEROPERABLE claim for a revision requires the applicable Rust/C qualification to have executed and retained evidence for that revision.
 
-The corpus MUST govern semantic inputs and expected internal decisions; it MUST NOT become a de facto wire specification before TD-004 allocates normative grammar.
+The corpus governs semantic inputs and expected internal decisions; it MUST NOT become a de facto wire specification before TD-004 allocates normative grammar.
 
 ## 10. Formal-analysis boundary
 
@@ -168,16 +159,18 @@ No claim of forward secrecy, post-compromise security, KCI resistance, secure er
 ## 11. Current qualification state
 
 ```text
-replay continuity fail-closed behavior        IMPLEMENTED + TESTED in Rust/C
+replay continuity fail-closed behavior        IMPLEMENTED in Rust/C; TESTED only where retained execution evidence exists
 replay continuity symbolic model              SCOPED FORMALLY ANALYZED
 recovery security requirements                SPECIFIED
-LINEAGE_REPLACE semantic state owner          SPECIFIED in this document
+LINEAGE_REPLACE semantic state owner          SPECIFIED + IMPLEMENTED as a wire-neutral Rust/C decision/state surface
 canonical semantic transition inputs          SPECIFIED in this document
 wire grammar / registry allocation            NOT PRESENT
-Rust/C successor transition                   NOT IMPLEMENTED
-shared RE-01..RE-20 executable corpus          NOT PRESENT
+Rust/C successor transition                   IMPLEMENTED as wire-neutral decision, invalidation plan, and logical state machine
+shared RE-01..RE-20 decision corpus           PRESENT; exact-current execution required for a fresh TESTED claim
 iot-core replay_epoch_rule                    remains unresolved
 selectable                                    0
 ```
 
-Therefore this document advances zk213/TD-004 specification precision and FM-22 readiness, but it does not close zk213, TD-003, TD-004, profile promotion, Common Contract conformance, or deployment qualification.
+The implementation status above is deliberately narrower than a protocol-completion claim. The Rust/C surface does not allocate a wire operation, prove durable atomicity on physical targets, supply an authenticated `iot-core` fresh-epoch wire mechanism, or establish exact-current qualification unless the corresponding repository-owned lanes are executed for that revision.
+
+Therefore this document advances zk213/zk221/TD-004 implementation-to-specification traceability, but it does not close zk213, zk221, TD-002, TD-003, TD-004, profile promotion, Common Contract conformance, or deployment qualification.
