@@ -88,6 +88,9 @@ fi
   echo "== P2P exhaustive decision properties =="
   python3 "$ROOT/scripts/check-p2p-common-contract-properties.py"
   echo
+  echo "== P2P deterministic mutation qualification =="
+  python3 "$ROOT/scripts/check-p2p-common-contract-mutations.py"
+  echo
   echo "== P2P Common Contract cross-language qualification =="
   bash "$ROOT/scripts/check-p2p-common-contract-cross-language.sh"
 } 2>&1 | tee "$LOG"
