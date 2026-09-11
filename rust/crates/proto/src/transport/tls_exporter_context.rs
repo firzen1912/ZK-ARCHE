@@ -110,12 +110,42 @@ mod tests {
         let base = fixture(&transcript);
         let first = tls_exporter_context_digest(&base, false).unwrap();
 
+        let other_application = TlsExporterContext {
+            application_id: b"zk-arche-alt",
+            ..base
+        };
+        assert_ne!(first, tls_exporter_context_digest(&other_application, false).unwrap());
+
+        let other_alpn = TlsExporterContext {
+            alpn: b"zkarche/2",
+            ..base
+        };
+        assert_ne!(first, tls_exporter_context_digest(&other_alpn, false).unwrap());
+
+        let other_initiator = TlsExporterContext {
+            initiator_id: &[0x05, 0x06],
+            ..base
+        };
+        assert_ne!(first, tls_exporter_context_digest(&other_initiator, false).unwrap());
+
+        let other_responder = TlsExporterContext {
+            responder_id: &[0x07, 0x08],
+            ..base
+        };
+        assert_ne!(first, tls_exporter_context_digest(&other_responder, false).unwrap());
+
         let swapped = TlsExporterContext {
             initiator_id: base.responder_id,
             responder_id: base.initiator_id,
             ..base
         };
         assert_ne!(first, tls_exporter_context_digest(&swapped, false).unwrap());
+
+        let other_version = TlsExporterContext {
+            protocol_version: 4,
+            ..base
+        };
+        assert_ne!(first, tls_exporter_context_digest(&other_version, false).unwrap());
 
         let second_instance = TlsExporterContext {
             auth_instance_id: b"auth-0002",

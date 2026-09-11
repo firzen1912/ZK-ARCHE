@@ -41,7 +41,11 @@ int main(void)
         0xa3,0xba,0x08,0x67,0xea,0xd3,0xc6,0x04,0x16,0xf1,0xa6,0x85,0x96,0x56,0x6f,0x01,
         0x73,0x9b,0x35,0x20,0xb4,0x14,0x22,0xa3,0xcd,0xa7,0xc0,0x39,0xb2,0x80,0xc1,0x07
     };
+    static const uint8_t other_application[] = "zk-arche-alt";
+    static const uint8_t other_alpn[] = "zkarche/2";
     static const uint8_t other_deployment[] = "field";
+    static const uint8_t other_initiator[] = {0x05, 0x06};
+    static const uint8_t other_responder[] = {0x07, 0x08};
     uint8_t transcript[32];
     uint8_t alternate_transcript[32];
     uint8_t digest[32];
@@ -59,6 +63,27 @@ int main(void)
     assert(auth_tls_exporter_context_v1_digest(digest, &ctx, false) == AUTH_TLS_EXPORTER_CONTEXT_OK);
     assert(memcmp(digest, expected, sizeof expected) == 0);
 
+    ctx = fixture(transcript);
+    ctx.application_id = other_application;
+    ctx.application_id_len = sizeof other_application - 1u;
+    assert_context_changes(digest, &ctx);
+
+    ctx = fixture(transcript);
+    ctx.alpn = other_alpn;
+    ctx.alpn_len = sizeof other_alpn - 1u;
+    assert_context_changes(digest, &ctx);
+
+    ctx = fixture(transcript);
+    ctx.initiator_id = other_initiator;
+    ctx.initiator_id_len = sizeof other_initiator;
+    assert_context_changes(digest, &ctx);
+
+    ctx = fixture(transcript);
+    ctx.responder_id = other_responder;
+    ctx.responder_id_len = sizeof other_responder;
+    assert_context_changes(digest, &ctx);
+
+    ctx = fixture(transcript);
     {
         const uint8_t *saved = ctx.initiator_id;
         size_t saved_len = ctx.initiator_id_len;
@@ -66,6 +91,10 @@ int main(void)
         ctx.responder_id = saved; ctx.responder_id_len = saved_len;
         assert_context_changes(digest, &ctx);
     }
+
+    ctx = fixture(transcript);
+    ctx.protocol_version = 4u;
+    assert_context_changes(digest, &ctx);
 
     ctx = fixture(transcript);
     ctx.auth_instance_id = (const uint8_t *)"auth-0002";
