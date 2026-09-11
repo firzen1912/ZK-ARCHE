@@ -68,6 +68,143 @@ def classify_context(
     return classify(*security_state)
 
 
+def classify_lifecycle_context(
+    peer_a: str,
+    peer_b: str,
+    infrastructure_available: bool,
+    *,
+    auth_complete: bool = True,
+    preexisting_trust: bool = True,
+    authorization_present: bool = True,
+    authorization_fresh: bool = True,
+    authorization_generation_bound: bool = True,
+    authorization_generation_current: bool = True,
+    revocation_current: bool = True,
+    revoked: bool = False,
+    lineage_current: bool = True,
+    replay_continuity_current: bool = True,
+    restart_continuity_current: bool = True,
+    usage_counter_continuity_current: bool = True,
+    mandatory_floor_compatible: bool = True,
+    binding_required: bool = True,
+    binding_valid: bool = True,
+    rollback_suspected: bool = False,
+    trust_mutation_requested: bool = False,
+) -> str:
+    if peer_a not in PEER_CLASSES or peer_b not in PEER_CLASSES:
+        fail(f"unknown peer lifecycle context {peer_a}->{peer_b}")
+    if not isinstance(infrastructure_available, bool):
+        fail("lifecycle infrastructure availability must be Boolean")
+
+    # Optional infrastructure and peer class are context only. No online
+    # service, gateway, CA, registry, or higher-capability peer may repair a
+    # failed local lifecycle precondition.
+    if not auth_complete:
+        return FAIL
+    if not preexisting_trust:
+        return FAIL
+    if not authorization_present:
+        return FAIL
+    if not mandatory_floor_compatible:
+        return FAIL
+    if not authorization_generation_bound or not authorization_generation_current:
+        return FAIL
+    if not revocation_current or revoked:
+        return FAIL
+    if not lineage_current or not authorization_fresh:
+        return FAIL
+    if not replay_continuity_current:
+        return FAIL
+    if not restart_continuity_current:
+        return FAIL
+    if not usage_counter_continuity_current:
+        return FAIL
+    if rollback_suspected:
+        return FAIL
+    if binding_required and not binding_valid:
+        return FAIL
+    if trust_mutation_requested:
+        return FAIL
+    return SUCCESS
+
+
+def qualify_lifecycle_nonauthority() -> tuple[int, int]:
+    peer_pairs = tuple(itertools.product(PEER_CLASSES, repeat=2))
+    baseline_checks = 0
+    fail_closed_checks = 0
+
+    mandatory_failure_mutations = (
+        {"auth_complete": False},
+        {"preexisting_trust": False},
+        {"authorization_present": False},
+        {"authorization_fresh": False},
+        {"authorization_generation_bound": False},
+        {"authorization_generation_current": False},
+        {"revocation_current": False},
+        {"revoked": True},
+        {"lineage_current": False},
+        {"replay_continuity_current": False},
+        {"restart_continuity_current": False},
+        {"usage_counter_continuity_current": False},
+        {"mandatory_floor_compatible": False},
+        {"binding_valid": False},
+        {"rollback_suspected": True},
+        {"trust_mutation_requested": True},
+    )
+
+    for peer_a, peer_b in peer_pairs:
+        for infrastructure_available in (False, True):
+            baseline = classify_lifecycle_context(
+                peer_a, peer_b, infrastructure_available
+            )
+            if baseline != SUCCESS:
+                fail(
+                    "valid lifecycle state failed for "
+                    f"{peer_a}->{peer_b} infrastructure={infrastructure_available}"
+                )
+            baseline_checks += 1
+
+            for mutation in mandatory_failure_mutations:
+                outcome = classify_lifecycle_context(
+                    peer_a,
+                    peer_b,
+                    infrastructure_available,
+                    **mutation,
+                )
+                if outcome != FAIL:
+                    fail(
+                        "optional infrastructure or peer class repaired mandatory "
+                        f"lifecycle failure {mutation} for {peer_a}->{peer_b} "
+                        f"infrastructure={infrastructure_available}"
+                    )
+                fail_closed_checks += 1
+
+            # Binding evidence is non-authoritative when the profile does not
+            # require it; merely changing an optional binding value must not
+            # change an otherwise valid local authority decision.
+            optional_binding_invalid = classify_lifecycle_context(
+                peer_a,
+                peer_b,
+                infrastructure_available,
+                binding_required=False,
+                binding_valid=False,
+            )
+            optional_binding_valid = classify_lifecycle_context(
+                peer_a,
+                peer_b,
+                infrastructure_available,
+                binding_required=False,
+                binding_valid=True,
+            )
+            if optional_binding_invalid != SUCCESS or optional_binding_valid != SUCCESS:
+                fail(
+                    "optional binding metadata became lifecycle authority for "
+                    f"{peer_a}->{peer_b} infrastructure={infrastructure_available}"
+                )
+
+    return baseline_checks, fail_closed_checks
+
+
 def parse_bool(case_id: str, field: str, value: str) -> bool:
     if value == "true":
         return True
@@ -213,11 +350,20 @@ def main() -> None:
             f"unexpected generation fail-closed count {generation_failures}, expected 6144"
         )
 
+    lifecycle_baselines, lifecycle_failures = qualify_lifecycle_nonauthority()
+    if lifecycle_baselines != 8 or lifecycle_failures != 128:
+        fail(
+            "unexpected lifecycle non-authority coverage "
+            f"baselines={lifecycle_baselines} failures={lifecycle_failures}"
+        )
+
     print(
         "p2p-common-contract-properties: PASS "
         f"canonical={len(rows)} exhaustive_states={state_count} "
         f"success={success_count} fail_closed={failure_count} "
-        f"generation_fail_closed={generation_failures}"
+        f"generation_fail_closed={generation_failures} "
+        f"lifecycle_baselines={lifecycle_baselines} "
+        f"lifecycle_fail_closed={lifecycle_failures}"
     )
 
 
