@@ -205,6 +205,41 @@ def qualify_lifecycle_nonauthority() -> tuple[int, int]:
     return baseline_checks, fail_closed_checks
 
 
+def qualify_default_nontransitive_trust() -> int:
+    checks = 0
+
+    # Generalized delegation is intentionally not modeled here. This property
+    # qualifies only the current default: two valid local trust relations must
+    # never synthesize a third relation. The A->C decision consumes A's direct
+    # local trust evidence for C; A->B and B->C remain irrelevant context.
+    for peer_a, peer_b, peer_c in itertools.product(PEER_CLASSES, repeat=3):
+        for infrastructure_available in (False, True):
+            ab = classify_lifecycle_context(
+                peer_a, peer_b, infrastructure_available, preexisting_trust=True
+            )
+            bc = classify_lifecycle_context(
+                peer_b, peer_c, infrastructure_available, preexisting_trust=True
+            )
+            ac = classify_lifecycle_context(
+                peer_a, peer_c, infrastructure_available, preexisting_trust=False
+            )
+            if ab != SUCCESS or bc != SUCCESS:
+                fail(
+                    "valid direct trust edge failed while qualifying non-transitivity "
+                    f"for {peer_a}->{peer_b}->{peer_c} "
+                    f"infrastructure={infrastructure_available}"
+                )
+            if ac != FAIL:
+                fail(
+                    "trust became transitive without explicit A->C local evidence "
+                    f"for {peer_a}->{peer_b}->{peer_c} "
+                    f"infrastructure={infrastructure_available}"
+                )
+            checks += 1
+
+    return checks
+
+
 def parse_bool(case_id: str, field: str, value: str) -> bool:
     if value == "true":
         return True
@@ -357,13 +392,21 @@ def main() -> None:
             f"baselines={lifecycle_baselines} failures={lifecycle_failures}"
         )
 
+    nontransitive_checks = qualify_default_nontransitive_trust()
+    if nontransitive_checks != 16:
+        fail(
+            "unexpected default non-transitive trust coverage "
+            f"checks={nontransitive_checks}"
+        )
+
     print(
         "p2p-common-contract-properties: PASS "
         f"canonical={len(rows)} exhaustive_states={state_count} "
         f"success={success_count} fail_closed={failure_count} "
         f"generation_fail_closed={generation_failures} "
         f"lifecycle_baselines={lifecycle_baselines} "
-        f"lifecycle_fail_closed={lifecycle_failures}"
+        f"lifecycle_fail_closed={lifecycle_failures} "
+        f"nontransitive_trust={nontransitive_checks}"
     )
 
 
