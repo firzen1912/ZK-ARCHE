@@ -26,19 +26,35 @@ static auth_tls_exporter_context_v1_t fixture(const uint8_t transcript[32])
     return ctx;
 }
 
+static void assert_context_changes(
+    const uint8_t expected[32],
+    const auth_tls_exporter_context_v1_t *ctx)
+{
+    uint8_t changed[32];
+    assert(auth_tls_exporter_context_v1_digest(changed, ctx, false) == AUTH_TLS_EXPORTER_CONTEXT_OK);
+    assert(memcmp(expected, changed, 32u) != 0);
+}
+
 int main(void)
 {
     static const uint8_t expected[32] = {
         0xa3,0xba,0x08,0x67,0xea,0xd3,0xc6,0x04,0x16,0xf1,0xa6,0x85,0x96,0x56,0x6f,0x01,
         0x73,0x9b,0x35,0x20,0xb4,0x14,0x22,0xa3,0xcd,0xa7,0xc0,0x39,0xb2,0x80,0xc1,0x07
     };
+    static const uint8_t other_deployment[] = "field";
     uint8_t transcript[32];
+    uint8_t alternate_transcript[32];
     uint8_t digest[32];
     uint8_t changed[32];
     auth_tls_exporter_context_v1_t ctx;
     size_t i;
 
-    for (i = 0u; i < sizeof transcript; ++i) transcript[i] = (uint8_t)i;
+    for (i = 0u; i < sizeof transcript; ++i) {
+        transcript[i] = (uint8_t)i;
+        alternate_transcript[i] = (uint8_t)i;
+    }
+    alternate_transcript[31] ^= 0x01u;
+
     ctx = fixture(transcript);
     assert(auth_tls_exporter_context_v1_digest(digest, &ctx, false) == AUTH_TLS_EXPORTER_CONTEXT_OK);
     assert(memcmp(digest, expected, sizeof expected) == 0);
@@ -48,14 +64,28 @@ int main(void)
         size_t saved_len = ctx.initiator_id_len;
         ctx.initiator_id = ctx.responder_id; ctx.initiator_id_len = ctx.responder_id_len;
         ctx.responder_id = saved; ctx.responder_id_len = saved_len;
-        assert(auth_tls_exporter_context_v1_digest(changed, &ctx, false) == AUTH_TLS_EXPORTER_CONTEXT_OK);
-        assert(memcmp(digest, changed, sizeof digest) != 0);
+        assert_context_changes(digest, &ctx);
     }
 
     ctx = fixture(transcript);
     ctx.auth_instance_id = (const uint8_t *)"auth-0002";
-    assert(auth_tls_exporter_context_v1_digest(changed, &ctx, false) == AUTH_TLS_EXPORTER_CONTEXT_OK);
-    assert(memcmp(digest, changed, sizeof digest) != 0);
+    assert_context_changes(digest, &ctx);
+
+    ctx = fixture(transcript);
+    ctx.deployment_id = other_deployment;
+    ctx.deployment_id_len = sizeof other_deployment - 1u;
+    assert_context_changes(digest, &ctx);
+
+    ctx = fixture(transcript);
+    ctx.suite_id = 2u;
+    assert_context_changes(digest, &ctx);
+
+    ctx = fixture(transcript);
+    ctx.profile_id = 3u;
+    assert_context_changes(digest, &ctx);
+
+    ctx = fixture(alternate_transcript);
+    assert_context_changes(digest, &ctx);
 
     ctx = fixture(transcript);
     ctx.application_id_len = 0u;

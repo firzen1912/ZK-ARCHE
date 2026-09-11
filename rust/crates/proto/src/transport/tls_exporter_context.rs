@@ -105,7 +105,7 @@ mod tests {
     }
 
     #[test]
-    fn role_and_instance_changes_change_context() {
+    fn security_context_changes_are_domain_separated() {
         let transcript: Vec<u8> = (0u8..32).collect();
         let base = fixture(&transcript);
         let first = tls_exporter_context_digest(&base, false).unwrap();
@@ -122,6 +122,29 @@ mod tests {
             ..base
         };
         assert_ne!(first, tls_exporter_context_digest(&second_instance, false).unwrap());
+
+        let other_deployment = TlsExporterContext {
+            deployment_id: b"field",
+            ..base
+        };
+        assert_ne!(first, tls_exporter_context_digest(&other_deployment, false).unwrap());
+
+        let other_suite = TlsExporterContext {
+            suite_id: 2,
+            ..base
+        };
+        assert_ne!(first, tls_exporter_context_digest(&other_suite, false).unwrap());
+
+        let other_profile = TlsExporterContext {
+            profile_id: 3,
+            ..base
+        };
+        assert_ne!(first, tls_exporter_context_digest(&other_profile, false).unwrap());
+
+        let mut changed_transcript = transcript.clone();
+        changed_transcript[31] ^= 0x01;
+        let other_transcript = fixture(&changed_transcript);
+        assert_ne!(first, tls_exporter_context_digest(&other_transcript, false).unwrap());
     }
 
     #[test]
