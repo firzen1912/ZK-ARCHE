@@ -18,6 +18,10 @@ int auth_replay_continuity_apply(auth_replay_continuity_t *continuity,
             continuity->state = AUTH_REPLAY_CONTINUITY_RESTORING;
             return 0;
         }
+        if (event == AUTH_REPLAY_EVENT_ROLLBACK_SUSPECTED) {
+            continuity->state = AUTH_REPLAY_CONTINUITY_BROKEN;
+            return 0;
+        }
         if (event == AUTH_REPLAY_EVENT_FAILED_AUTH) return 0;
         return -1;
 

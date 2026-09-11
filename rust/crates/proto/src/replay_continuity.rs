@@ -53,6 +53,7 @@ impl ReplayContinuity {
 
         let next = match (self.state, event) {
             (State::Trusted, Event::Restart) => State::Restoring,
+            (State::Trusted, Event::RollbackSuspected) => State::ContinuityBroken,
             (State::Restoring, Event::RestoredTrustedWindow) => State::Trusted,
             (
                 State::Restoring,
