@@ -132,7 +132,23 @@ mod tests {
         assert!(!verify_data_audit_transition(&[0u8; 32], 2, &e, &EXPECTED_FIRST));
 
         let mut changed = e;
+        changed.release_context_hash[0] ^= 1;
+        assert!(!verify_data_audit_transition(&[0u8; 32], 1, &changed, &EXPECTED_FIRST));
+
+        changed = e;
+        changed.authorization_generation += 1;
+        assert!(!verify_data_audit_transition(&[0u8; 32], 1, &changed, &EXPECTED_FIRST));
+
+        changed = e;
+        changed.revocation_epoch += 1;
+        assert!(!verify_data_audit_transition(&[0u8; 32], 1, &changed, &EXPECTED_FIRST));
+
+        changed = e;
         changed.policy_epoch += 1;
+        assert!(!verify_data_audit_transition(&[0u8; 32], 1, &changed, &EXPECTED_FIRST));
+
+        changed = e;
+        changed.kind = DataAuditEventKind::ReleaseDenied;
         assert!(!verify_data_audit_transition(&[0u8; 32], 1, &changed, &EXPECTED_FIRST));
     }
 
