@@ -51,9 +51,9 @@ def require_case(
 
     # v4 tail layout: binding_required, binding_valid, rollback_suspected,
     # trust_mutation_requested, decision, reason.
-    if fields[13] != rollback_suspected:
+    if fields[15] != rollback_suspected:
         fail(f"{case_id}: rollback_suspected drifted from {rollback_suspected}")
-    if fields[14] != trust_mutation_requested:
+    if fields[16] != trust_mutation_requested:
         fail(f"{case_id}: trust_mutation_requested drifted from {trust_mutation_requested}")
     if fields[-2] != "FAIL_CLOSED" or fields[-1] != expected_reason:
         fail(f"{case_id}: expected FAIL_CLOSED/{expected_reason}, got {fields[-2]}/{fields[-1]}")
