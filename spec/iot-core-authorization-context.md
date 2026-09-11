@@ -116,11 +116,29 @@ This value identifies the authorization lineage generation for the holder/audien
 
 This value identifies the policy generation used to interpret `role_policy_id`, `scope_bits`, and other local authorization conditions. The peer MUST evaluate against a policy state compatible with this epoch. Silent fallback to an older policy interpretation is forbidden.
 
+For the v1 locally authoritative attribution record defined by the current Rust and C implementations, "compatible" means **exact equality** with the active context. A retained attribution whose `policy_epoch` differs from the active `policy_epoch` MUST fail closed as an authorization mismatch. Advancing local policy does not silently upgrade an older retained authorization record; replacement or re-attribution requires an explicit lifecycle operation.
+
 ### 7.3 `revocation_epoch`
 
 This value states the minimum issuer/authority revocation-view epoch required by the authorization. The local revocation view MUST be at least this epoch and MUST also satisfy the profile's separately defined freshness policy. A higher local epoch does not automatically authorize the peer; revocation/lineage checks still apply.
 
+The minimum-view rule applies to the authority's revocation knowledge, not to reuse of a retained v1 attribution tuple. A retained attribution record is bound to the exact `revocation_epoch` of the active authorization context and MUST fail closed if those values differ. In particular, a stale retained attribution MUST NOT become current merely because the verifier now possesses a newer revocation view.
+
 This field does not solve restart, rollback, or stale-view policy by itself. Those remain part of the broader replay/revocation lifecycle contract.
+
+### 7.4 Retained local authority consistency
+
+A locally retained v1 attribution record is a cache of already-authorized local state, not an independent source of authorization and not a mechanism for learning trust. Before the record can authorize use of an active context, the implementation MUST require exact equality for all authorization-bound fields carried by both structures:
+
+- `holder_binding`;
+- `audience_id`;
+- `role_policy_id`;
+- `scope_bits`;
+- `authorization_generation`;
+- `policy_epoch`;
+- `revocation_epoch`.
+
+Any mismatch MUST fail closed before the retained record is used for association, lineage replacement, resumption, or another privilege-bearing lifecycle transition. An implementation MUST NOT repair, advance, normalize, or overwrite the retained record as a side effect of ordinary AUTH. This requirement preserves NO-LEARNING AUTH and keeps authentication, authorization, and trust mutation separate.
 
 ## 8. Canonical validation rules
 
@@ -140,9 +158,9 @@ A conformant `iot-core` v1 encoder/validator MUST reject:
 
 A canonical context can still be unauthorized. Local authorization evaluation MUST additionally verify holder, audience, role-policy/proof, lineage, revocation, and any deployment restrictions.
 
-## 9. Deterministic vector
+## 9. Deterministic and freshness vectors
 
-The shared draft vector is:
+The shared draft encoding vector is:
 
 ```text
 rust/test-vectors/auth-v3/iot-core-authorization-v1.txt
@@ -151,6 +169,14 @@ rust/test-vectors/auth-v3/iot-core-authorization-v1.txt
 Its canonical encoding is 148 bytes and its SHA-256 digest is the draft `authz_context_hash` value for that fixture.
 
 Both Rust and C MUST reproduce the same encoding/hash and reject semantic zero/scope violations before this schema can be considered interoperable.
+
+The shared retained-authority freshness corpus is:
+
+```text
+rust/test-vectors/auth-v3/iot-core-authorization-freshness-v1.txt
+```
+
+Rust and C consumers MUST reject at least the corpus cases in which an otherwise matching retained attribution has a stale `policy_epoch` or stale `revocation_epoch`, and MUST return the authorization-mismatch decision without returning an authorized record. Passing this corpus is qualification evidence for the v1 retained-authority rule; it does not by itself establish complete revocation convergence, restart/rollback safety, or deployment qualification.
 
 ## 10. Common Contract and promotion boundary
 
