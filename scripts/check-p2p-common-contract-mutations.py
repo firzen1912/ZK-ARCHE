@@ -101,7 +101,7 @@ def load_rows() -> list[dict[str, object]]:
 
 def main() -> int:
     rows = load_rows()
-    assert len(rows) == 24, f"expected 24 canonical rows, got {len(rows)}"
+    assert len(rows) == 25, f"expected 25 canonical rows, got {len(rows)}"
 
     for row in rows:
         observed = classify(row)
