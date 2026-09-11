@@ -11,6 +11,7 @@ free cmd_establish: bitstring.
 free cmd_trust_mutation: bitstring.
 free cmd_auth_incomplete: bitstring.
 free cmd_trust_record_missing: bitstring.
+free cmd_authorization_missing_compound: bitstring.
 free cmd_revoked: bitstring.
 free cmd_other_failure: bitstring.
 
@@ -22,6 +23,7 @@ event AuthIncomplete(evaluation).
 event PreexistingTrustRecord(evaluation).
 event TrustRecordMissing(evaluation).
 event AuthorizationPresent(evaluation).
+event AuthorizationMissing(evaluation).
 event AuthorizationFresh(evaluation).
 event AuthorizationGenerationBound(evaluation).
 event AuthorizationGenerationCurrent(evaluation).
@@ -43,6 +45,7 @@ query e:evaluation; event(AssociationEstablished(e)) && event(AuthIncomplete(e))
 query e:evaluation; event(AssociationEstablished(e)) ==> event(PreexistingTrustRecord(e)).
 query e:evaluation; event(AssociationEstablished(e)) && event(TrustRecordMissing(e)) ==> false.
 query e:evaluation; event(AssociationEstablished(e)) ==> event(AuthorizationPresent(e)).
+query e:evaluation; event(AssociationEstablished(e)) && event(AuthorizationMissing(e)) ==> false.
 query e:evaluation; event(AssociationEstablished(e)) ==> event(AuthorizationFresh(e)).
 query e:evaluation; event(AssociationEstablished(e)) ==> event(AuthorizationGenerationBound(e)).
 query e:evaluation; event(AssociationEstablished(e)) ==> event(AuthorizationGenerationCurrent(e)).
@@ -83,6 +86,15 @@ let AdmissionEvaluation(e:evaluation) =
     event AssociationRejected(e)
   else if command = cmd_trust_record_missing then
     event TrustRecordMissing(e);
+    event AssociationRejected(e)
+  (* Mirrors ASC4-004's decisive missing-authorization condition together with
+     a representative downstream unsafe fact. Deterministic reason precedence
+     remains a classifier/corpus property outside this symbolic abstraction. *)
+  else if command = cmd_authorization_missing_compound then
+    event AuthComplete(e);
+    event PreexistingTrustRecord(e);
+    event AuthorizationMissing(e);
+    event ExplicitRevocationObserved(e);
     event AssociationRejected(e)
   else if command = cmd_revoked then
     event ExplicitRevocationObserved(e);
