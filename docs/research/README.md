@@ -173,6 +173,7 @@ The historical 2026-08-15 through 2026-08-25 reports remain valid provenance. Fu
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-09-11 | [Daily research](daily/2026-09-11.md) | fresh channel rebinding during resumption; resumption-credential lineage vs new traffic-key epoch; cumulative full-AUTH/resumption-lineage lifetime | reproduce; explicit review required |
 | 2026-09-10 | [Daily research](daily/2026-09-10.md) | dedicated per-AUTH TLS exporter binding vs RFC 9266 fixed channel binding; exporter-secret generation/currentness separation for long-lived connections | reproduce; explicit review required |
 | 2026-09-09 | [Daily research](daily/2026-09-09.md) | terminal AUTH consume-before-verify state-deletion DoS on spoofable transports; forgery-resistance-normalized terminal disposition | reproduce; explicit review required |
 | 2026-09-08 | [Daily research](daily/2026-09-08.md) | AUTH-v3 critical-extension semantic processing vs ID recognition; canonical singleton/order-independent occurrence boundary and versioning rule | reproduce; explicit review required |
@@ -188,7 +189,7 @@ The historical 2026-08-15 through 2026-08-25 reports remain valid provenance. Fu
 | 2026-08-29 | [Daily research](daily/2026-08-29.md) | non-redundant UKS/misbinding identity attribution, dynamic-corruption and compositional formal-analysis boundaries | reproduce / investigate; explicit review required |
 | 2026-08-28 | [Daily research](daily/2026-08-28.md) | hostile-count parser resource bounds, authorization authority namespace, authenticated fresh replay-epoch recovery | reproduce; explicit review required |
 | 2026-08-27 | [Daily research](daily/2026-08-27.md) | immutable profile-ID semantics, deterministic unknown fixtures vs live GREASE, AUTH-v3 subcontext canonicalization/criticality boundary | reproduce; explicit review required |
-| 2026-08-26 | [Daily research](daily/2026-08-26.md) | replay-state lifetime/formal-runtime fidelity, Rust/C eviction parity, pre-authentication source validation and DoS contention | reproduce / benchmark; explicit review required |
+| 2026-08-26 | [Daily research](daily/2026-08-26.md) | replay-state lifetime/formal-runtime fidelity, Rust/C eviction parity, pre-authentication source validation and DoS contention | reproduce; explicit review required |
 | 2026-08-25 | [Daily research](daily/2026-08-25.md) | resumption authorization revalidation and PSK/ticket reuse, crypto execution-context evidence, IoT deployment-context claim boundaries | reproduce / benchmark; explicit review required |
 | 2026-08-24 | [Daily research](daily/2026-08-24.md) | revocation convergence and stale-window bounds, scoped/expiring role authorization, dynamic rights lineage, correlation metadata privacy | reproduce; explicit review required |
 | 2026-08-23 | [Daily research](daily/2026-08-23.md) | SAPIC+ single-source multi-backend formal verification, anonymity-vs-unlinkability and observable-failure privacy contract, Ascon/COSE benchmark maturity | reproduce / benchmark; explicit review required |
