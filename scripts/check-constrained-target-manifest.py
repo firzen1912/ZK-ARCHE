@@ -202,6 +202,10 @@ def validate_measured(doc: dict[str, Any], measurements: dict[str, Any]) -> None
             fail(f"qualification.{key} must be boolean")
     if qualification.get("result") not in {"PASS", "FAIL"}:
         fail("measured qualification.result must be PASS or FAIL")
+    if qualification["result"] == "PASS":
+        failed_flags = [key for key in QUALIFICATION_FLAGS if not qualification[key]]
+        if failed_flags:
+            fail("measured PASS requires all qualification flags true: " + ", ".join(failed_flags))
     provenance = section(doc, "provenance")
     operator = provenance.get("operator")
     if not isinstance(operator, str) or not operator.strip():
