@@ -100,7 +100,8 @@ def main() -> int:
     # Terminal retained-session state must stay fail-closed even when an ordinary
     # FULL_AUTH_REQUIRED condition is simultaneously present. Keep these compound
     # precedence rows in the cross-module gate so corpus refactors cannot silently
-    # turn terminal rejection into a resumable/full-auth fallback path.
+    # turn terminal rejection into a resumable/full-auth fallback path. In particular,
+    # a channel-binding mismatch cannot downgrade stale lineage into a retry path.
     require_decision(resumption, "rollback-with-authz-stale", "REJECT", "ROLLBACK_SUSPECTED")
     require_decision(resumption, "restart-stale-at-reuse-limit", "REJECT", "RESTART_CONTINUITY_STALE")
     require_decision(resumption, "usage-continuity-stale-with-generation-stale", "REJECT", "USAGE_COUNTER_CONTINUITY_STALE")
@@ -108,6 +109,9 @@ def main() -> int:
     require_decision(resumption, "revocation-stale-with-profile-mismatch", "REJECT", "REVOCATION_STALE")
     require_decision(resumption, "revoked-with-profile-mismatch", "REJECT", "REVOKED")
     require_decision(resumption, "lineage-stale-with-profile-mismatch", "REJECT", "LINEAGE_STALE")
+    require_decision(resumption, "revocation-stale-at-reuse-limit", "REJECT", "REVOCATION_STALE")
+    require_decision(resumption, "revoked-with-authz-stale", "REJECT", "REVOKED")
+    require_decision(resumption, "lineage-stale-with-binding-mismatch", "REJECT", "LINEAGE_STALE")
 
     transport = decision_rows("rust/test-vectors/state/transport-continuation-v3.txt")
     require_decision(transport, "steady", "CONTINUE", "CURRENT")
@@ -183,7 +187,7 @@ def main() -> int:
     assert online["infrastructure_available"] == "true"
     assert offline["expected"] == online["expected"] == "ESTABLISH"
 
-    print("cross-module-lifecycle-invariants: PASS surfaces=8 authz_generation=12 revocation=13 revocation_ingestion=5 lineage=6 replay_restart=7 usage_counter=6 privacy_resumption=8 terminal_resumption=7 transport_non_authority=2 infrastructure_non_authority=1 delegation_non_repair=7")
+    print("cross-module-lifecycle-invariants: PASS surfaces=8 authz_generation=12 revocation=13 revocation_ingestion=5 lineage=6 replay_restart=7 usage_counter=6 privacy_resumption=8 terminal_resumption=10 transport_non_authority=2 infrastructure_non_authority=1 delegation_non_repair=7")
     return 0
 
 
