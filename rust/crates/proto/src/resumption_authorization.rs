@@ -95,6 +95,15 @@ pub fn classify_resumption_authorization(
     if f.session_invalidated {
         return d(Reject, SessionInvalidated);
     }
+    if !f.revocation_current {
+        return d(Reject, RevocationStale);
+    }
+    if f.explicitly_revoked {
+        return d(Reject, Revoked);
+    }
+    if !f.lineage_current {
+        return d(Reject, LineageStale);
+    }
     if !f.privacy_identifier_state_current {
         return d(FullAuthRequired, PrivacyIdentifierStateStale);
     }
@@ -130,15 +139,6 @@ pub fn classify_resumption_authorization(
     }
     if !f.authorization_generation_current {
         return d(FullAuthRequired, AuthorizationGenerationStale);
-    }
-    if !f.revocation_current {
-        return d(Reject, RevocationStale);
-    }
-    if f.explicitly_revoked {
-        return d(Reject, Revoked);
-    }
-    if !f.lineage_current {
-        return d(Reject, LineageStale);
     }
     if !f.peer_match {
         return d(FullAuthRequired, PeerMismatch);
@@ -247,6 +247,6 @@ mod tests {
             );
             n += 1;
         }
-        assert_eq!(n, 37);
+        assert_eq!(n, 40);
     }
 }

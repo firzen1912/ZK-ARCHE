@@ -20,6 +20,12 @@ resumption_authorization_decision_t resumption_authorization_classify(
         return decision(RESUMPTION_ACTION_REJECT, RESUMPTION_REASON_USAGE_COUNTER_CONTINUITY_STALE);
     if (facts->session_invalidated)
         return decision(RESUMPTION_ACTION_REJECT, RESUMPTION_REASON_SESSION_INVALIDATED);
+    if (!facts->revocation_current)
+        return decision(RESUMPTION_ACTION_REJECT, RESUMPTION_REASON_REVOCATION_STALE);
+    if (facts->explicitly_revoked)
+        return decision(RESUMPTION_ACTION_REJECT, RESUMPTION_REASON_REVOKED);
+    if (!facts->lineage_current)
+        return decision(RESUMPTION_ACTION_REJECT, RESUMPTION_REASON_LINEAGE_STALE);
     if (!facts->privacy_identifier_state_current)
         return decision(RESUMPTION_ACTION_FULL_AUTH_REQUIRED,
                         RESUMPTION_REASON_PRIVACY_IDENTIFIER_STATE_STALE);
@@ -49,12 +55,6 @@ resumption_authorization_decision_t resumption_authorization_classify(
     if (!facts->authorization_generation_current)
         return decision(RESUMPTION_ACTION_FULL_AUTH_REQUIRED,
                         RESUMPTION_REASON_AUTHORIZATION_GENERATION_STALE);
-    if (!facts->revocation_current)
-        return decision(RESUMPTION_ACTION_REJECT, RESUMPTION_REASON_REVOCATION_STALE);
-    if (facts->explicitly_revoked)
-        return decision(RESUMPTION_ACTION_REJECT, RESUMPTION_REASON_REVOKED);
-    if (!facts->lineage_current)
-        return decision(RESUMPTION_ACTION_REJECT, RESUMPTION_REASON_LINEAGE_STALE);
     if (!facts->peer_match)
         return decision(RESUMPTION_ACTION_FULL_AUTH_REQUIRED, RESUMPTION_REASON_PEER_MISMATCH);
     if (!facts->deployment_match)

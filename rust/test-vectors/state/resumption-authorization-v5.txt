@@ -39,3 +39,6 @@ case=session-invalidated-with-profile-mismatch|1|1|1|0|4|4|1|1|0|1|0|0|1|0|1|1|1
 case=revocation-stale-with-profile-mismatch|1|1|1|0|0|4|1|1|1|1|1|0|0|1|1|1|0|1|0|1|1|1|0|0|REJECT|REVOCATION_STALE
 case=revoked-with-profile-mismatch|1|1|1|0|0|4|1|1|1|1|1|1|1|1|1|1|0|1|0|1|1|1|0|0|REJECT|REVOKED
 case=lineage-stale-with-profile-mismatch|1|1|1|0|0|4|1|1|1|1|1|1|0|0|1|1|0|1|0|1|1|1|0|0|REJECT|LINEAGE_STALE
+case=revocation-stale-at-reuse-limit|1|1|1|0|4|4|1|1|1|1|1|0|0|1|1|1|0|1|0|1|1|1|1|0|REJECT|REVOCATION_STALE
+case=revoked-with-authz-stale|1|1|1|0|0|4|1|1|0|1|1|1|1|1|1|1|0|1|0|1|1|1|1|0|REJECT|REVOKED
+case=lineage-stale-with-binding-mismatch|1|1|0|0|0|4|1|1|1|1|1|1|0|0|1|1|0|1|0|1|1|1|1|0|REJECT|LINEAGE_STALE
