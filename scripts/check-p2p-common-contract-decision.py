@@ -115,6 +115,7 @@ def main() -> None:
 
     require_text(P2P_CORPUS, [
         "P2P-002|mcu-core|linux-edge", "P2P-003|linux-edge|mcu-core",
+        "P2P-005|peer-a|peer-c|none|transitive-only|normal-auth|fail-closed-without-explicit-bounded-delegation|required-unexecuted",
         "P2P-006|any|any|infrastructure-loss", "P2P-009|any|any|none|stale-beyond-permitted-freshness",
     ])
     require_text(REVOCATION_SPEC, [
@@ -127,6 +128,7 @@ def main() -> None:
     ])
     require_text(ROADMAP, [
         "Asymmetric computation is acceptable; asymmetric authentication assurance is not.",
+        "Trust is local and non-transitive by default. `A trusts B` and `B trusts C` must not imply `A trusts C` without explicit bounded delegation evidence accepted by A.",
         "no hidden CA/cloud/gateway dependency in the core path", "profile/capability downgrade-resistance tests",
     ])
     print(
