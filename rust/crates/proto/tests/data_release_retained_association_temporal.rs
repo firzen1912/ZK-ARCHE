@@ -154,6 +154,39 @@ fn successor_association_does_not_revive_predecessor_release_authority() {
 }
 
 #[test]
+fn fresh_auth_and_rebinding_do_not_revive_stale_release_authority() {
+    let mut stale_generation = current_release();
+    stale_generation.authorization_generation_current = false;
+    stale_generation.channel_binding_valid = false;
+    stale_generation.authenticated = true;
+    stale_generation.channel_binding_valid = true;
+    let generation_decision = classify_data_release(&stale_generation);
+    assert_eq!(generation_decision.action, DataReleaseAction::Deny);
+    assert_eq!(
+        generation_decision.reason,
+        DataReleaseReason::AuthorizationGenerationStale
+    );
+
+    let mut revoked = current_release();
+    revoked.explicitly_revoked = true;
+    revoked.channel_binding_valid = false;
+    revoked.authenticated = true;
+    revoked.channel_binding_valid = true;
+    let revoked_decision = classify_data_release(&revoked);
+    assert_eq!(revoked_decision.action, DataReleaseAction::Deny);
+    assert_eq!(revoked_decision.reason, DataReleaseReason::Revoked);
+
+    let mut stale_lineage = current_release();
+    stale_lineage.lineage_current = false;
+    stale_lineage.channel_binding_valid = false;
+    stale_lineage.authenticated = true;
+    stale_lineage.channel_binding_valid = true;
+    let lineage_decision = classify_data_release(&stale_lineage);
+    assert_eq!(lineage_decision.action, DataReleaseAction::Deny);
+    assert_eq!(lineage_decision.reason, DataReleaseReason::LineageStale);
+}
+
+#[test]
 fn consumed_operation_remains_rejected_after_successful_release() {
     let mut release = current_release();
     assert_eq!(classify_data_release(&release).action, DataReleaseAction::Release);

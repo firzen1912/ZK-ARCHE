@@ -113,6 +113,39 @@ int main(void) {
     }
 
     {
+        data_release_facts_t stale_generation = current_release();
+        data_release_facts_t revoked = current_release();
+        data_release_facts_t stale_lineage = current_release();
+        data_release_decision_t decision;
+
+        /* Fresh AUTH and a newly valid channel binding must not synthesize
+         * current DATA authority after generation/revocation/lineage changes. */
+        stale_generation.authorization_generation_current = false;
+        stale_generation.channel_binding_valid = false;
+        stale_generation.authenticated = true;
+        stale_generation.channel_binding_valid = true;
+        decision = data_release_authorization_classify(&stale_generation);
+        assert(decision.action == DATA_RELEASE_ACTION_DENY);
+        assert(decision.reason == DATA_RELEASE_REASON_AUTHORIZATION_GENERATION_STALE);
+
+        revoked.explicitly_revoked = true;
+        revoked.channel_binding_valid = false;
+        revoked.authenticated = true;
+        revoked.channel_binding_valid = true;
+        decision = data_release_authorization_classify(&revoked);
+        assert(decision.action == DATA_RELEASE_ACTION_DENY);
+        assert(decision.reason == DATA_RELEASE_REASON_REVOKED);
+
+        stale_lineage.lineage_current = false;
+        stale_lineage.channel_binding_valid = false;
+        stale_lineage.authenticated = true;
+        stale_lineage.channel_binding_valid = true;
+        decision = data_release_authorization_classify(&stale_lineage);
+        assert(decision.action == DATA_RELEASE_ACTION_DENY);
+        assert(decision.reason == DATA_RELEASE_REASON_LINEAGE_STALE);
+    }
+
+    {
         data_release_facts_t release = current_release();
         data_release_decision_t replay;
         assert(data_release_authorization_classify(&release).action ==
@@ -123,6 +156,6 @@ int main(void) {
         assert(replay.reason == DATA_RELEASE_REASON_RELEASE_REPLAY_DETECTED);
     }
 
-    puts("DATA retained-association temporal qualification: ok mutations=7 lineage_successor=1 replay=1");
+    puts("DATA retained-association temporal qualification: ok mutations=7 lineage_successor=1 fresh_auth_rebind=3 replay=1");
     return EXIT_SUCCESS;
 }
