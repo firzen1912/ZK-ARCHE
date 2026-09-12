@@ -168,3 +168,19 @@ run_step_in() {
   echo
   echo "release qualification: PASS"
 } 2>&1 | tee "$LOG"
+
+# The preflight manifest is generated from the exact HEAD that all release
+# qualification steps validated. Bind the completed log and the release gate
+# itself to that same commit after the tee has closed, so the retained log is
+# complete and cannot be mistaken for a merely-started qualification run.
+RELEASE_QUALIFICATION_HEAD="$(awk -F '\t' 'NR == 2 { print $2 }' "$EVIDENCE/exact-head-preflight.tsv")"
+if [ -z "$RELEASE_QUALIFICATION_HEAD" ]; then
+  echo "release qualification record: FAIL: preflight exact-head manifest missing HEAD" >&2
+  exit 1
+fi
+
+bash "$ROOT/scripts/record-qualification.sh" \
+  "$RELEASE_QUALIFICATION_HEAD" \
+  "$LOG" \
+  "scripts/ci-release-qualification.sh" \
+  "release-qualification"
