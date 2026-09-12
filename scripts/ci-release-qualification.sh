@@ -86,6 +86,21 @@ run_step_in() {
 
   run_step "exact-head clean preflight" exact_head_gate preflight
 
+  run_step "constrained-target evidence contract" \
+    python3 "$ROOT/scripts/check-constrained-target-manifest.py" \
+      "$ROOT/evidence/constrained-target/manifest-template.json"
+
+  run_step "constrained lifecycle-storage evidence honesty" \
+    python3 "$ROOT/scripts/check-constrained-lifecycle-storage.py" \
+      "$ROOT/evidence/constrained-target/lifecycle-storage-template.json"
+
+  run_step "constrained lifecycle-storage negative self-test" \
+    python3 "$ROOT/scripts/test-constrained-lifecycle-storage.py"
+
+  run_step "constrained DATA audit-chain storage evidence contract" \
+    python3 "$ROOT/scripts/check-constrained-data-audit-storage.py" \
+      "$ROOT/evidence/constrained-target/data-audit-storage-template.json"
+
   run_step "fuzz target/corpus provenance" \
     python3 "$ROOT/scripts/check-fuzz-provenance.py"
 
@@ -97,6 +112,9 @@ run_step_in() {
 
   run_step "wire error registry/corpus parity" \
     python3 "$ROOT/scripts/check-error-registry-parity.py"
+
+  run_step "core version/suite/capability registry parity" \
+    python3 "$ROOT/scripts/check-core-registry-parity.py"
 
   run_step "AUTH terminal-flight contract/corpus parity" \
     python3 "$ROOT/scripts/check-auth-terminal-flight-contract.py"
@@ -113,12 +131,11 @@ run_step_in() {
   run_step "cross-module lifecycle invariant audit" \
     python3 "$ROOT/scripts/check-cross-module-lifecycle-invariants.py"
 
-  run_step "constrained lifecycle-storage evidence honesty" \
-    python3 "$ROOT/scripts/check-constrained-lifecycle-storage.py" \
-      "$ROOT/evidence/constrained-target/lifecycle-storage-template.json"
+  run_step "lineage replacement dependent-state lifecycle audit" \
+    python3 "$ROOT/scripts/check-lineage-replace-lifecycle-invariants.py"
 
-  run_step "constrained lifecycle-storage negative self-test" \
-    python3 "$ROOT/scripts/test-constrained-lifecycle-storage.py"
+  run_step "DATA release retained-authority qualification" \
+    bash "$ROOT/scripts/check-data-release-retained-authority.sh"
 
   run_step "P2P Common Contract qualification corpus" \
     python3 "$ROOT/scripts/check-p2p-common-contract-qualification.py"
