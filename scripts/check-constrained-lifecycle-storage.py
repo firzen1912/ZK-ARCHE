@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 from typing import Any, NoReturn
 
-SCHEMA = "ZKARCHE-CONSTRAINED-LIFECYCLE-STORAGE/5"
+SCHEMA = "ZKARCHE-CONSTRAINED-LIFECYCLE-STORAGE/6"
 
 OBSERVATION_KEYS = (
     "wire_bytes_auth_exchange",
@@ -94,6 +94,25 @@ POSITIVE_INTEGER_CONTEXT = {
     ("rng_adapter", "max_request_bytes"),
 }
 
+EXECUTION_FLAGS = (
+    "restart_test_executed",
+    "rollback_test_executed",
+    "entropy_path_exercised",
+    "key_storage_path_exercised",
+    "revocation_reconciliation_test_executed",
+    "revocation_restart_test_executed",
+    "revocation_rollback_test_executed",
+    "revocation_power_loss_test_executed",
+    "authorization_generation_test_executed",
+    "authorization_generation_restart_test_executed",
+    "authorization_generation_rollback_test_executed",
+    "authorization_generation_power_loss_test_executed",
+    "enrollment_replay_test_executed",
+    "enrollment_restart_test_executed",
+    "enrollment_rollback_test_executed",
+    "enrollment_power_loss_test_executed",
+)
+
 
 def fail(message: str) -> NoReturn:
     raise SystemExit(f"constrained-lifecycle-storage: FAIL: {message}")
@@ -142,24 +161,10 @@ def main() -> None:
     status = doc.get("evidence_status")
     physical = doc.get("physical_target_executed")
 
-    execution_flags = (
-        "restart_test_executed",
-        "rollback_test_executed",
-        "entropy_path_exercised",
-        "key_storage_path_exercised",
-        "revocation_reconciliation_test_executed",
-        "revocation_restart_test_executed",
-        "revocation_power_loss_test_executed",
-        "authorization_generation_test_executed",
-        "authorization_generation_power_loss_test_executed",
-        "enrollment_replay_test_executed",
-        "enrollment_power_loss_test_executed",
-    )
-
     if status == "unmeasured":
         if physical is not False:
             fail("unmeasured manifest must set physical_target_executed=false")
-        for flag in execution_flags:
+        for flag in EXECUTION_FLAGS:
             if doc.get(flag) is not False:
                 fail(f"unmeasured manifest must set {flag}=false")
         non_null = [key for key in OBSERVATION_KEYS if observations[key] is not None]
@@ -172,7 +177,7 @@ def main() -> None:
         fail("evidence_status must be 'unmeasured' or 'measured'")
     if physical is not True:
         fail("measured manifest requires physical_target_executed=true")
-    for flag in execution_flags:
+    for flag in EXECUTION_FLAGS:
         if doc.get(flag) is not True:
             fail(f"measured manifest requires {flag}=true")
 

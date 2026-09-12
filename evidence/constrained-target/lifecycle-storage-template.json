@@ -1,5 +1,5 @@
 {
-  "schema": "ZKARCHE-CONSTRAINED-LIFECYCLE-STORAGE/5",
+  "schema": "ZKARCHE-CONSTRAINED-LIFECYCLE-STORAGE/6",
   "evidence_status": "unmeasured",
   "physical_target_executed": false,
   "restart_test_executed": false,
@@ -8,10 +8,15 @@
   "key_storage_path_exercised": false,
   "revocation_reconciliation_test_executed": false,
   "revocation_restart_test_executed": false,
+  "revocation_rollback_test_executed": false,
   "revocation_power_loss_test_executed": false,
   "authorization_generation_test_executed": false,
+  "authorization_generation_restart_test_executed": false,
+  "authorization_generation_rollback_test_executed": false,
   "authorization_generation_power_loss_test_executed": false,
   "enrollment_replay_test_executed": false,
+  "enrollment_restart_test_executed": false,
+  "enrollment_rollback_test_executed": false,
   "enrollment_power_loss_test_executed": false,
   "target": {
     "family": "",
@@ -107,5 +112,5 @@
     "bytes_written_per_update": null,
     "revocation_bytes_written_per_update": null
   },
-  "notes": "Template only; no physical-target measurement, restart/rollback result, revocation reconciliation/persistence/power-loss result, authorization-generation persistence/power-loss result, enrollment replay/power-loss result, entropy-path evidence, or key-storage evidence is claimed."
+  "notes": "Template only; no physical-target measurement, restart/rollback result, per-domain revocation/authorization/enrollment restart or rollback result, persistence/power-loss result, entropy-path evidence, or key-storage evidence is claimed."
 }
