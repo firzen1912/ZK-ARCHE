@@ -5,7 +5,9 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 CORPUS = ROOT / "rust/test-vectors/state/auth-trust-boundary-v1.txt"
 RUST = ROOT / "rust/crates/server/src/main.rs"
+RUST_AUTH = ROOT / "rust/crates/proto/src/proto/auth.rs"
 C = ROOT / "c/bin/server.c"
+C_AUTH_GUARD = ROOT / "c/src/proto/replay_guard.c"
 SPEC = ROOT / "spec/auth-trust-mutation-boundary.md"
 
 REQUIRED_CASES = {
@@ -26,6 +28,13 @@ RUST_PERSISTENT_TRUST_MUTATION_MARKERS = (
     "state.registry.retain(",
     "state.registry.save(",
     "state.registry.persist(",
+)
+
+RUST_AUTH_HELPER_TRUST_MUTATION_MARKERS = (
+    "registry.save(",
+    "RegistryStore::save(",
+    ".save_server_pub(",
+    ".save_role_credential(",
 )
 
 C_PERSISTENT_TRUST_MUTATION_MARKERS = (
@@ -101,7 +110,9 @@ def main() -> None:
             fail(f"{case}: got {observed}, expected {expected}")
 
     rust = read(RUST)
+    rust_auth = read(RUST_AUTH)
     c = read(C)
+    c_auth_guard = read(C_AUTH_GUARD)
     spec = read(SPEC)
 
     rust_auth1 = between(rust, "PKT_AUTH_1 => {", "PKT_AUTH_3 =>", "rust AUTH_1")
@@ -119,6 +130,29 @@ def main() -> None:
     if "handle_setup_3(" not in rust_setup3 or "&mut state.registry" not in rust_setup3:
         fail("rust SETUP_3: explicit registry mutation control path drifted")
 
+    # Guard the semantic owner as well as the dispatch call site. A future
+    # refactor must not move enrollment/trust persistence into normal AUTH
+    # helpers while leaving the server dispatch superficially read-only.
+    rust_core_auth1 = between(
+        rust_auth,
+        "pub fn handle_auth_1<",
+        "pub fn handle_auth_3(",
+        "rust core AUTH_1",
+    )
+    rust_core_auth3 = rust_auth[rust_auth.find("pub fn handle_auth_3(") :]
+    if "registry: &R" not in rust_core_auth1 or "registry.iter()" not in rust_core_auth1:
+        fail("rust core AUTH_1: registry must remain an immutable lookup dependency")
+    reject_markers(
+        "rust core AUTH_1",
+        rust_core_auth1,
+        RUST_AUTH_HELPER_TRUST_MUTATION_MARKERS,
+    )
+    reject_markers(
+        "rust core AUTH_3",
+        rust_core_auth3,
+        RUST_AUTH_HELPER_TRUST_MUTATION_MARKERS,
+    )
+
     c_auth1 = between(c, "case AUTH_PKT_AUTH_1: {", "case AUTH_PKT_AUTH_3: {", "c AUTH_1")
     c_auth3 = between(c, "case AUTH_PKT_AUTH_3: {", "default:", "c AUTH_3")
     c_setup3 = between(c, "case AUTH_PKT_SETUP_3: {", "case AUTH_PKT_AUTH_1: {", "c SETUP_3")
@@ -134,6 +168,16 @@ def main() -> None:
         fail("c AUTH_3: terminal handler marker missing")
     if "auth_registry_put(" not in c_setup3 or "auth_registry_save(" not in c_setup3:
         fail("c SETUP_3: explicit registry mutation control path drifted")
+
+    # The C guarded AUTH owner receives only a lookup callback/context for
+    # trust state. Keep persistent registry mutation outside normal AUTH even
+    # if dispatch is later refactored around this helper.
+    reject_markers("c core AUTH_1 guard", c_auth_guard, C_PERSISTENT_TRUST_MUTATION_MARKERS)
+    require_markers(
+        "c core AUTH_1 guard",
+        c_auth_guard,
+        ("auth_registry_lookup_fn lookup_fn", "auth_server_handle_auth1("),
+    )
 
     required_spec = [
         "MUST NOT create, replace, delete, or otherwise mutate persistent trust/enrollment registry state",
