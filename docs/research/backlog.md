@@ -1,6 +1,30 @@
 # ZK-ARCHE Research Backlog
 
-This file tracks research questions and external technologies that may affect ZK-ARCHE but are **not yet engineering commitments**.
+This file is the canonical persistent **research-execution queue** for recurring ZK-ARCHE research. Items here are research questions and evidence gaps, not engineering commitments.
+
+The daily pipeline in `PIPELINE.md` should continuously select the highest-value actionable items from this queue, research them, update their evidence/status, enqueue distinct follow-on questions when justified, and continue until the run budget is exhausted or no actionable item remains.
+
+A backlog item becoming `promote` or `exhausted` does **not** modify the roadmap, ADRs, specification, code, technical debt, assurance posture, or release claims. Those remain explicitly human-gated.
+
+## Queue priority
+
+Use the following priority order for daily selection:
+
+- `P0` — blocks security, conformance, formal-assurance, or claim boundaries.
+- `P1` — blocks mandatory Common Contract, constrained-device, lifecycle, interoperability, or P2P maturity.
+- `P2` — valuable core capability/evidence expansion after P0/P1 blockers.
+- `P3` — optional, exploratory, migration, or research-only work.
+
+Current queue-priority mapping:
+
+| Priority | Backlog items | Rationale |
+|---|---|---|
+| P0 | R-004, R-007, R-009, R-010, R-013, R-015 | formal/security proof boundaries, cryptographic review, replay/resumption/channel-binding correctness, trust-mutation and privacy claims |
+| P1 | R-001, R-005, R-008, R-011, R-012, R-014 | constrained Common Contract, hardware evidence, authn/authz/enrollment, interoperability/extension agility, revocation convergence, DoS/lookup behavior |
+| P2 | none currently | reserve for non-blocking core evidence/capability expansion |
+| P3 | R-002, R-003, R-006 | anonymous credentials, PQ hybrids, optional attestation; useful but not mandatory baseline blockers |
+
+The priority map may be changed by a daily report only when the report explains the dependency/evidence reason. Priority is about research execution order, not feature importance.
 
 ## Status vocabulary
 
@@ -9,10 +33,29 @@ This file tracks research questions and external technologies that may affect ZK
 - `reproduce` — a claim/result needs local reproduction or independent validation.
 - `benchmark` — feasibility depends on measured wire/RAM/CPU/storage/latency evidence.
 - `prototype` — bounded experimental implementation is justified.
-- `promote` — evidence is sufficient to propose a roadmap/ADR/spec change.
-- `research-only` — useful context or experiment, but intentionally outside the baseline.
+- `promote` — evidence is sufficient to propose explicit human engineering review.
+- `research-only` — useful context/experiment, intentionally outside the mandatory baseline.
 - `defer` — potentially useful, but current cost/priority/evidence is insufficient.
 - `reject` — incompatible, unsafe, redundant, or not valuable for ZK-ARCHE.
+- `exhausted` — the current research question has no material unresolved research step under its present scope.
+
+`exhausted` does not mean engineering implementation is complete. New contradictory or superseding evidence may reactivate an exhausted item.
+
+## Daily queue-consumption contract
+
+For every daily run:
+
+1. read all non-terminal items;
+2. rank by priority, dependency value, staleness, and explicit evidence gap;
+3. select at least one actionable item;
+4. record selected IDs and rationale in the daily report;
+5. gather the exact next evidence requested by the item;
+6. update status/evidence/last-reviewed only when justified;
+7. enqueue a new `R-*` item only for a genuinely distinct question;
+8. continue to another item if run budget remains;
+9. if all items are non-actionable/exhausted, perform a bounded discovery pass rather than inventing low-value work.
+
+Do not keep revisiting an item without a concrete unresolved next question or a new evidence trigger.
 
 ## Backlog
 
@@ -34,11 +77,11 @@ This file tracks research questions and external technologies that may affect ZK
 | R-014 | Privacy-preserving O(1) registry lookup hints for large AUTH registries | prototype | bounded HPKE encrypted-hint prototype using an opaque registry key as non-authoritative prefilter; exact extension/info/AAD/padding encoding; lookup-key epoch/rotation/revocation model; stateless/bounded `AUTH_RETRY` source validation placed before session reservation, registry scan and expensive proof verification in exposed datagram profiles; O(n) PID scan vs O(1)+HPKE benchmarks at 10/100/1k/10k records; adversarial mixed UDP/TCP contention, replay-lock wait, session-slot occupancy and amplification measurements; duplicate-race tests proving exactly one accepted state transition; Rust/C deterministic and negative vectors; passive-linkability analysis; comparison against enrollment-issued random opaque handles and VOPRF/POPRF; threat model required before any VOPRF promotion | zk219/zk220/zk225/zk226/zk229 / optional lookup-hint extension | 2026-08-26 |
 | R-015 | Privacy-observability and active-unlinkability contract for AUTH/ENROLL/P2P failure behavior, correlation metadata, and resumption identifiers | reproduce | attacker-model-specific anonymity/unlinkability definitions; externally observable failure matrix covering response/no-response, alert type, size bucket, retry behavior and timing; known-vs-unknown lookup/credential/reference and allowed-vs-disallowed role oracle tests; interaction with `AUTH_RETRY`; correlation-surface inventory covering session/connection IDs, capability/suite/profile lists and ordering, extension sets, retry tokens, packet sizes, lower-layer identifiers, and resumption ticket/PSK identifiers; identifier-rotation and bounded-reuse policy; Rust/C response-class, repeated-session, and repeated-resumption metadata equivalence fixtures; realistic timing/fingerprint measurements; DoS-cost analysis for normalization/dummy-work policy | zk203/zk217/zk218/zk219/zk220/zk221/zk225/zk226/zk229/zk239 / privacy and error/state-machine spec + assurance | 2026-08-25 |
 
-Add new items when a research question is concrete enough to state what evidence would change a ZK-ARCHE decision. Do not use this table as a feature wishlist.
+Add new items only when a research question is concrete enough to state what evidence would change a ZK-ARCHE decision. Do not use this table as a feature wishlist.
 
 ## Promotion record
 
-When an item is promoted, retain the row and link the destination so research provenance is preserved. Example:
+When an item is promoted, retain the row and link the destination so research provenance survives:
 
 ```text
 R-00X → docs/roadmaps/...#phase → docs/adr/NNNN-...md → spec/...md
