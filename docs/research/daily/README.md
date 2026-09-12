@@ -6,40 +6,48 @@ Completed recurring ZK-ARCHE research reports live here using ISO dates:
 docs/research/daily/YYYY-MM-DD.md
 ```
 
-Do not create empty reports for future dates. A file exists only when research was actually performed.
-
-Historical reports are dated provenance. Do not rewrite old reports merely to make them match a newer template; improve the forward contract and consolidate older conclusions through `docs/findings/` when needed.
+Do not create empty future reports. Historical reports remain dated provenance and should not be rewritten merely to match a newer template.
 
 ## Daily report objective
 
-A daily report should answer four questions quickly:
+A daily report should answer six questions quickly:
 
-1. What changed in the repository since the previous research run?
-2. What external evidence is genuinely new rather than repeated?
-3. Which existing `R-*`, `TD-*`, spec/roadmap/assurance question does it affect?
-4. What evidence should be gathered next before any engineering promotion occurs?
+1. What changed in the repository since the prior run?
+2. Which active `R-*` backlog items were selected, and why?
+3. What external evidence is genuinely new?
+4. What status/evidence transition did each selected backlog item earn?
+5. What new follow-on research question, if any, was discovered?
+6. What evidence is still required before engineering promotion?
 
-The daily report is **research intake**, not an implementation request. Candidate weekly findings may be identified, but the recurring research automation must not create or update `docs/findings/` or `docs/requests/`.
+The daily report is research execution and evidence intake, not an implementation request. It may consume and replenish `../backlog.md`, but it must not autonomously create engineering commitments.
+
+## Queue vocabulary
+
+### Priority
+
+```text
+P0 | P1 | P2 | P3
+```
+
+P0/P1 items normally outrank P2/P3 items. See `../PIPELINE.md` for exact semantics.
+
+### Status
+
+```text
+queued | researching | reproduce | benchmark | prototype | promote | research-only | defer | reject | exhausted
+```
+
+`exhausted` means the current research question has no material unresolved research step under its present scope. It does not mean engineering implementation or roadmap acceptance is complete.
 
 ## Novelty vocabulary
-
-Each material finding must classify its relationship to prior research:
 
 ```text
 new | corroborates | refines | contradicts | supersedes
 ```
 
-- `new` — establishes a distinct engineering/security question not already captured.
-- `corroborates` — adds independent support without materially changing the existing conclusion.
-- `refines` — changes the evidence contract, constraints, threat model, or recommended next step for an existing question.
-- `contradicts` — conflicts with a prior assumption or finding and requires reconciliation.
-- `supersedes` — newer/stronger evidence replaces a previous conclusion or source basis.
+Do not create a new backlog item merely because a new paper corroborates an existing question.
 
-Do not create a new backlog item for every `corroborates` or `refines` result.
-
-## Evidence maturity vocabulary
-
-Use one normalized vocabulary across future reports:
+## Evidence maturity
 
 ```text
 concept | formal | software | constrained-hardware | deployed | externally-reviewed
@@ -59,49 +67,56 @@ concept | formal | software | constrained-hardware | deployed | externally-revie
 | Repository delta since prior report | concise list or `none` |
 | Research focus | concise description |
 
-If there is no meaningful implementation/spec/roadmap/assurance delta, say so once. Do not repeat a long unchanged repository inventory.
+## 1. Queue snapshot and selection
 
-## 1. Executive synthesis
+### Active queue summary
 
-Keep this decision-dense. Prefer 3–6 numbered conclusions:
+| Priority | queued/researching | reproduce | benchmark | prototype | promote | deferred/research-only |
+|---|---:|---:|---:|---:|---:|---:|
+| P0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| P1 | 0 | 0 | 0 | 0 | 0 | 0 |
+| P2 | 0 | 0 | 0 | 0 | 0 | 0 |
+| P3 | 0 | 0 | 0 | 0 | 0 | 0 |
 
-- what is genuinely new or stronger;
-- why it matters to the current ZK-ARCHE state;
-- what should be reproduced, benchmarked, prototyped, deferred, rejected, or kept research-only;
-- what did **not** change (wire, suite, maturity, roadmap, etc.).
+### Selected backlog items
 
-## 2. Finding index
+| ID | Priority | Starting status | Why selected today | Intended evidence step |
+|---|---|---|---|---|
+| R-xxx | P0 | reproduce | dependency/security reason | exact next evidence |
 
-| ID | Finding | Novelty | Existing owner | Disposition | Weekly finding candidate? |
+## 2. Executive synthesis
+
+Keep this decision-dense. Prefer 3–6 conclusions:
+
+- what changed;
+- why it matters;
+- what advanced or failed to advance;
+- what should happen next;
+- what did **not** change.
+
+## 3. Finding index
+
+| ID | Finding | Novelty | Backlog owner | Disposition | Weekly finding candidate? |
 |---|---|---|---|---|---|
-| DYYYYMMDD-F01 | short title | new/refines/... | R-xxx / TD-xxx / phase / none | reproduce/... | yes/no |
+| DYYYYMMDD-F01 | short title | new/refines/... | R-xxx | reproduce/... | yes/no |
 
-Use stable per-report IDs such as `D20260826-F01`.
+## 4. Repository context reviewed
 
-## 3. Repository context reviewed
+Record only relevant changed/controlling surfaces and direct implementation/spec/test/formal anchors.
 
-Record only the repository surfaces needed to support the findings.
-
-Separate:
-
-- **changed since prior report**;
-- **unchanged but controlling** (for example an open debt item);
-- **direct implementation/spec/test anchors actually inspected**.
-
-Link or name exact paths instead of restating large amounts of stable prose.
-
-## 4. Findings
+## 5. Findings
 
 ### DYYYYMMDD-F01 — Finding title
 
 - **Novelty:** new | corroborates | refines | contradicts | supersedes
+- **Backlog owner:** R-xxx / none
 - **Source:**
 - **Primary link:**
 - **Source type / venue:**
 - **Publication or release date:**
 - **Verified claim:**
-- **Existing owner:** R-xxx / TD-xxx / roadmap phase / spec section / none
-- **Repository fact:** what is actually true in current ZK-ARCHE
+- **Existing engineering owner:** TD-xxx / roadmap phase / spec section / none
+- **Repository fact:**
 - **Problem addressed:**
 - **Strongest distinct engineering idea:**
 - **Evidence maturity:** concept | formal | software | constrained-hardware | deployed | externally-reviewed
@@ -124,82 +139,68 @@ roadmap_impact:
   promotion_requirement: explicit human review
 ```
 
-## 5. Cross-source synthesis
+## 6. Cross-source synthesis
 
-State the combined conclusion once. Distinguish:
+State the combined conclusion once. Reconcile corroboration, disagreement, assumptions, and any changed decision boundary.
 
-- corroboration;
-- disagreement;
-- unresolved assumptions;
-- evidence that changes the prior decision boundary.
+## 7. Backlog transitions
 
-Avoid restating each source independently when they support the same conclusion.
+| ID | Start | End | Evidence gained today | Remaining unresolved question |
+|---|---|---|---|---|
+| R-xxx | reproduce | reproduce/benchmark/promote/etc. | concise evidence | exact next step |
 
-## 6. Actionability matrix
+If no transition is justified, state `none`.
+
+## 8. Newly enqueued follow-ons
+
+| New ID | Priority | Question | Why distinct | Evidence that would change a decision |
+|---|---|---|---|---|
+
+Only add a new item when it is genuinely distinct from existing backlog questions. Otherwise update the existing item.
+
+## 9. Actionability matrix
 
 | Target | Today’s change | Required next evidence | Destination |
 |---|---|---|---|
-| R-xxx / TD-xxx / none | status/evidence refinement | exact evidence | research backlog / weekly findings candidate / explicit human review |
+| R-xxx / TD-xxx / none | refinement | exact evidence | backlog / weekly findings candidate / explicit human review |
 
-This table is advisory. It does not create a request, roadmap change, ADR, spec requirement, or maturity claim.
-
-## 7. Candidate backlog updates
-
-List only material status/evidence changes to `../backlog.md` or distinct new research questions.
-
-Explicitly say `none` when nothing should change.
-
-## 8. Weekly handoff candidates
+## 10. Weekly handoff candidates
 
 ### Findings candidates
 
-List conclusions suitable for consolidation into `../../findings/week-of-*-findings.md` during a separate human-reviewed weekly synthesis.
+List conclusions suitable for later human-reviewed consolidation into `docs/findings/`.
 
 ### Request candidates
 
-Normally `none` for automated research. A request requires explicit human intent or another already-authorized engineering process.
+Normally `none` for automated research.
 
-## 9. Claim / no-change boundary
+## 11. Claim / no-change boundary
 
-State what this report did **not** establish, for example:
+State what this report did **not** establish: no wire change, no suite change, no roadmap/spec/ADR change, no debt cleared, no readiness/certification claim changed, unless a separate authorized process actually made that change.
 
-- no mandatory-suite change;
-- no wire-format change;
-- no roadmap/spec/ADR change;
-- no debt cleared;
-- no maturity/readiness/certification claim changed.
+## 12. Next queue recommendations
 
-## 10. Follow-up sources
+List the highest-value unexhausted backlog items for the next run, in priority order, with one-line rationale.
 
-Prioritize the primary sources that deserve deeper review next. Do not create a long generic reading list.
+## 13. Follow-up sources
+
+Prioritize only primary sources that deserve deeper review next.
 ````
 
 ## Quality rules
 
-The goal is not to maximize paper count or report length. Spend detail on sources that can change an architecture decision, security assumption, protocol mechanism, benchmark target, implementation priority, interoperability requirement, or research hypothesis.
+- Consume backlog items by decision value, not age alone.
+- Prefer P0/P1 when actionable.
+- A revisit must have a concrete unresolved question or new-source trigger.
+- Do not fabricate status transitions to show progress.
+- Do not create one backlog item per paper.
+- Consolidate convergent sources under one engineering question.
+- Preserve source provenance and limitations.
+- Prefer a few high-impact findings over a literature dump.
+- If all active items are exhausted, perform a bounded discovery pass and enqueue only distinct questions with explicit evidence contracts.
 
-Prefer these compression rules:
+## Promotion boundary
 
-- If the repo is unchanged, state the controlling gaps once rather than rewriting the same paragraph every day.
-- If a source only corroborates an existing backlog item, record the stronger evidence and avoid duplicating the entire prior rationale.
-- If several sources converge on one engineering conclusion, synthesize them under one finding or cross-source conclusion.
-- Preserve exact source provenance and limitations even when the executive summary is short.
-- A smaller number of high-impact, well-supported findings is preferable to a large undifferentiated literature dump.
+Daily research may mark an item `promote`, but this means only that the evidence is ready for explicit human engineering review.
 
-## Weekly handoff boundary
-
-The daily research process may propose `weekly finding candidates`, but it remains write-limited to `docs/research/**` under `../PIPELINE.md`.
-
-A separate human-reviewed process may consolidate daily research into:
-
-```text
-docs/findings/week-of-MM-DD-YYYY-findings.md
-```
-
-Explicit human-authorized work may then be recorded in:
-
-```text
-docs/requests/week-of-MM-DD-YYYY-request.md
-```
-
-Neither step is automatic research promotion.
+The daily process remains write-limited to `docs/research/**` under `../PIPELINE.md` and must not itself modify roadmap, ADR, spec, implementation, assurance, release, technical-debt, findings, or request state.
