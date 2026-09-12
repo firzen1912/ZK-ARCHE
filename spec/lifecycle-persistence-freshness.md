@@ -137,7 +137,35 @@ LPF-12 normal AUTH does not mutate trust while recovery is incomplete
 
 Where both implementations claim a concrete lifecycle transition, deterministic fixtures MUST identify the same pre-state, event, post-state or failure class, and durable-commit disposition.
 
-## 11. Evidence boundary
+## 11. Domain-specific recovery evidence
+
+A generic statement that "restart was tested" or "rollback was tested" is not sufficient evidence for every lifecycle component. Revocation state, authorization-generation state, and enrollment replay/one-time-consumption state have different security meanings and MAY use different records, atomicity mechanisms, freshness sources, or recovery policies. Evidence for one domain MUST NOT be silently reused as evidence for another.
+
+For a constrained profile that claims physical restart or rollback qualification for these domains, the retained evidence MUST independently identify whether the following paths were executed:
+
+```text
+revocation restart recovery
+revocation rollback handling
+authorization-generation restart recovery
+authorization-generation rollback handling
+enrollment replay / one-time-consumption restart recovery
+enrollment replay / one-time-consumption rollback handling
+```
+
+When a claimed domain is measured, its corresponding restart and rollback path MUST have been physically exercised on the identified target/storage backend. A manifest that leaves a required domain unexecuted MUST NOT be interpreted as measured qualification for that domain. Repository evidence currently enforces this separation through `ZKARCHE-CONSTRAINED-LIFECYCLE-STORAGE/6`; this specification defines the semantic claim boundary, not the JSON schema itself.
+
+The following evidence composition rules apply:
+
+- a successful revocation restart test does not establish authorization-generation or enrollment-replay recovery;
+- a successful authorization-generation rollback test does not establish revocation rollback resistance;
+- a successful enrollment replay recovery test does not prove revocation convergence or authorization freshness;
+- a generic process-restart test does not establish power-loss atomicity;
+- host-side decision tests do not establish physical persistence correctness;
+- successful AUTH, resumption, transport rebinding, or optional infrastructure availability cannot substitute for missing domain-specific recovery evidence.
+
+If one persistent transaction intentionally co-locates multiple security domains, the implementation MAY exercise them in a single physical fault campaign, but the retained result MUST still report the disposition of each claimed domain independently. If a fault can leave the domains at different generations, recovery MUST follow Section 5 and fail closed rather than treating the transaction as globally fresh.
+
+## 12. Evidence boundary
 
 Host tests can establish state-machine and accept/reject semantics. They do not establish flash durability, atomicity under physical power loss, secure-storage integrity, monotonic-counter correctness, rollback resistance, endurance, or restart latency on an MCU.
 
@@ -145,8 +173,8 @@ Physical target evidence for TD-002 MUST identify the target, storage backend, p
 
 Symbolic formal results MAY analyze an abstraction of lifecycle freshness, but they do not establish storage correctness or physical rollback resistance. The model-to-runtime abstraction gap MUST remain explicit under TD-003.
 
-## 12. Qualification status
+## 13. Qualification status
 
-This document advances TD-004 by making the restart/freshness composition rule independently reviewable. It does not by itself provide Rust/C implementation parity, physical MCU measurements, formal proof, independent cryptographic review, a bounded disconnected revocation-convergence policy, authorization-aware resumption implementation, or Common Contract qualification.
+This document advances TD-004 by making the restart/freshness composition rule and domain-specific recovery claim boundary independently reviewable. It does not by itself provide Rust/C implementation parity, physical MCU measurements, formal proof, independent cryptographic review, a bounded disconnected revocation-convergence policy, authorization-aware resumption implementation, or Common Contract qualification.
 
 Accordingly, `iot-core` and `p2p-iot-core` remain non-selectable until their own declared exit evidence exists. ZK-ARCHE remains a project targeting RFC-class engineering quality; this document is not an RFC and does not imply IETF status.
