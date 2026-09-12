@@ -154,7 +154,7 @@ fn successor_association_does_not_revive_predecessor_release_authority() {
 }
 
 #[test]
-fn fresh_auth_and_rebinding_do_not_revive_stale_release_authority() {
+fn fresh_auth_and_rebinding_do_not_revive_unsafe_release_state() {
     let mut stale_generation = current_release();
     stale_generation.authorization_generation_current = false;
     stale_generation.channel_binding_valid = false;
@@ -184,6 +184,60 @@ fn fresh_auth_and_rebinding_do_not_revive_stale_release_authority() {
     let lineage_decision = classify_data_release(&stale_lineage);
     assert_eq!(lineage_decision.action, DataReleaseAction::Deny);
     assert_eq!(lineage_decision.reason, DataReleaseReason::LineageStale);
+
+    let mut stale_local_authority = current_release();
+    stale_local_authority.device_release_authority_current = false;
+    stale_local_authority.channel_binding_valid = false;
+    stale_local_authority.authenticated = true;
+    stale_local_authority.channel_binding_valid = true;
+    let authority_decision = classify_data_release(&stale_local_authority);
+    assert_eq!(authority_decision.action, DataReleaseAction::Deny);
+    assert_eq!(
+        authority_decision.reason,
+        DataReleaseReason::DeviceReleaseAuthorityStale
+    );
+
+    let mut stale_authorization = current_release();
+    stale_authorization.authorization_fresh = false;
+    stale_authorization.channel_binding_valid = false;
+    stale_authorization.authenticated = true;
+    stale_authorization.channel_binding_valid = true;
+    let authorization_decision = classify_data_release(&stale_authorization);
+    assert_eq!(authorization_decision.action, DataReleaseAction::Deny);
+    assert_eq!(
+        authorization_decision.reason,
+        DataReleaseReason::AuthorizationStale
+    );
+
+    let mut policy_mismatch = current_release();
+    policy_mismatch.policy_match = false;
+    policy_mismatch.channel_binding_valid = false;
+    policy_mismatch.authenticated = true;
+    policy_mismatch.channel_binding_valid = true;
+    let policy_decision = classify_data_release(&policy_mismatch);
+    assert_eq!(policy_decision.action, DataReleaseAction::Deny);
+    assert_eq!(policy_decision.reason, DataReleaseReason::PolicyMismatch);
+
+    let mut consumed_operation = current_release();
+    consumed_operation.release_operation_unused = false;
+    consumed_operation.channel_binding_valid = false;
+    consumed_operation.authenticated = true;
+    consumed_operation.channel_binding_valid = true;
+    let replay_decision = classify_data_release(&consumed_operation);
+    assert_eq!(replay_decision.action, DataReleaseAction::Deny);
+    assert_eq!(
+        replay_decision.reason,
+        DataReleaseReason::ReleaseReplayDetected
+    );
+
+    let mut rollback = current_release();
+    rollback.rollback_suspected = true;
+    rollback.channel_binding_valid = false;
+    rollback.authenticated = true;
+    rollback.channel_binding_valid = true;
+    let rollback_decision = classify_data_release(&rollback);
+    assert_eq!(rollback_decision.action, DataReleaseAction::Deny);
+    assert_eq!(rollback_decision.reason, DataReleaseReason::RollbackSuspected);
 }
 
 #[test]

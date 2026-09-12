@@ -116,10 +116,15 @@ int main(void) {
         data_release_facts_t stale_generation = current_release();
         data_release_facts_t revoked = current_release();
         data_release_facts_t stale_lineage = current_release();
+        data_release_facts_t stale_local_authority = current_release();
+        data_release_facts_t stale_authorization = current_release();
+        data_release_facts_t policy_mismatch = current_release();
+        data_release_facts_t consumed_operation = current_release();
+        data_release_facts_t rollback = current_release();
         data_release_decision_t decision;
 
         /* Fresh AUTH and a newly valid channel binding must not synthesize
-         * current DATA authority after generation/revocation/lineage changes. */
+         * current DATA authority after any retained DATA-local fact becomes unsafe. */
         stale_generation.authorization_generation_current = false;
         stale_generation.channel_binding_valid = false;
         stale_generation.authenticated = true;
@@ -143,6 +148,46 @@ int main(void) {
         decision = data_release_authorization_classify(&stale_lineage);
         assert(decision.action == DATA_RELEASE_ACTION_DENY);
         assert(decision.reason == DATA_RELEASE_REASON_LINEAGE_STALE);
+
+        stale_local_authority.device_release_authority_current = false;
+        stale_local_authority.channel_binding_valid = false;
+        stale_local_authority.authenticated = true;
+        stale_local_authority.channel_binding_valid = true;
+        decision = data_release_authorization_classify(&stale_local_authority);
+        assert(decision.action == DATA_RELEASE_ACTION_DENY);
+        assert(decision.reason == DATA_RELEASE_REASON_DEVICE_RELEASE_AUTHORITY_STALE);
+
+        stale_authorization.authorization_fresh = false;
+        stale_authorization.channel_binding_valid = false;
+        stale_authorization.authenticated = true;
+        stale_authorization.channel_binding_valid = true;
+        decision = data_release_authorization_classify(&stale_authorization);
+        assert(decision.action == DATA_RELEASE_ACTION_DENY);
+        assert(decision.reason == DATA_RELEASE_REASON_AUTHORIZATION_STALE);
+
+        policy_mismatch.policy_match = false;
+        policy_mismatch.channel_binding_valid = false;
+        policy_mismatch.authenticated = true;
+        policy_mismatch.channel_binding_valid = true;
+        decision = data_release_authorization_classify(&policy_mismatch);
+        assert(decision.action == DATA_RELEASE_ACTION_DENY);
+        assert(decision.reason == DATA_RELEASE_REASON_POLICY_MISMATCH);
+
+        consumed_operation.release_operation_unused = false;
+        consumed_operation.channel_binding_valid = false;
+        consumed_operation.authenticated = true;
+        consumed_operation.channel_binding_valid = true;
+        decision = data_release_authorization_classify(&consumed_operation);
+        assert(decision.action == DATA_RELEASE_ACTION_DENY);
+        assert(decision.reason == DATA_RELEASE_REASON_RELEASE_REPLAY_DETECTED);
+
+        rollback.rollback_suspected = true;
+        rollback.channel_binding_valid = false;
+        rollback.authenticated = true;
+        rollback.channel_binding_valid = true;
+        decision = data_release_authorization_classify(&rollback);
+        assert(decision.action == DATA_RELEASE_ACTION_DENY);
+        assert(decision.reason == DATA_RELEASE_REASON_ROLLBACK_SUSPECTED);
     }
 
     {
@@ -156,6 +201,6 @@ int main(void) {
         assert(replay.reason == DATA_RELEASE_REASON_RELEASE_REPLAY_DETECTED);
     }
 
-    puts("DATA retained-association temporal qualification: ok mutations=7 lineage_successor=1 fresh_auth_rebind=3 replay=1");
+    puts("DATA retained-association temporal qualification: ok mutations=7 lineage_successor=1 fresh_auth_rebind=8 replay=1");
     return EXIT_SUCCESS;
 }
