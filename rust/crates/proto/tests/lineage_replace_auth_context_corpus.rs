@@ -68,14 +68,19 @@ fn base_evidence() -> LineageReplaceAuthContextEvidence {
 
 #[test]
 fn canonical_auth_context_corpus() {
-    let vectors = include_str!("../../../test-vectors/replay/lineage-replace-auth-context-v1.txt");
+    let vectors = include_str!("../../../test-vectors/replay/lineage-replace-auth-context-v2.txt");
+    let mut version = 0usize;
     let mut cases = 0usize;
     for line in vectors.lines() {
+        if line == "version=2" {
+            version = 2;
+            continue;
+        }
         if !line.starts_with("case=") {
             continue;
         }
         let fields: Vec<_> = line[5..].split('|').collect();
-        assert_eq!(fields.len(), 10);
+        assert_eq!(fields.len(), 12);
         let mut context = base_context();
         let mut record = base_record(&context);
         let mut evidence = base_evidence();
@@ -86,15 +91,21 @@ fn canonical_auth_context_corpus() {
             context.authorization_generation = 0;
         }
         if !bit(fields[5]) {
-            record.policy_epoch += 1;
+            record.authorization_generation += 1;
         }
         if !bit(fields[6]) {
-            record.peer_identity[0] ^= 1;
+            record.policy_epoch += 1;
         }
         if !bit(fields[7]) {
-            evidence.predecessor_credential_reference[0] ^= 1;
+            record.revocation_epoch += 1;
         }
         if !bit(fields[8]) {
+            record.peer_identity[0] ^= 1;
+        }
+        if !bit(fields[9]) {
+            evidence.predecessor_credential_reference[0] ^= 1;
+        }
+        if !bit(fields[10]) {
             evidence.requested_successor_scope_bits = 2;
         }
         assert_eq!(
@@ -103,13 +114,14 @@ fn canonical_auth_context_corpus() {
                 Some(&record),
                 Some(&evidence),
             ),
-            expected(fields[9]),
+            expected(fields[11]),
             "{}",
             fields[0]
         );
         cases += 1;
     }
-    assert_eq!(cases, 12);
+    assert_eq!(version, 2);
+    assert_eq!(cases, 15);
 }
 
 #[test]

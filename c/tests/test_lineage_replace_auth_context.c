@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define VECTOR_PATH "../rust/test-vectors/replay/lineage-replace-auth-context-v1.txt"
+#define VECTOR_PATH "../rust/test-vectors/replay/lineage-replace-auth-context-v2.txt"
 static bool bit(const char *v) { if (strcmp(v, "1") == 0) return true; assert(strcmp(v, "0") == 0); return false; }
 static void fill(uint8_t out[32], uint8_t value) { memset(out, value, 32u); }
 static lineage_replace_authorization_decision_t expected(const char *v) {
@@ -35,22 +35,24 @@ static lineage_replace_auth_context_evidence_t base_evidence(void) {
 int main(void) {
     FILE *fp = fopen(VECTOR_PATH, "r"); char line[512]; unsigned cases = 0u; int version = 0; assert(fp != NULL);
     while (fgets(line, sizeof(line), fp) != NULL) {
-        char *f[10] = {0}; char *p; unsigned i = 0u;
+        char *f[12] = {0}; char *p; unsigned i = 0u;
         auth_v3_iot_core_authorization_context_v1_t c; auth_v3_iot_core_attribution_record_v1_t r;
         lineage_replace_auth_context_evidence_t e;
-        line[strcspn(line, "\r\n")] = '\0'; if (strcmp(line, "version=1") == 0) { version = 1; continue; }
+        line[strcspn(line, "\r\n")] = '\0'; if (strcmp(line, "version=2") == 0) { version = 2; continue; }
         if (strncmp(line, "case=", 5u) != 0) continue;
-        p = strtok(line + 5u, "|"); while (p != NULL && i < 10u) { f[i++] = p; p = strtok(NULL, "|"); } assert(i == 10u && p == NULL);
+        p = strtok(line + 5u, "|"); while (p != NULL && i < 12u) { f[i++] = p; p = strtok(NULL, "|"); } assert(i == 12u && p == NULL);
         c = base_context(); r = base_record(&c); e = base_evidence();
         e.current_credential_control_valid = bit(f[1]); e.successor_key_control_valid = bit(f[2]); e.current_session_authenticated = bit(f[3]);
         if (!bit(f[4])) c.authorization_generation = 0u;
-        if (!bit(f[5])) r.policy_epoch += 1u;
-        if (!bit(f[6])) r.peer_identity[0] ^= 1u;
-        if (!bit(f[7])) e.predecessor_credential_reference[0] ^= 1u;
-        if (!bit(f[8])) e.requested_successor_scope_bits = 2u;
-        assert(lineage_replace_authorization_from_iot_core(&c, &r, &e) == expected(f[9])); cases += 1u;
+        if (!bit(f[5])) r.authorization_generation += 1u;
+        if (!bit(f[6])) r.policy_epoch += 1u;
+        if (!bit(f[7])) r.revocation_epoch += 1u;
+        if (!bit(f[8])) r.peer_identity[0] ^= 1u;
+        if (!bit(f[9])) e.predecessor_credential_reference[0] ^= 1u;
+        if (!bit(f[10])) e.requested_successor_scope_bits = 2u;
+        assert(lineage_replace_authorization_from_iot_core(&c, &r, &e) == expected(f[11])); cases += 1u;
     }
-    fclose(fp); assert(version == 1 && cases == 12u);
+    fclose(fp); assert(version == 2 && cases == 15u);
     { auth_v3_iot_core_authorization_context_v1_t c = base_context(); auth_v3_iot_core_attribution_record_v1_t r = base_record(&c); lineage_replace_auth_context_evidence_t e = base_evidence();
       assert(lineage_replace_authorization_from_iot_core(NULL, &r, &e) == LINEAGE_REPLACE_REJECT_SESSION_AUTHORIZATION);
       assert(lineage_replace_authorization_from_iot_core(&c, NULL, &e) == LINEAGE_REPLACE_REJECT_SESSION_AUTHORIZATION);
