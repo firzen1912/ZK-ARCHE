@@ -72,7 +72,7 @@ int main(void) {
 
     fclose(fp);
     assert(saw_version == 1);
-    assert(cases == 26u);
+    assert(cases == 32u);
 
     {
         transport_continuation_decision_t got = transport_continuation_classify(NULL);
@@ -80,6 +80,6 @@ int main(void) {
         assert(got.reason == TRANSPORT_CONTINUATION_REASON_INVALID_FACTS);
     }
 
-    puts("transport continuation corpus v3: ok cases=26");
+    puts("transport continuation corpus v3: ok cases=32");
     return EXIT_SUCCESS;
 }
