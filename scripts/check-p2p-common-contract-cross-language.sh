@@ -16,6 +16,19 @@ cc -std=c11 -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Werror \
   "$BUILD_DIR/p2p-common-contract-c"
 )
 
+# Cross-class lifecycle qualification composes the association-admission
+# classifier, so require the complete canonical fail-closed corpus in C rather
+# than relying only on the narrower retained-authority-loss smoke cases above.
+cc -std=c11 -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Werror \
+  -I"$ROOT/c/include" \
+  "$ROOT/c/src/proto/association_admission.c" \
+  "$ROOT/c/tests/test_association_admission.c" \
+  -o "$BUILD_DIR/association-admission-c"
+(
+  cd "$ROOT/c"
+  "$BUILD_DIR/association-admission-c"
+)
+
 echo "[p2p-common-contract] decision matrix and normative-boundary qualification"
 python3 "$ROOT/scripts/check-p2p-common-contract-decision.py"
 
@@ -44,6 +57,11 @@ fi
     --exact canonical_p2p_common_contract_lifecycle_corpus
   cargo test -p proto --test p2p_common_contract_lifecycle -- \
     --exact retained_cross_class_authority_fails_closed_after_lifecycle_loss
+  # Mirror the full C association-admission corpus at the Rust semantic owner
+  # so every retained-authority guard used by the cross-class P2P lane remains
+  # decision-compatible across both implementations.
+  cargo test -p proto association_admission::tests::canonical_corpus_matches_classifier -- \
+    --exact
 )
 
 # Offline Common Contract establishment depends on a locally incorporated,
@@ -62,4 +80,4 @@ python3 "$ROOT/scripts/check-revocation-view-reconciliation.py"
 echo "[p2p-common-contract] protected DATA retained-authority qualification"
 "$ROOT/scripts/check-data-release-retained-authority.sh"
 
-echo "p2p-common-contract-cross-language: PASS corpus=common-contract-lifecycle-v4 decision_matrix=pass exhaustive_properties=pass mutations=pass cross_module_lifecycle=pass retained_authority_loss=pass revocation_reconciliation=pass protected_data_release=pass C=pass Rust=pass"
+echo "p2p-common-contract-cross-language: PASS corpus=common-contract-lifecycle-v4 association_admission=pass decision_matrix=pass exhaustive_properties=pass mutations=pass cross_module_lifecycle=pass retained_authority_loss=pass revocation_reconciliation=pass protected_data_release=pass C=pass Rust=pass"
