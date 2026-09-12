@@ -57,6 +57,7 @@ event ReplayRejected(pkey, pkey, sessionid, bitstring).
 event ReplayRecorded(pkey, pkey, sessionid, bitstring).
 event ServerAuth1Accepted(pkey, pkey, sessionid, bitstring).
 event AuthorizationChecked(pkey, role, sessionid, bitstring).
+event AuthorizationContextAdmitted(pkey, pkey, sessionid, bitstring).
 event ServerAuth2Sent(pkey, pkey, sessionid, bitstring).
 event ClientAuth3Sent(pkey, pkey, sessionid, bitstring).
 event ClientComplete(pkey, pkey, sessionid, bitstring).
@@ -89,12 +90,18 @@ query cpk:pkey, spk:pkey, sid:sessionid, kcctx:bitstring;
   event(ServerComplete(cpk, spk, sid, kcctx))
   ==> event(ClientAuth3Sent(cpk, spk, sid, kcctx)).
 
-(* FM-09: successful server-side AUTH is relative to pre-existing trusted
-   state and an explicit authorization check. Normal AUTH has no modeled
-   transition that inserts or expands trusted state. *)
+(* FM-09/FM-10 seam: successful server-side AUTH is relative to pre-existing
+   trusted state and a modeled authorization admission. Normal AUTH has no
+   modeled transition that inserts or expands trusted state. The admitted
+   authorization event represents only the currently implemented role-proof
+   check; it does not establish complete audience/scope/policy semantics. *)
 query cpk:pkey, spk:pkey, sid:sessionid, kcctx:bitstring;
   event(ServerComplete(cpk, spk, sid, kcctx))
   ==> event(TrustedRecordPresent(cpk)).
+
+query cpk:pkey, spk:pkey, sid:sessionid, kcctx:bitstring;
+  event(ServerComplete(cpk, spk, sid, kcctx))
+  ==> event(AuthorizationContextAdmitted(cpk, spk, sid, kcctx)).
 
 let Client(csk:skey, spk:pkey, allowed:role) =
   new sid:sessionid;
@@ -151,6 +158,7 @@ let Server(ssk:skey, trusted_cpk:pkey, allowed:role) =
             let kcctx = kc_context(p, cpf, nc, ephc, spk, server_pf, ns, ephs) in
             let k = kdf(shared, nc, ns, kcctx) in
             let tagS = hmac(k, (server_finished_label, kcctx)) in
+            event AuthorizationContextAdmitted(cpk, spk, sid, kcctx);
             event ServerAuth2Sent(cpk, spk, sid, kcctx);
             out(c, (sid, ns, ephs, server_pf, tagS));
             in(c, (=sid, tagC:bitstring));
