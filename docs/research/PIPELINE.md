@@ -2,63 +2,130 @@
 
 This document defines the operating contract for recurring automated research on ZK-ARCHE.
 
-The pipeline is intentionally separated from protocol implementation. It may inspect the full repository to understand the current state, but its write authority is restricted to `docs/research/**` on the `dev` branch.
+The pipeline may inspect the full repository for context, but its write authority is restricted to `docs/research/**` on `dev`. The research backlog is a persistent **research-execution queue**; it is not an engineering implementation queue and it does not autonomously promote work into the roadmap, ADRs, specification, code, assurance claims, or release posture.
 
 ## Objective
 
-Each daily run should identify high-value external developments that can materially improve ZK-ARCHE's privacy, security, interoperability, constrained-device feasibility, formal assurance, or protocol maturity, and translate them into traceable research input **without silently changing the framework or creating implementation commitments**.
+Each daily run should continuously consume the highest-value unresolved research questions, gather and reconcile primary evidence, update the research queue, discover justified follow-on questions, and preserve traceable research provenance without silently changing ZK-ARCHE architecture or implementation commitments.
 
 The workflow is:
 
 ```text
 read current ZK-ARCHE dev state
         ↓
-identify current gaps and active roadmap/debt questions
+read backlog.md and prior daily reports
+        ↓
+select highest-priority unexhausted queue items
+        ↓
+inspect repository anchors for those items
         ↓
 research current primary sources
         ↓
-classify novelty vs prior research
+classify novelty vs prior evidence
         ↓
-separate verified facts from ZK-ARCHE inference
+reproduce / benchmark / prototype where the research scope permits
         ↓
 write delta-oriented daily report
         ↓
+update backlog item status, evidence, next question, and last-reviewed date
+        ↓
+discover and enqueue distinct justified follow-on questions
+        ↓
+continue until the run budget is exhausted or no actionable queued item remains
+        ↓
 update research index
         ↓
-update backlog only when justified
-        ↓
-one atomic commit → one dev ref update
-        ↓
-optional weekly finding candidates for later human review
+one atomic research commit → one dev ref update
 ```
 
-The daily automation stops at the research layer. It does not create or update weekly findings or requests.
+A run may consume more than one backlog item when time and evidence quality permit. It should prefer depth over paper count and should avoid repeatedly selecting an item that has no unresolved next-evidence question.
+
+## Queue semantics
+
+`docs/research/backlog.md` is the canonical persistent queue for recurring research.
+
+Every active item must have:
+
+- a stable `R-*` identifier;
+- a concrete research question;
+- a queue priority;
+- a status;
+- explicit evidence needed to advance or close the question;
+- a potential destination if later promoted;
+- a last-reviewed date;
+- enough next-step detail that a later daily run can resume without rediscovering context.
+
+### Queue priority
+
+Use:
+
+```text
+P0 | P1 | P2 | P3
+```
+
+- `P0` — research directly blocks a security, conformance, formal-assurance, or claim boundary.
+- `P1` — research blocks mandatory Common Contract, constrained-device, interoperability, lifecycle, or P2P maturity.
+- `P2` — valuable core capability or evidence expansion after P0/P1 blockers.
+- `P3` — optional, exploratory, migration, or research-only work that must not delay the mandatory baseline.
+
+Daily selection order is normally P0 → P1 → P2 → P3, but a lower-priority item may be selected when it is dependency-unblocking, newly time-sensitive, or can be resolved efficiently with evidence already being reviewed.
+
+### Status lifecycle
+
+Use:
+
+```text
+queued
+researching
+reproduce
+benchmark
+prototype
+promote
+research-only
+defer
+reject
+exhausted
+```
+
+`exhausted` means the current research question has no material unresolved research step under its present scope. It does **not** mean the associated engineering work is implemented or the destination is accepted.
+
+An item may remain `reproduce`, `benchmark`, or `prototype` across multiple runs until its explicit evidence contract is satisfied.
+
+### Queue consumption rule
+
+At the start of each run:
+
+1. load all non-terminal backlog items;
+2. ignore `reject` and `exhausted` unless new contradictory/superseding evidence appears;
+3. rank by priority, dependency value, staleness, and evidence gap;
+4. select at least one highest-value actionable item;
+5. record selected item IDs in the daily report;
+6. research until the item can be advanced, refined, deferred, rejected, exhausted, or left active with a sharper next-evidence requirement;
+7. only then move to the next queue item if run budget remains.
+
+A run must not keep selecting the same active item merely because it is old. Each revisit should have a concrete unresolved question or new source trigger.
+
+### Backlog replenishment
+
+The pipeline should continuously replenish the queue when justified by:
+
+- a distinct question discovered while resolving an existing item;
+- a newly published primary source that changes the threat model or evidence contract;
+- a repository change exposing a new research gap;
+- a contradiction between implementation, specification, formal model, and external guidance;
+- a benchmark or reproduction result that creates a separable follow-on question.
+
+Do not create one backlog entry per paper. Consolidate sources under the engineering question they inform.
 
 ## Branch and access policy
 
 ### Read scope
 
-The pipeline may read and search the entire `firzen1912/ZK-ARCHE` repository on `dev`, including:
-
-- Rust and C implementation code;
-- tests, fuzzers, deterministic vectors, and formal models;
-- `spec/`;
-- `docs/architecture/`;
-- `docs/roadmaps/`;
-- `docs/assurance/`;
-- `docs/adr/`;
-- `docs/technical-debt/`;
-- `docs/findings/`;
-- `docs/requests/`;
-- `docs/release/`;
-- CI workflows and validation scripts;
-- commit, issue, and pull-request history when relevant.
-
-This access is for context only outside the research namespace.
+The pipeline may read/search the entire repository on `dev`, including implementation, tests, vectors, formal models, `spec/`, architecture, roadmaps, assurance, ADRs, technical debt, findings, requests, release material, validation scripts, commit history, issues, and pull requests when relevant.
 
 ### Write scope
 
-The pipeline may create or update files only under:
+The recurring pipeline may create or update only:
 
 ```text
 docs/research/**
@@ -72,171 +139,91 @@ docs/research/backlog.md
 docs/research/daily/YYYY-MM-DD.md
 ```
 
-The pipeline must never create, modify, move, rename, overwrite, or delete anything outside `docs/research/**`.
+It must not write to `docs/findings/**`, `docs/requests/**`, `docs/technical-debt/**`, `docs/roadmaps/**`, `docs/adr/**`, `spec/**`, `rust/**`, `c/**`, `main`, repository settings, issues, PRs, or releases.
 
-In particular, the recurring daily pipeline must not write:
-
-```text
-docs/findings/**
-docs/requests/**
-docs/technical-debt/**
-docs/roadmaps/**
-docs/adr/**
-spec/**
-rust/**
-c/**
-```
-
-It must never write to `main`, merge branches, rebase, force-push, publish releases, modify repository settings, or create/update pull requests or issues as part of the daily research run.
-
-If a finding implies a change to code, tests, specifications, roadmaps, ADRs, CI, release governance, weekly findings, weekly requests, or assurance claims, record the recommendation in the daily report and, when justified, in `backlog.md` for explicit human promotion.
-
-## One-commit / one-ref-update rule
-
-Each daily run may produce at most one Git commit and one update of `refs/heads/dev`.
-
-Before writing, the automation must:
-
-1. read the current `dev` head;
-2. inspect the current repository state relevant to the day's research;
-3. read every research file that may be changed;
-4. build the complete final contents of the daily report, index, and backlog before any write;
-5. create the required blobs and one replacement tree;
-6. create one commit with the previous `dev` head as its parent;
-7. update the `dev` ref once without force;
-8. verify that the resulting diff contains only `docs/research/**` paths.
-
-Recommended commit message:
-
-```text
-research: add ZK-ARCHE daily research report YYYY-MM-DD
-```
-
-If the report already exists and a same-day rerun is deliberately performed:
-
-```text
-research: update ZK-ARCHE daily research report YYYY-MM-DD
-```
-
-If safe atomic publication cannot be completed, make no unrelated repository changes and return the research results with the GitHub-write failure stated clearly.
+A daily research run may identify implementation or governance work, but it records that only as advisory research evidence or a promotion candidate.
 
 ## Repository-first research rule
 
-Every run must begin by inspecting the current `dev` state before searching externally.
-
-At minimum, review the material most likely to determine the current research priorities:
+Every run begins with current `dev` state. At minimum, inspect:
 
 - `docs/research/README.md`;
 - `docs/research/backlog.md`;
-- the most recent daily research reports;
-- the current weekly findings/request files if they exist;
+- the most recent daily reports;
+- relevant weekly findings/requests;
 - `docs/roadmaps/improvement-roadmap.md`;
 - `docs/roadmaps/rfc-evolution-plan.md`;
 - `docs/technical-debt/README.md`;
 - `docs/assurance/assurance-and-validation.md`;
-- `spec/README.md` and relevant specification files;
-- recent repository commits and implementation changes.
+- relevant `spec/` and implementation/test/formal anchors;
+- recent commits affecting selected queue items.
 
-The purpose is to avoid generic cryptography news collection. Research should target actual ZK-ARCHE gaps, current implementation decisions, upcoming roadmap work, unresolved evidence needs, and recently changed protocol surfaces.
-
-## Delta and compression discipline
-
-The daily report should preserve evidence while minimizing repeated context.
-
-If there is no meaningful repository change since the previous report:
-
-- say so once in the run-identity/repository-delta section;
-- name the still-controlling `R-*`/`TD-*` items;
-- do not reproduce a long unchanged repository inventory merely for completeness.
-
-For each source-supported finding, classify its relationship to prior research:
-
-```text
-new | corroborates | refines | contradicts | supersedes
-```
-
-Use `corroborates` when a source adds support but does not change the engineering decision. Use `refines` when it changes the threat model, evidence contract, constraints, or next experiment. Use `contradicts`/`supersedes` only when the report explicitly reconciles the older conclusion.
-
-Do not repeatedly restate an older source or finding unless the new evidence changes its status, limitations, destination, or required evidence.
+Research must target actual ZK-ARCHE gaps rather than generic cryptography or IoT news.
 
 ## Research channels
 
-Prefer primary and authoritative sources. Daily runs should consider, where relevant:
+Prefer primary sources:
 
-- IETF RFCs, Internet-Drafts, working-group repositories, meeting material, and reference implementations;
-- NIST standards, draft standards, guidance, and cryptographic-transition material;
-- IACR ePrint and peer-reviewed CRYPTO/EUROCRYPT/ASIACRYPT work;
-- IEEE, ACM, USENIX Security, NDSS, CCS, S&P, PETS, and related venues;
-- official university or research-lab publications and code;
-- official GitHub repositories, releases, commits, issues, benchmarks, and test suites;
-- official documentation for libsodium, Rust cryptography libraries, embedded targets, RTOS platforms, secure elements, and MCU cryptographic accelerators;
-- formal-methods tools and primary research for ProVerif, Tamarin, SAPIC+, symbolic protocol analysis, and mechanized proof where relevant.
+- IETF RFCs, Internet-Drafts, working-group material, and reference implementations;
+- NIST standards/guidance;
+- IACR ePrint and peer-reviewed cryptography work;
+- IEEE, ACM, USENIX Security, NDSS, CCS, S&P, PETS, and similar venues;
+- university/research-lab publications and code;
+- official source repositories, releases, benchmarks, test suites, and hardware documentation;
+- formal-methods primary sources for ProVerif, Tamarin, SAPIC+, and related tools.
 
-Secondary articles may help discovery, but claims promoted into the report should be traced to the strongest available primary source.
+Secondary sources may aid discovery, but substantive claims should be traced to the strongest available primary source.
 
 ## Priority research domains
 
-Daily research should prioritize distinct developments in:
+The queue should continue to cover:
 
-- privacy-preserving device authentication and authorization;
-- constrained Sigma/Schnorr-style proof systems;
-- anonymous credentials and selective disclosure;
-- unlinkability and metadata-leakage reduction;
-- EDHOC, OSCORE, CoAP, DTLS 1.3, TLS 1.3, mTLS, exporters, and channel binding;
-- IoT enrollment, commissioning, ownership transfer, late enrollment, rekey, and revocation;
-- replay protection, retry cookies, anti-amplification, resumption, state exhaustion, and DoS resistance;
-- transcript design, downgrade resistance, reflection/UKS resistance, and strict state machines;
-- deterministic vectors, differential testing, fuzzing, mutation testing, and implementation interoperability;
-- formal verification, symbolic analysis, and implementation-to-model traceability;
-- constant-time implementation, side-channel hardening, RNG/DRBG design, secure storage, and key lifecycle;
-- STM32 and ESP32-S3 CPU/RAM/flash/wire-size constraints;
-- Rust/C cryptographic implementation safety and portability;
-- optional post-quantum or hybrid profiles when constrained-device measurements exist;
-- P2P zero-trust trust graphs, scoped delegation, revocation epochs, and mutual authentication;
-- privacy-preserving data sovereignty and policy-bound release.
+- privacy-preserving authentication/authorization;
+- constrained Sigma/Schnorr-style proofs;
+- anonymous/selective-disclosure credentials;
+- unlinkability and metadata leakage;
+- EDHOC, OSCORE, CoAP, DTLS/TLS/mTLS/exporters/channel binding;
+- enrollment, commissioning, rekey, revocation, ownership transfer;
+- replay, retry cookies, anti-amplification, resumption, state exhaustion, DoS;
+- transcript design, downgrade/reflection/UKS resistance, strict state machines;
+- vectors, differential testing, fuzzing, mutation testing, Rust/C interoperability;
+- formal verification and model-to-code traceability;
+- constant-time behavior, side channels, RNG/DRBG, secure storage, key lifecycle;
+- STM32/ESP32-S3 CPU/RAM/flash/wire constraints;
+- optional PQ/hybrid profiles when measured;
+- P2P zero-trust, scoped delegation, revocation, mutual authentication;
+- data sovereignty, policy-bound release, auditability, and privacy-preserving data access.
 
 ## Finding contract
 
 Each meaningful finding must include:
 
 1. stable per-report finding ID;
-2. novelty classification relative to prior research;
-3. source title and source type;
-4. publication/release/update date;
-5. primary-source link or citation;
-6. verified source-supported claim;
-7. exact existing owner when one exists (`R-*`, `TD-*`, roadmap phase, spec section, or `none`);
-8. concrete repository fact or implementation/spec/test anchor;
-9. problem or bottleneck addressed;
-10. strongest distinct engineering idea;
-11. evidence maturity;
-12. limitations and uncertainty;
-13. direct ZK-ARCHE relevance;
-14. likely impact on wire format, CPU, RAM, flash, dependencies, trust model, or privacy where applicable;
-15. compatibility impact on Rust, C, deterministic vectors, and existing profiles;
-16. required next evidence;
-17. recommended disposition;
-18. whether the item is a weekly finding candidate.
+2. selected backlog item(s) affected;
+3. novelty classification: `new | corroborates | refines | contradicts | supersedes`;
+4. source title/type/date/primary link;
+5. verified source-supported claim;
+6. exact owner (`R-*`, `TD-*`, roadmap phase, spec section, or `none`);
+7. concrete repository anchor;
+8. problem addressed and strongest distinct engineering idea;
+9. evidence maturity: `concept | formal | software | constrained-hardware | deployed | externally-reviewed`;
+10. limitations/uncertainty;
+11. ZK-ARCHE inference;
+12. likely wire/CPU/RAM/flash/dependency/trust/privacy impact;
+13. Rust/C/vector compatibility impact;
+14. required next evidence;
+15. recommended disposition;
+16. whether it is a weekly-finding candidate.
 
-Use the evidence maturity vocabulary:
-
-```text
-concept | formal | software | constrained-hardware | deployed | externally-reviewed
-```
-
-Use the disposition vocabulary:
-
-```text
-investigate | reproduce | benchmark | prototype | promote | defer | reject | research-only
-```
-
-Separate **source-supported facts**, **repository facts**, and **ZK-ARCHE inference** explicitly.
+Separate source-supported facts, repository facts, and ZK-ARCHE inference explicitly.
 
 ## Promotion boundary
 
-Research output is advisory. It must not directly edit the roadmap, specification, code, ADRs, assurance claims, release posture, weekly findings, weekly requests, or technical-debt status.
+Research may move a backlog item to `promote`, but `promote` means only **ready for explicit human engineering review**.
 
-Each potentially actionable finding should include:
+The pipeline must not directly edit roadmap/spec/code/ADR/assurance/debt/release/weekly request state.
+
+Use:
 
 ```yaml
 roadmap_impact:
@@ -249,73 +236,60 @@ roadmap_impact:
   promotion_requirement: explicit human review
 ```
 
-A report may identify a likely roadmap phase, ADR need, spec section, test requirement, benchmark, or weekly finding candidate, but only explicit subsequent human-reviewed work may modify those artifacts.
-
-## Weekly handoff boundary
-
-ZK-ARCHE now has separate weekly layers:
-
-```text
-docs/findings/week-of-MM-DD-YYYY-findings.md
-docs/requests/week-of-MM-DD-YYYY-request.md
-```
-
-The daily automation may **read** these files for context but may not write them.
-
-A daily report may list:
-
-- **weekly finding candidates** — conclusions that a later human-reviewed synthesis could consolidate into `docs/findings/`;
-- **request candidates** — normally `none`; a request requires explicit human intent or another already-authorized engineering process.
-
-The weekly findings process should collapse duplicate daily conclusions and retain exact provenance. The weekly request process should record only explicitly authorized work with acceptance conditions and evidence requirements.
-
-This separation is deliberate: recurring research must not become a de facto roadmap or autonomous work queue.
-
 ## Daily output contract
 
-The daily report must follow `docs/research/daily/README.md` and should contain:
+Every daily report must include:
 
 - run identity and repository delta;
-- a concise executive synthesis;
-- a finding index with novelty, owner, disposition, and weekly-handoff classification;
-- only the repository context actually needed to support the findings;
-- detailed source-supported findings;
+- **queue snapshot**: active counts by priority/status;
+- **selected backlog items** and why they were chosen;
+- concise executive synthesis;
+- finding index;
+- repository context inspected;
+- detailed findings;
 - cross-source synthesis;
-- an actionability matrix;
-- justified backlog updates or an explicit `none`;
+- actionability matrix;
+- **backlog transitions** (`old status → new status`, evidence gained, remaining question);
+- **newly enqueued follow-ons**, if any;
 - weekly finding/request handoff candidates;
-- an explicit no-change/claim boundary;
-- high-priority follow-up primary sources.
+- explicit claim/no-change boundary;
+- next recommended queue items.
 
-The report should make clear:
+If no backlog transition is justified, state `none`; do not fabricate progress.
 
-- what is genuinely new relative to previous reports;
-- what only corroborates/refines existing backlog work;
-- what matters most to the current ZK-ARCHE implementation;
-- what should be investigated or benchmarked next;
-- what should remain research-only;
-- which existing backlog items gained or lost support;
-- what this report did **not** change.
+## Exhaustion behavior
 
-Avoid padding. A smaller number of high-impact, well-supported findings is preferable to a large undifferentiated literature dump.
+When no actionable non-terminal backlog item remains:
 
-## Backlog update rule
+1. confirm the queue is exhausted rather than merely stale;
+2. run a bounded discovery pass across the priority research domains and recent primary sources;
+3. enqueue only distinct questions with an explicit decision-changing evidence contract;
+4. if no justified question is found, record `queue exhausted; no material new research question discovered` in the daily report.
 
-Update `docs/research/backlog.md` only when a finding materially changes the status/evidence contract of an existing question or establishes a distinct new research question.
+The pipeline should never generate low-value backlog entries merely to keep itself busy.
 
-Do not create duplicate backlog entries for every paper or release. Consolidate multiple sources under the same engineering question where appropriate.
+## One-commit / one-ref-update rule
 
-When a finding only corroborates an existing item, update the row only if the new source changes the evidence required, status, destination, or review date in a meaningful way.
+Each automated daily run may produce at most one Git commit and one `dev` ref update. The report, README index update, and backlog transitions for that run should be assembled atomically.
+
+Recommended messages:
+
+```text
+research: add ZK-ARCHE daily research report YYYY-MM-DD
+research: update ZK-ARCHE daily research report YYYY-MM-DD
+```
+
+If atomic publication fails, do not make unrelated changes.
 
 ## Verification after publication
 
-After updating `dev`, verify:
+Verify that:
 
-- the new commit's parent is the previous `dev` head;
-- the daily report exists for the correct date;
+- the report exists for the correct date;
 - the research index links to it;
-- any backlog modification is supported by the report;
-- no file outside `docs/research/**` changed;
-- `docs/findings/**` and `docs/requests/**` were not modified by the daily run;
-- `main` was not modified;
-- only one commit and one `dev` ref update were used for that daily run.
+- selected backlog items and transitions match the report;
+- newly enqueued items have a distinct question and evidence contract;
+- no path outside `docs/research/**` changed;
+- `docs/findings/**` and `docs/requests/**` were untouched;
+- `main` was untouched;
+- the daily run used one research commit / one `dev` ref update.
