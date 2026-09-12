@@ -5,6 +5,13 @@ TMP="${TMPDIR:-/tmp}/zk-arche-p2p-c-qualification-$$"
 trap 'rm -rf "$TMP"' EXIT INT TERM
 mkdir -p "$TMP"
 CC_BIN="${CC:-cc}"
+
+# Bind the exhaustive Common Contract authority/non-authority properties to
+# this executable C qualification lane. This keeps optional infrastructure,
+# peer class, and non-transitive trust from drifting away from the shared
+# lifecycle corpus exercised below.
+python3 "$ROOT/scripts/check-p2p-common-contract-properties.py"
+
 "$CC_BIN" -std=c11 -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Werror \
   -I"$ROOT/c/include" \
   "$ROOT/c/src/proto/association_admission.c" \
