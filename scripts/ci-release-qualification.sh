@@ -86,6 +86,12 @@ run_step_in() {
 
   run_step "exact-head clean preflight" exact_head_gate preflight
 
+  run_step "fuzz target/corpus provenance" \
+    python3 "$ROOT/scripts/check-fuzz-provenance.py"
+
+  run_step "fuzz harness compile integration" \
+    cargo check --manifest-path "$ROOT/rust/fuzz/Cargo.toml" --locked --bins
+
   run_step "formal qualification" \
     bash "$ROOT/scripts/ci-formal.sh"
 
@@ -122,6 +128,9 @@ run_step_in() {
 
   run_step "P2P exhaustive decision properties" \
     python3 "$ROOT/scripts/check-p2p-common-contract-properties.py"
+
+  run_step "P2P deterministic mutation qualification" \
+    python3 "$ROOT/scripts/check-p2p-common-contract-mutations.py"
 
   run_step "P2P Rust/C lifecycle qualification" \
     bash "$ROOT/scripts/check-p2p-common-contract-cross-language.sh"
