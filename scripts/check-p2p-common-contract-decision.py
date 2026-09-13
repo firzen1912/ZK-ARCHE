@@ -18,8 +18,17 @@ FIELDS = [
     "revocation_fresh", "holder_revoked", "lineage_current", "mandatory_floor_compatible",
     "binding_required", "binding_valid", "expected",
 ]
-PEER_CLASSES = {"mcu-core", "linux-edge"}
+PEER_CLASSES = {"mcu-core", "mcu-plus", "linux-edge", "accelerated-edge"}
 OUTCOMES = {"MUTUAL_AUTH_LOCAL_DECISION", "FAIL_CLOSED"}
+REQUIRED_DIRECTIONS = {
+    ("mcu-core", "mcu-core"),
+    ("mcu-core", "mcu-plus"),
+    ("mcu-plus", "mcu-core"),
+    ("mcu-core", "linux-edge"),
+    ("linux-edge", "mcu-core"),
+    ("mcu-core", "accelerated-edge"),
+    ("accelerated-edge", "mcu-core"),
+}
 
 def fail(message: str) -> None:
     print(f"p2p-common-contract-decision: FAIL: {message}", file=sys.stderr)
@@ -80,6 +89,7 @@ def main() -> None:
         fail(f"unexpected fields: {reader.fieldnames}")
 
     seen: set[str] = set()
+    successful_directions: set[tuple[str, str]] = set()
     cross_class = 0
     offline_accept = 0
     negative = 0
@@ -100,6 +110,7 @@ def main() -> None:
             cross_class += 1
         if row["infrastructure_available"] == "false" and actual == "MUTUAL_AUTH_LOCAL_DECISION":
             offline_accept += 1
+            successful_directions.add((row["peer_a"], row["peer_b"]))
         if actual == "FAIL_CLOSED":
             negative += 1
         if row["authorization_generation_bound"] == "false" or row["authorization_generation_current"] == "false":
@@ -107,7 +118,11 @@ def main() -> None:
                 fail(f"{cid}: stale/unbound authorization generation must fail closed")
             generation_negative += 1
 
-    if len(seen) < 16 or cross_class < 12 or offline_accept < 5 or negative < 10 or generation_negative < 4:
+    missing_directions = REQUIRED_DIRECTIONS - successful_directions
+    if missing_directions:
+        fail(f"missing successful offline direction coverage: {sorted(missing_directions)}")
+
+    if len(seen) < 22 or cross_class < 18 or offline_accept < 9 or negative < 12 or generation_negative < 4:
         fail(
             f"insufficient coverage cases={len(seen)} cross_class={cross_class} "
             f"offline_accept={offline_accept} negative={negative} generation_negative={generation_negative}"
@@ -129,12 +144,16 @@ def main() -> None:
     require_text(ROADMAP, [
         "Asymmetric computation is acceptable; asymmetric authentication assurance is not.",
         "Trust is local and non-transitive by default. `A trusts B` and `B trusts C` must not imply `A trusts C` without explicit bounded delegation evidence accepted by A.",
+        "STM32-class peer  ↔ ESP32-S3-class peer",
+        "STM32-class peer  ↔ Jetson-class peer",
+        "Jetson-class peer ↔ STM32-class peer",
         "no hidden CA/cloud/gateway dependency in the core path", "profile/capability downgrade-resistance tests",
     ])
     print(
         "p2p-common-contract-decision: PASS "
         f"cases={len(seen)} cross_class={cross_class} offline_accept={offline_accept} "
-        f"negative={negative} generation_negative={generation_negative}"
+        f"negative={negative} generation_negative={generation_negative} "
+        f"successful_directions={len(successful_directions)}"
     )
 
 if __name__ == "__main__":
