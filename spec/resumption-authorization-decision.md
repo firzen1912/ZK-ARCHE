@@ -34,18 +34,20 @@ Implementations MUST apply this fail-closed precedence:
 2. stale restart/replay continuity -> `REJECT`;
 3. stale/unknown bounded-reuse counter continuity -> `REJECT`;
 4. explicit session invalidation -> `REJECT`;
-5. stale/unknown privacy-identifier state -> `FULL_AUTH_REQUIRED`;
-6. repeated identifier would exceed the profile linkability bound -> `FULL_AUTH_REQUIRED`;
-7. stale credential epoch -> `FULL_AUTH_REQUIRED`;
-8. missing/invalid credential, binding mismatch, expiry, or reuse exhaustion -> `FULL_AUTH_REQUIRED`;
-9. missing/stale cached authorization context -> `FULL_AUTH_REQUIRED`;
-10. missing authenticated authorization-generation binding -> `FULL_AUTH_REQUIRED`;
-11. stale credential-bound authorization generation -> `FULL_AUTH_REQUIRED`;
-12. stale revocation state -> `REJECT`;
-13. explicit revocation -> `REJECT`;
-14. stale authorization lineage -> `REJECT`;
+5. stale revocation state -> `REJECT`;
+6. explicit revocation -> `REJECT`;
+7. stale authorization lineage -> `REJECT`;
+8. stale/unknown privacy-identifier state -> `FULL_AUTH_REQUIRED`;
+9. repeated identifier would exceed the profile linkability bound -> `FULL_AUTH_REQUIRED`;
+10. stale credential epoch -> `FULL_AUTH_REQUIRED`;
+11. missing/invalid credential, binding mismatch, expiry, or reuse exhaustion -> `FULL_AUTH_REQUIRED`;
+12. missing/stale cached authorization context -> `FULL_AUTH_REQUIRED`;
+13. missing authenticated authorization-generation binding -> `FULL_AUTH_REQUIRED`;
+14. stale credential-bound authorization generation -> `FULL_AUTH_REQUIRED`;
 15. changed peer, deployment/domain, audience, or profile -> `FULL_AUTH_REQUIRED`;
 16. otherwise -> `RESUME`.
+
+Terminal retained-authority failures (`REJECT`) MUST dominate ordinary fast-path fallback conditions (`FULL_AUTH_REQUIRED`). In particular, revocation or stale lineage MUST NOT be masked by a simultaneous privacy, credential-reuse, binding, authorization-cache, authorization-generation, or profile mismatch. This ordering is part of Rust/C decision compatibility, not merely an implementation preference.
 
 A zero usage limit disables resumption. `usage_count >= usage_limit` requires full AUTH. A peer MUST NOT reset or reconstruct a lower usage count because process or volatile transport state restarted. Identifier-privacy state is a separate bound: a remaining credential reuse count does not authorize repeated use of a privacy-relevant identifier when the profile's linkability bound has been reached.
 
@@ -63,7 +65,7 @@ Restart or transport reconnection MUST NOT manufacture fresh authorization, revo
 
 The canonical decision corpus is `rust/test-vectors/state/resumption-authorization-v5.txt` and is consumed by both Rust and C tests.
 
-The v5 corpus covers current-state success plus rollback, stale restart continuity, stale reuse-counter continuity, stale privacy-identifier state, forbidden repeated-identifier linkability, stale credential epoch, explicit invalidation, missing/invalid credential, binding mismatch, expiry, reuse exhaustion, missing/stale authorization context, missing authorization-generation binding, stale authorization generation, stale revocation state, explicit revocation, stale lineage, and peer/deployment/audience/profile changes.
+The v5 corpus covers current-state success plus rollback, stale restart continuity, stale reuse-counter continuity, stale privacy-identifier state, forbidden repeated-identifier linkability, stale credential epoch, explicit invalidation, missing/invalid credential, binding mismatch, expiry, reuse exhaustion, missing/stale authorization context, missing authorization-generation binding, stale authorization generation, stale revocation state, explicit revocation, stale lineage, and peer/deployment/audience/profile changes. It also contains simultaneous-failure cases that pin terminal lifecycle precedence, including revocation/lineage against profile, binding, reuse-limit, or stale-authorization fallback conditions.
 
 Versions 1–4 remain historical evidence. New implementations claiming the current contract MUST use version 5.
 
