@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, NoReturn
 
 SCHEMA = "ZKARCHE-CONSTRAINED-TARGET/2"
+PEER_CLASSES = ("mcu-core", "mcu-plus", "linux-edge", "accelerated-edge")
 SCALAR_MEASUREMENTS = (
     "static_ram_bytes",
     "peak_stack_bytes",
@@ -31,6 +32,7 @@ NONEMPTY_PATHS = (
     ("target", "board"),
     ("target", "board_revision"),
     ("target", "architecture"),
+    ("target", "peer_class"),
     ("target", "execution_environment"),
     ("target", "power_mode"),
     ("implementation", "commit_sha"),
@@ -116,6 +118,10 @@ def require_null_measurements(measurements: dict[str, Any]) -> None:
 def validate_unmeasured(doc: dict[str, Any], measurements: dict[str, Any]) -> None:
     if doc.get("physical_target_executed") is not False:
         fail("unmeasured manifest must set physical_target_executed=false")
+    target = section(doc, "target")
+    peer_class = target.get("peer_class")
+    if peer_class not in {None, "", *PEER_CLASSES}:
+        fail("unmeasured target.peer_class must be empty or a declared Common Contract peer class")
     require_null_measurements(measurements)
     method = section(doc, "measurement_method")
     for key in ("warmup_iterations", "sample_count"):
@@ -147,6 +153,9 @@ def validate_measured(doc: dict[str, Any], measurements: dict[str, Any]) -> None
         if not isinstance(value, str) or not value.strip():
             fail("measured manifest requires non-empty " + ".".join(field_path))
     target = section(doc, "target")
+    peer_class = target["peer_class"]
+    if peer_class not in PEER_CLASSES:
+        fail("target.peer_class must be one of: " + ", ".join(PEER_CLASSES))
     for key in ("cpu_clock_hz", "ram_bytes", "flash_bytes_available"):
         numeric(target.get(key), f"target.{key}", positive=True, integral=True)
     commit_sha = get_path(doc, ("implementation", "commit_sha"))
@@ -214,7 +223,11 @@ def validate_measured(doc: dict[str, Any], measurements: dict[str, Any]) -> None
     refs = provenance.get("raw_evidence_refs")
     if not isinstance(refs, list) or not refs or not all(isinstance(item, str) and item.strip() for item in refs):
         fail("measured manifest requires at least one non-empty provenance.raw_evidence_refs entry")
-    print(f"constrained-target-manifest: PASS status=measured target={get_path(doc, ('target', 'board'))} commit={commit_sha}")
+    print(
+        "constrained-target-manifest: PASS "
+        f"status=measured target={get_path(doc, ('target', 'board'))} "
+        f"peer_class={peer_class} commit={commit_sha}"
+    )
 
 
 def main() -> None:
