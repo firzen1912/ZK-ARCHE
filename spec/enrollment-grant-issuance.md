@@ -26,6 +26,8 @@ The replay store and its persistence/restart guarantees are owned by the enrollm
 
 A commissioner cannot confer authority it does not hold. Delegated commissioner authority is therefore capped by the already-accepted local grant and its delegation depth. Enrollment does not make trust transitive: subsequent peers still evaluate the issued grant under their own local trust policy.
 
+Delegation depth is an additional bound on an otherwise-valid explicit enrollment decision; it is not an alternate trust root and it does not outrank stronger invalid states. An implementation MUST NOT use acceptable or excessive delegation depth to bypass the normal-AUTH prohibition, commissioner revocation, stale authorization generation, stale policy epoch, stale revocation view, stale lineage, or rollback detection. Conversely, when one of those stronger conditions is already unsafe, the decision reason follows the normative precedence below rather than reporting only `DELEGATION_DEPTH_EXCEEDED`.
+
 Revocation, authorization freshness, authorization-generation provenance, authorization-generation currentness, and lineage freshness are mandatory issuance inputs. Stale or unproven local authority state cannot be repaired by normal AUTH or successful subject possession proof.
 
 ## Required precedence
@@ -50,11 +52,21 @@ A conformant implementation applies the following fail-closed order:
 
 When multiple facts are unsafe simultaneously, the earliest applicable condition in this order is authoritative. A later recoverable or narrower failure MUST NOT mask rollback suspicion, normal-AUTH misuse, missing commissioner authority/provenance, revocation, replay, authority escalation, or stale lifecycle state.
 
+For independent implementations, this ordering is part of the decision contract rather than an implementation detail. Two implementations that both deny an unsafe request but select different reasons for the same canonical compound-fault vector are not decision-compatible with this contract.
+
 ## Conformance evidence
 
 `rust/test-vectors/state/enrollment-grant-v4.txt` is the current canonical decision corpus. Rust and C implementations claiming the current contract MUST reproduce its `ISSUE`/`DENY` result and reason precedence. Versions 1 through 3 remain historical evidence for earlier decision surfaces.
 
-The v4 corpus contains dedicated negative evidence for missing commissioner authorization-generation provenance and stale generations, and now includes compound-fault precedence cases spanning rollback versus normal AUTH, commissioner authentication versus stale authority, generation provenance versus stale generation, revocation versus replay, authority escalation versus delegation depth, and epoch/revocation/lineage ordering. It retains the prior stale-authorization, replay, normal-AUTH, commissioner, possession, scope, epoch, revocation, lineage, delegation-depth, and rollback cases.
+The v4 corpus contains dedicated negative evidence for missing commissioner authorization-generation provenance and stale generations. Its compound-fault cases cover rollback versus normal AUTH, commissioner authentication versus stale authority, generation provenance versus stale generation, revocation versus replay, authority escalation versus delegation depth, epoch/revocation/lineage ordering, and the bounded-delegation precedence boundary. In particular, the corpus requires:
+
+- `ENR4-031`: normal AUTH plus excessive delegation depth -> `DENY / NORMAL_AUTH_FORBIDDEN`;
+- `ENR4-032`: revoked commissioner plus excessive delegation depth -> `DENY / COMMISSIONER_REVOKED`;
+- `ENR4-033`: stale lineage plus excessive delegation depth -> `DENY / LINEAGE_STALE`.
+
+These cases demonstrate that delegation is subordinate to the explicit enrollment, revocation, and lifecycle-authority boundaries. They do not define a generalized delegation credential format or delegation propagation protocol.
+
+The corpus retains the prior stale-authorization, replay, normal-AUTH, commissioner, possession, scope, epoch, revocation, lineage, delegation-depth, and rollback cases. Conformance requires consuming the canonical corpus rather than reproducing these examples as a separate source of truth.
 
 ## Evidence boundary
 
