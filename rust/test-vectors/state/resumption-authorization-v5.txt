@@ -31,13 +31,13 @@ case=privacy-stale-with-epoch-stale|1|1|1|0|0|4|1|1|1|1|1|1|0|1|1|0|0|0|0|1|1|1|
 case=repeated-id-with-epoch-stale|1|1|1|0|0|4|1|1|1|1|1|1|0|1|1|0|0|1|1|1|1|1|1|0|FULL_AUTH_REQUIRED|REPEATED_IDENTIFIER_LINKABLE
 case=privacy-stale-with-binding-mismatch|1|1|0|0|0|4|1|1|1|1|1|1|0|1|1|1|0|0|0|1|1|1|1|0|FULL_AUTH_REQUIRED|PRIVACY_IDENTIFIER_STATE_STALE
 case=repeated-id-with-profile-mismatch|1|1|1|0|0|4|1|1|1|1|1|1|0|1|1|1|0|1|1|1|1|1|0|0|FULL_AUTH_REQUIRED|REPEATED_IDENTIFIER_LINKABLE
-# Terminal lifecycle precedence: unsafe retained-session state MUST dominate ordinary full-AUTH fallback conditions and later retained-state failures.
-case=rollback-with-authz-stale|1|1|1|0|4|4|0|1|0|1|0|0|1|0|0|0|1|0|1|1|1|1|0|1|REJECT|ROLLBACK_SUSPECTED
-case=restart-stale-at-reuse-limit|1|1|1|0|4|4|0|1|1|1|0|0|1|0|0|0|1|0|1|1|1|1|0|0|REJECT|RESTART_CONTINUITY_STALE
-case=usage-continuity-stale-with-generation-stale|1|1|1|0|4|4|0|1|1|1|0|0|1|0|1|1|1|0|1|1|1|1|0|0|REJECT|USAGE_COUNTER_CONTINUITY_STALE
-case=session-invalidated-with-profile-mismatch|1|1|1|0|4|4|1|1|0|1|0|0|1|0|1|1|1|1|0|1|1|1|0|0|REJECT|SESSION_INVALIDATED
-case=revocation-stale-with-profile-mismatch|1|1|1|0|0|4|1|1|1|1|1|0|0|1|1|1|0|1|0|1|1|1|0|0|REJECT|REVOCATION_STALE
-case=revoked-with-profile-mismatch|1|1|1|0|0|4|1|1|1|1|1|1|1|1|1|1|0|1|0|1|1|1|0|0|REJECT|REVOKED
+# Terminal lifecycle precedence: unsafe retained-session state MUST dominate ordinary full-AUTH fallback conditions, including transport/channel binding mismatch, and later retained-state failures.
+case=rollback-with-authz-stale-and-binding-mismatch|1|1|0|0|4|4|0|1|0|1|0|0|1|0|0|0|1|0|1|1|1|1|0|1|REJECT|ROLLBACK_SUSPECTED
+case=restart-stale-at-reuse-limit-and-binding-mismatch|1|1|0|0|4|4|0|1|1|1|0|0|1|0|0|0|1|0|1|1|1|1|0|0|REJECT|RESTART_CONTINUITY_STALE
+case=usage-continuity-stale-with-generation-stale-and-binding-mismatch|1|1|0|0|4|4|0|1|1|1|0|0|1|0|1|1|1|0|1|1|1|1|0|0|REJECT|USAGE_COUNTER_CONTINUITY_STALE
+case=session-invalidated-with-profile-and-binding-mismatch|1|1|0|0|4|4|1|1|0|1|0|0|1|0|1|1|1|1|0|1|1|1|0|0|REJECT|SESSION_INVALIDATED
+case=revocation-stale-with-profile-and-binding-mismatch|1|1|0|0|0|4|1|1|1|1|1|0|0|1|1|1|0|1|0|1|1|1|0|0|REJECT|REVOCATION_STALE
+case=revoked-with-profile-and-binding-mismatch|1|1|0|0|0|4|1|1|1|1|1|1|1|1|1|1|0|1|0|1|1|1|0|0|REJECT|REVOKED
 case=lineage-stale-with-profile-mismatch|1|1|1|0|0|4|1|1|1|1|1|1|0|0|1|1|0|1|0|1|1|1|0|0|REJECT|LINEAGE_STALE
 case=revocation-stale-at-reuse-limit|1|1|1|0|4|4|1|1|1|1|1|0|0|1|1|1|0|1|0|1|1|1|1|0|REJECT|REVOCATION_STALE
 case=revoked-with-authz-stale|1|1|1|0|0|4|1|1|0|1|1|1|1|1|1|1|0|1|0|1|1|1|1|0|REJECT|REVOKED
