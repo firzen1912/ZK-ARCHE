@@ -174,6 +174,31 @@ pub fn classify_p2p_delegation(f: &P2pDelegationFacts) -> P2pDelegationDecision 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn current_facts() -> P2pDelegationFacts {
+        P2pDelegationFacts {
+            issuer_trusted: true,
+            issuer_trust_local: true,
+            holder_authenticated: true,
+            grant_present: true,
+            grant_integrity_valid: true,
+            scope_match: true,
+            audience_match: true,
+            deployment_match: true,
+            validity_current: true,
+            authorization_generation_bound: true,
+            authorization_generation_current: true,
+            epoch_current: true,
+            revocation_current: true,
+            explicitly_revoked: false,
+            lineage_current: true,
+            depth_within_limit: true,
+            redelegation_permitted: false,
+            redelegation_requested: false,
+            rollback_suspected: false,
+        }
+    }
+
     fn bit(value: &str) -> bool {
         match value {
             "0" => false,
@@ -215,6 +240,79 @@ mod tests {
             _ => panic!("invalid reason: {value}"),
         }
     }
+
+    #[test]
+    fn retained_delegation_is_re_evaluated_after_authority_loss() {
+        let baseline = current_facts();
+        assert_eq!(
+            classify_p2p_delegation(&baseline),
+            P2pDelegationDecision {
+                action: P2pDelegationAction::Accept,
+                reason: P2pDelegationReason::Current,
+            }
+        );
+
+        let mut stale_generation = baseline;
+        stale_generation.authorization_generation_current = false;
+        assert_eq!(
+            classify_p2p_delegation(&stale_generation),
+            P2pDelegationDecision {
+                action: P2pDelegationAction::Deny,
+                reason: P2pDelegationReason::AuthorizationGenerationStale,
+            }
+        );
+
+        let mut stale_epoch = baseline;
+        stale_epoch.epoch_current = false;
+        assert_eq!(
+            classify_p2p_delegation(&stale_epoch),
+            P2pDelegationDecision {
+                action: P2pDelegationAction::Deny,
+                reason: P2pDelegationReason::EpochStale,
+            }
+        );
+
+        let mut stale_revocation = baseline;
+        stale_revocation.revocation_current = false;
+        assert_eq!(
+            classify_p2p_delegation(&stale_revocation),
+            P2pDelegationDecision {
+                action: P2pDelegationAction::Deny,
+                reason: P2pDelegationReason::RevocationStale,
+            }
+        );
+
+        let mut revoked = baseline;
+        revoked.explicitly_revoked = true;
+        assert_eq!(
+            classify_p2p_delegation(&revoked),
+            P2pDelegationDecision {
+                action: P2pDelegationAction::Deny,
+                reason: P2pDelegationReason::Revoked,
+            }
+        );
+
+        let mut stale_lineage = baseline;
+        stale_lineage.lineage_current = false;
+        assert_eq!(
+            classify_p2p_delegation(&stale_lineage),
+            P2pDelegationDecision {
+                action: P2pDelegationAction::Deny,
+                reason: P2pDelegationReason::LineageStale,
+            }
+        );
+
+        let mut trust_no_longer_local = baseline;
+        trust_no_longer_local.issuer_trust_local = false;
+        assert_eq!(
+            classify_p2p_delegation(&trust_no_longer_local),
+            P2pDelegationDecision {
+                action: P2pDelegationAction::Deny,
+                reason: P2pDelegationReason::IssuerTrustNotLocal,
+            }
+        );
+    }
+
     #[test]
     fn canonical_v3_corpus_matches_classifier() {
         let corpus = include_str!("../../../test-vectors/p2p/bounded-delegation-v3.txt");
