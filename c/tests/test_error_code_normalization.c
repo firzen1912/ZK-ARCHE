@@ -72,7 +72,7 @@ int main(void)
     }
     fclose(fp);
 
-    assert(version == 1 && cases == 35u);
+    assert(version == 1 && cases == 47u);
 
     {
         const uint8_t short_payload[] = {0x03};

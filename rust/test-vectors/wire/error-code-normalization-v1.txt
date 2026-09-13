@@ -1,5 +1,7 @@
 version=1
 # case=<id>|<received-u16-hex>|<normalized-u16-hex>
+# Registered values normalize to themselves. Representative unassigned values
+# from every currently defined wire-error category normalize to UNSPECIFIED.
 case=EC-01|0101|0101
 case=EC-02|0102|0102
 case=EC-03|0103|0103
@@ -35,3 +37,15 @@ case=EC-32|0001|7fff
 case=EC-33|1234|7fff
 case=EC-34|7ffe|7fff
 case=EC-35|ffff|7fff
+case=EC-36|0200|7fff
+case=EC-37|0206|7fff
+case=EC-38|0300|7fff
+case=EC-39|0307|7fff
+case=EC-40|0400|7fff
+case=EC-41|0405|7fff
+case=EC-42|0500|7fff
+case=EC-43|0505|7fff
+case=EC-44|0600|7fff
+case=EC-45|0604|7fff
+case=EC-46|0700|7fff
+case=EC-47|0704|7fff

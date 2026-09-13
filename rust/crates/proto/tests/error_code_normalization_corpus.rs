@@ -36,7 +36,7 @@ fn shared_error_code_normalization_corpus_is_enforced() {
         count += 1;
     }
 
-    assert_eq!(count, 35);
+    assert_eq!(count, 47);
 }
 
 #[test]
