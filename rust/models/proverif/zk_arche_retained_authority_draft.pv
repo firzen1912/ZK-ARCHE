@@ -9,7 +9,10 @@
 free c: channel.
 free cmd_current: bitstring.
 free cmd_generation_stale: bitstring.
+free cmd_revocation_stale: bitstring.
 free cmd_revoked: bitstring.
+free cmd_lineage_stale: bitstring.
+free cmd_replay_lost: bitstring.
 free cmd_restart_lost: bitstring.
 free cmd_usage_lost: bitstring.
 free cmd_binding_lost: bitstring.
@@ -20,7 +23,10 @@ set preciseActions = true.
 event AssociationEstablished(association).
 event AuthorityCurrent(association).
 event AuthorizationGenerationStale(association).
+event RevocationStateStale(association).
 event ExplicitRevocationObserved(association).
+event LineageStale(association).
+event ReplayContinuityLost(association).
 event RestartContinuityLost(association).
 event UsageCounterContinuityLost(association).
 event RequiredBindingLost(association).
@@ -30,7 +36,10 @@ event ProtectedUseRejected(association).
 query a:association; event(ProtectedUseAllowed(a)) ==> event(AssociationEstablished(a)).
 query a:association; event(ProtectedUseAllowed(a)) ==> event(AuthorityCurrent(a)).
 query a:association; event(ProtectedUseAllowed(a)) && event(AuthorizationGenerationStale(a)) ==> false.
+query a:association; event(ProtectedUseAllowed(a)) && event(RevocationStateStale(a)) ==> false.
 query a:association; event(ProtectedUseAllowed(a)) && event(ExplicitRevocationObserved(a)) ==> false.
+query a:association; event(ProtectedUseAllowed(a)) && event(LineageStale(a)) ==> false.
+query a:association; event(ProtectedUseAllowed(a)) && event(ReplayContinuityLost(a)) ==> false.
 query a:association; event(ProtectedUseAllowed(a)) && event(RestartContinuityLost(a)) ==> false.
 query a:association; event(ProtectedUseAllowed(a)) && event(UsageCounterContinuityLost(a)) ==> false.
 query a:association; event(ProtectedUseAllowed(a)) && event(RequiredBindingLost(a)) ==> false.
@@ -44,8 +53,17 @@ let RetainedAssociationUse(a:association) =
   else if lifecycle = cmd_generation_stale then
     event AuthorizationGenerationStale(a);
     event ProtectedUseRejected(a)
+  else if lifecycle = cmd_revocation_stale then
+    event RevocationStateStale(a);
+    event ProtectedUseRejected(a)
   else if lifecycle = cmd_revoked then
     event ExplicitRevocationObserved(a);
+    event ProtectedUseRejected(a)
+  else if lifecycle = cmd_lineage_stale then
+    event LineageStale(a);
+    event ProtectedUseRejected(a)
+  else if lifecycle = cmd_replay_lost then
+    event ReplayContinuityLost(a);
     event ProtectedUseRejected(a)
   else if lifecycle = cmd_restart_lost then
     event RestartContinuityLost(a);

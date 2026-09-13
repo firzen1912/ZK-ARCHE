@@ -137,7 +137,7 @@ run_model \
 run_model \
   "retained-authority" \
   "$ROOT/rust/models/proverif/zk_arche_retained_authority_draft.pv" \
-  7
+  10
 
 echo
 echo "formal evidence manifest: $MANIFEST"
