@@ -4,44 +4,83 @@ This note records the exact formal-analysis boundary for the shared association-
 
 ## Runtime contract
 
-Association establishment is intentionally stricter than successful authentication. The executable contract distinguishes authentication, pre-existing local trust, authorization, authorization-generation provenance, revocation/lineage state, replay/restart/key-usage continuity, and required binding. Normal AUTH is **NO-LEARNING**: it cannot create or mutate trust.
+Association establishment is intentionally stricter than successful authentication. The executable contract distinguishes authentication, pre-existing local trust, authorization, authorization-generation provenance, revocation/lineage state, replay/restart/key-usage continuity, required binding, rollback state, and caller trust-mutation intent. Normal AUTH is **NO-LEARNING**: it cannot create or mutate trust.
 
-The current fail-closed decision order treats rollback as the highest-priority lifecycle failure and then rejects an explicit trust-mutation request before downstream authentication, trust-presence, authorization, lifecycle, or binding failures. The shared association-admission v4 corpus includes compound case `ASC4-019` to exercise that boundary: with rollback clear and a trust-mutation request present alongside multiple other unsafe facts, the required classifier outcome is `FAIL_CLOSED|TRUST_MUTATION_REQUESTED`.
+The current fail-closed decision order treats rollback as the highest-priority lifecycle failure and then rejects an explicit trust-mutation request before downstream authentication, trust-presence, authorization, revocation/lineage, continuity, or binding failures. The shared association-admission v4 corpus now qualifies this boundary with multiple compound cases:
 
-`ASC4-019` is executable qualification evidence only when the relevant Rust/C corpus consumers are actually run. Its presence in the repository is not itself a current-run PASS.
+- `ASC4-017`: trust mutation plus invalid required binding still yields `FAIL_CLOSED|TRUST_MUTATION_REQUESTED`;
+- `ASC4-019`: trust mutation plus multiple downstream unsafe facts still yields `FAIL_CLOSED|TRUST_MUTATION_REQUESTED` when rollback is clear;
+- `ASC4-022`: trust mutation plus missing pre-existing trust and stale revocation state still yields `FAIL_CLOSED|TRUST_MUTATION_REQUESTED`;
+- `ASC4-023`: trust mutation plus missing authorization, explicit revocation, and stale lineage still yields `FAIL_CLOSED|TRUST_MUTATION_REQUESTED`;
+- `ASC4-024`: rollback plus trust mutation yields `FAIL_CLOSED|ROLLBACK_SUSPECTED`, retaining rollback's higher precedence.
+
+These corpus cases are executable qualification evidence only when the relevant Rust/C corpus consumers are actually run. Their presence in the repository is not itself a current-run PASS.
 
 ## Current ProVerif projection
 
-`rust/models/proverif/zk_arche_auth_skeleton.pv` FM-09 models the coarser association-establishment safety property. Establishment requires authenticated state plus pre-existing local trust and current authorization scope/generation, revocation, lineage, replay, restart, key-usage, and binding predicates. That projection supports the claim that normal AUTH does not establish an association merely by learning trust during AUTH.
+The exact-current dedicated association-admission model is `rust/models/proverif/zk_arche_association_admission_draft.pv`, with a byte-identical synchronized copy at `c/models/proverif/zk_arche_association_admission_draft.pv`. The model projects the wire-neutral CORE/LINK postcondition in `spec/core-association-admission.md`; it does not model the full AUTH wire protocol.
 
-FM-09 currently does **not** expose `trust_mutation_requested` as a distinct symbolic input and does **not** model the runtime classifier's exact error/discriminator precedence. Consequently, FM-09 must not be cited as proving that `TRUST_MUTATION_REQUESTED` wins over downstream authentication, trust, authorization, lifecycle, or binding failures.
+Unlike the older coarse AUTH FM-09 projection, this dedicated model explicitly contains `TrustMutationRequested(evaluation)` and the safety query:
 
-This distinction is deliberate: symbolic correspondence for association establishment and executable decision-precedence qualification are separate evidence classes.
+```text
+event(AssociationEstablished(e)) && event(TrustMutationRequested(e)) ==> false
+```
 
-## Traceability boundary
+It also models successful establishment as depending on the mandatory admission facts for authentication, pre-existing trust, authorization, authorization-generation binding/currentness, revocation/current holder state, lineage, replay/restart/key-usage continuity, required binding, and rollback clearance. This closes the earlier traceability ambiguity in which explicit trust-mutation intent existed only at the normative/runtime decision surface.
 
-The evidence chain is therefore:
+The symbolic model still does **not** model the runtime classifier's exact failure-reason precedence. Its `cmd_trust_mutation` path establishes that the modeled trust-mutation attempt is rejected rather than establishing an association; it does not prove that `TRUST_MUTATION_REQUESTED` must be the observable discriminator when binding, revocation, lineage, trust-presence, or authorization faults are simultaneously present. Likewise, the model's rollback-clear correspondence requirement does not prove that `ROLLBACK_SUSPECTED` wins over trust-mutation intent in the concrete classifier.
 
-1. normative association-admission semantics define authentication != authorization != trust mutation and require pre-existing trust for normal AUTH;
-2. Rust and C classifiers implement the fail-closed decision surface and discriminator order;
-3. the shared association-admission v4 corpus, including `ASC4-019`, specifies cross-language decision evidence;
-4. FM-09 models the broader establishment/pre-existing-trust safety property but not exact classifier precedence;
-5. retained ProVerif output, when produced against an exact model revision, supports only the queries actually executed.
+That distinction is deliberate: symbolic association-safety correspondence and executable deterministic discriminator precedence remain separate evidence classes.
 
-A symbolic result does not establish Rust/C byte compatibility, classifier error precedence, constant-time behavior, RNG quality, memory bounds, computational soundness, hardware behavior, or deployment qualification.
+## Model -> spec -> Rust/C -> test traceability
 
-## Closure criteria for the explicit trust-mutation abstraction gap
+| Layer | Exact repository anchor | Established property | Remaining abstraction gap |
+|---|---|---|---|
+| Symbolic model | `rust/models/proverif/zk_arche_association_admission_draft.pv` plus synchronized C copy | `AssociationEstablished` requires the modeled admission facts and cannot coexist with `TrustMutationRequested` or explicit revocation | Does not execute production classifier/storage code, model exact reason precedence, or prove implementation equivalence |
+| Normative contract | `spec/core-association-admission.md` | Authentication != authorization != trust mutation; rollback precedes trust-mutation rejection; normal AUTH is NO-LEARNING | Does not itself prove implementation conformance or persistence correctness |
+| Rust/C classifiers | shared association-admission decision implementations consumed by their language-specific qualification surfaces | Concrete deterministic fail-closed decision order | Requires exact-head execution for TESTED/INTEROPERABLE evidence; source correspondence is not a formal proof |
+| Shared corpus | `rust/test-vectors/state/association-admission-v4.txt` | Cross-language decision cases, including `ASC4-017`, `ASC4-019`, `ASC4-022`, `ASC4-023`, and `ASC4-024`, pin trust-mutation/rollback compound-fault precedence | Corpus presence is not execution and does not establish caller-side persistence/teardown behavior |
+| Retained formal results | `docs/assurance/formal-runs/` | Historical ProVerif results exist for other exact model revisions/properties | No retained exact-model ProVerif result for the current dedicated association-admission model was identified by this reconciliation; no PASS is inferred |
 
-The gap is closed only if all of the following are deliberately completed:
+The synchronized Rust/C ProVerif files are copies of one symbolic model, not independent formal implementations. Byte identity supports synchronization discipline only; it does not establish independent implementation equivalence.
 
-- the symbolic model gains an explicit trust-mutation-attempt fact/event without weakening NO-LEARNING AUTH;
-- synchronized queries establish that association establishment cannot succeed through that path;
-- attacker assumptions and abstraction choices remain documented and synchronized with the normative contract;
-- model -> spec -> Rust/C -> shared-corpus traceability identifies the exact corresponding surfaces;
-- ProVerif is executed against the exact model revision and the result or counterexample is retained with provenance.
+## Formal abstraction boundary
 
-Even after those steps, symbolic analysis would establish only the modeled security property. Exact runtime discriminator ordering remains executable classifier/corpus evidence unless it is itself faithfully represented by the model.
+The dedicated symbolic model must not be described as proving concrete classifier precedence or whole-program behavior. In particular it does **not** establish:
+
+- that `TRUST_MUTATION_REQUESTED` is the concrete observable reason for every compound runtime state;
+- that `ROLLBACK_SUSPECTED` concretely dominates trust-mutation intent;
+- whole-program absence of persistent side effects from normal AUTH;
+- correctness, crash consistency, or rollback resistance of trust/authorization/revocation storage;
+- soundness of the custom role-membership proof or other computational cryptography;
+- constant-time behavior, memory safety, RNG quality, zeroization, or target resource bounds;
+- independent Rust/C formal equivalence;
+- physical constrained-target behavior or deployment qualification.
+
+The compound v4 corpus is therefore the appropriate decision-level evidence for exact discriminator ordering, while the dedicated ProVerif model is the appropriate symbolic surface for the modeled no-establishment safety correspondence.
+
+## Closure criteria and retained-results discipline
+
+The explicit trust-mutation **modeling** gap recorded by earlier versions of this note is now closed at the model-source level because `TrustMutationRequested` and its no-establishment query exist in the dedicated synchronized model. TD-003 is not closed. The remaining work for this surface is to:
+
+- execute ProVerif against the exact dedicated association-admission model revision and retain the result or counterexample with model hash/commit provenance;
+- keep the synchronized Rust/C model copies mechanically checked as the model evolves;
+- keep attacker assumptions and abstraction choices synchronized with `spec/core-association-admission.md`;
+- preserve model -> spec -> Rust/C -> shared-corpus traceability as admission facts and lifecycle semantics evolve;
+- model additional lifecycle/privacy/compromise properties only where the abstraction can faithfully support them, rather than encoding concrete discriminator behavior as an unjustified symbolic claim.
+
+Even after an exact-model ProVerif run, symbolic analysis would establish only the queries actually modeled and executed. Exact runtime discriminator ordering remains executable classifier/corpus evidence unless it is separately and faithfully represented by the model.
 
 ## Evidence status
 
-This artifact closes a documentation/traceability ambiguity in TD-003. It does **not** create a new `FORMALLY ANALYZED` claim, does not assert a ProVerif PASS, and does not justify a roadmap score increase without the declared exit evidence for the affected roadmap item.
+This reconciliation repairs stale TD-003 traceability and records that explicit trust-mutation rejection already exists in the dedicated synchronized symbolic model. It does **not** create a new ProVerif result, does not assert an exact-head formal PASS, does not prove Rust/C implementation equivalence, and does not justify a roadmap score increase without the declared exit evidence for the affected roadmap item.
+
+- `IMPLEMENTED`: unchanged.
+- `TESTED`: unchanged unless repository-owned validation executes for the exact head.
+- `INTEROPERABLE`: unchanged.
+- `FORMALLY ANALYZED`: traceability/abstraction accounting strengthened; no new tool result claimed.
+- `MEASURED`: unchanged.
+- `EXTERNALLY REVIEWED`: unchanged; TD-001 remains open.
+- `RFC-CLASS DOCUMENTED`: unchanged at roadmap score level.
+- `COMMON-CONFORMANT`: unchanged.
+- `DEPLOYMENT-QUALIFIED`: unchanged.
