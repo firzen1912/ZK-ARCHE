@@ -10,6 +10,50 @@ fn bit(data: &[u8], index: usize) -> bool {
         .map_or(false, |byte| byte & (1u8 << (index % 8)) != 0)
 }
 
+fn expected_reason(facts: &P2pDelegationFacts) -> P2pDelegationReason {
+    if facts.issuer_trust_local && !facts.issuer_trusted {
+        P2pDelegationReason::InvalidFacts
+    } else if facts.rollback_suspected {
+        P2pDelegationReason::RollbackSuspected
+    } else if !facts.issuer_trusted {
+        P2pDelegationReason::IssuerUntrusted
+    } else if !facts.issuer_trust_local {
+        P2pDelegationReason::IssuerTrustNotLocal
+    } else if !facts.holder_authenticated {
+        P2pDelegationReason::HolderUnauthenticated
+    } else if !facts.grant_present {
+        P2pDelegationReason::GrantMissing
+    } else if !facts.grant_integrity_valid {
+        P2pDelegationReason::GrantInvalid
+    } else if !facts.scope_match {
+        P2pDelegationReason::ScopeMismatch
+    } else if !facts.audience_match {
+        P2pDelegationReason::AudienceMismatch
+    } else if !facts.deployment_match {
+        P2pDelegationReason::DeploymentMismatch
+    } else if !facts.validity_current {
+        P2pDelegationReason::ExpiredOrNotYetValid
+    } else if !facts.authorization_generation_bound {
+        P2pDelegationReason::AuthorizationGenerationUnbound
+    } else if !facts.authorization_generation_current {
+        P2pDelegationReason::AuthorizationGenerationStale
+    } else if !facts.epoch_current {
+        P2pDelegationReason::EpochStale
+    } else if !facts.revocation_current {
+        P2pDelegationReason::RevocationStale
+    } else if facts.explicitly_revoked {
+        P2pDelegationReason::Revoked
+    } else if !facts.lineage_current {
+        P2pDelegationReason::LineageStale
+    } else if !facts.depth_within_limit {
+        P2pDelegationReason::DepthExceeded
+    } else if facts.redelegation_requested && !facts.redelegation_permitted {
+        P2pDelegationReason::RedelegationForbidden
+    } else {
+        P2pDelegationReason::Current
+    }
+}
+
 fuzz_target!(|data: &[u8]| {
     let facts = P2pDelegationFacts {
         issuer_trusted: bit(data, 0),
@@ -34,6 +78,18 @@ fuzz_target!(|data: &[u8]| {
     };
 
     let decision = classify_p2p_delegation(&facts);
+    let expected_reason = expected_reason(&facts);
+    let expected_action = if expected_reason == P2pDelegationReason::Current {
+        P2pDelegationAction::Accept
+    } else {
+        P2pDelegationAction::Deny
+    };
+
+    // Every reachable fact combination must preserve the normative fail-closed
+    // discriminator ordering, not merely return some denial. This also keeps
+    // internally contradictory local-trust state ahead of rollback suspicion.
+    assert_eq!(decision.reason, expected_reason);
+    assert_eq!(decision.action, expected_action);
 
     if decision.action == P2pDelegationAction::Accept {
         assert!(facts.issuer_trusted);
@@ -56,21 +112,14 @@ fuzz_target!(|data: &[u8]| {
         assert!(!facts.rollback_suspected);
     }
 
-    if facts.rollback_suspected {
-        assert_eq!(decision.action, P2pDelegationAction::Deny);
-        assert_eq!(decision.reason, P2pDelegationReason::RollbackSuspected);
-    }
-
     // Third-party/transitive trust must never become a local delegation root.
-    // Once rollback and the earlier issuer-presence guard are clear, the exact
-    // fail-closed reason must remain ISSUER_TRUST_NOT_LOCAL regardless of any
-    // downstream grant/authorization/lifecycle facts.
-    if !facts.rollback_suspected && facts.issuer_trusted && !facts.issuer_trust_local {
+    // Once the earlier invalid-facts/rollback/issuer-presence guards are clear,
+    // downstream grant or lifecycle state cannot reclassify this condition.
+    if !facts.rollback_suspected
+        && facts.issuer_trusted
+        && !facts.issuer_trust_local
+    {
         assert_eq!(decision.action, P2pDelegationAction::Deny);
         assert_eq!(decision.reason, P2pDelegationReason::IssuerTrustNotLocal);
-    }
-
-    if facts.redelegation_requested && !facts.redelegation_permitted {
-        assert_eq!(decision.action, P2pDelegationAction::Deny);
     }
 });
