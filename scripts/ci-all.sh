@@ -23,6 +23,9 @@ fi
   python3 "$ROOT/scripts/check-constrained-target-manifest.py" \
     "$ROOT/evidence/constrained-target/manifest-template.json"
   echo
+  echo "== constrained-target manifest negative self-test =="
+  python3 "$ROOT/scripts/test-constrained-target-manifest.py"
+  echo
   echo "== constrained lifecycle/storage evidence contract =="
   python3 "$ROOT/scripts/check-constrained-lifecycle-storage.py" \
     "$ROOT/evidence/constrained-target/lifecycle-storage-template.json"
