@@ -17,7 +17,8 @@ static bool bit(const char *v) {
 }
 
 static bool known_peer(const char *v) {
-    return strcmp(v, "mcu-core") == 0 || strcmp(v, "linux-edge") == 0;
+    return strcmp(v, "mcu-core") == 0 || strcmp(v, "mcu-plus") == 0 ||
+           strcmp(v, "linux-edge") == 0 || strcmp(v, "accelerated-edge") == 0;
 }
 
 static association_admission_facts_t established_facts(void) {
@@ -144,11 +145,11 @@ int main(void) {
     }
 
     fclose(fp);
-    assert(cases == 25u);
-    assert(established == 6u);
-    assert(failed == 19u);
-    assert(offline_established == 5u);
-    assert(cross_class >= 20u);
-    puts("p2p common-contract C lifecycle qualification v4: ok cases=25 establish=6 fail_closed=19 offline_establish=5 retained_authority_loss=5");
+    assert(cases == 35u);
+    assert(established == 12u);
+    assert(failed == 23u);
+    assert(offline_established == 11u);
+    assert(cross_class >= 33u);
+    puts("p2p common-contract C lifecycle qualification v4: ok cases=35 establish=12 fail_closed=23 offline_establish=11 retained_authority_loss=5");
     return EXIT_SUCCESS;
 }

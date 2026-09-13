@@ -11,7 +11,10 @@ fn bit(value: &str) -> bool {
 }
 
 fn known_peer(value: &str) -> bool {
-    matches!(value, "mcu-core" | "linux-edge")
+    matches!(
+        value,
+        "mcu-core" | "mcu-plus" | "linux-edge" | "accelerated-edge"
+    )
 }
 
 fn established_facts() -> AssociationAdmissionFacts {
@@ -149,9 +152,9 @@ fn canonical_p2p_common_contract_lifecycle_corpus() {
         cases += 1;
     }
 
-    assert_eq!(cases, 25);
-    assert_eq!(established, 6);
-    assert_eq!(failed, 19);
-    assert_eq!(offline_established, 5);
-    assert!(cross_class >= 20);
+    assert_eq!(cases, 35);
+    assert_eq!(established, 12);
+    assert_eq!(failed, 23);
+    assert_eq!(offline_established, 11);
+    assert!(cross_class >= 33);
 }
