@@ -15,7 +15,7 @@ FIELDS = [
     "revocation_fresh", "holder_revoked", "lineage_current", "mandatory_floor_compatible",
     "binding_required", "binding_valid", "expected",
 ]
-PEER_CLASSES = ("mcu-core", "linux-edge")
+PEER_CLASSES = ("mcu-core", "mcu-plus", "linux-edge", "accelerated-edge")
 SUCCESS = "MUTUAL_AUTH_LOCAL_DECISION"
 FAIL = "FAIL_CLOSED"
 
@@ -373,27 +373,27 @@ def main() -> None:
                 if unbound != FAIL or stale != FAIL:
                     fail(f"generation mutation preserved success: {security_state}")
 
-    if state_count != 8192:
-        fail(f"unexpected exhaustive state count {state_count}, expected 8192")
-    if success_count != 24 or failure_count != 8168:
+    if state_count != 32768:
+        fail(f"unexpected exhaustive state count {state_count}, expected 32768")
+    if success_count != 96 or failure_count != 32672:
         fail(
             f"unexpected decision distribution success={success_count} failure={failure_count}; "
             "classifier semantics drifted"
         )
-    if generation_failures != 6144:
+    if generation_failures != 24576:
         fail(
-            f"unexpected generation fail-closed count {generation_failures}, expected 6144"
+            f"unexpected generation fail-closed count {generation_failures}, expected 24576"
         )
 
     lifecycle_baselines, lifecycle_failures = qualify_lifecycle_nonauthority()
-    if lifecycle_baselines != 8 or lifecycle_failures != 128:
+    if lifecycle_baselines != 32 or lifecycle_failures != 512:
         fail(
             "unexpected lifecycle non-authority coverage "
             f"baselines={lifecycle_baselines} failures={lifecycle_failures}"
         )
 
     nontransitive_checks = qualify_default_nontransitive_trust()
-    if nontransitive_checks != 16:
+    if nontransitive_checks != 128:
         fail(
             "unexpected default non-transitive trust coverage "
             f"checks={nontransitive_checks}"
