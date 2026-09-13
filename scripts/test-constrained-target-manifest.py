@@ -203,7 +203,57 @@ def main() -> None:
         needle="peak_stack_bytes cannot exceed target.ram_bytes",
     )
 
-    print("constrained-target-manifest-self-test: PASS cases=8 physical_evidence_claimed=0")
+    invalid_commit = copy.deepcopy(valid)
+    invalid_commit["implementation"]["commit_sha"] = "deadbeef"
+    run_case(
+        "invalid-commit-sha",
+        invalid_commit,
+        expect_ok=False,
+        needle="commit_sha must be a full lowercase 40-hex Git SHA",
+    )
+
+    zero_cpu_clock = copy.deepcopy(valid)
+    zero_cpu_clock["target"]["cpu_clock_hz"] = 0
+    run_case(
+        "zero-cpu-clock",
+        zero_cpu_clock,
+        expect_ok=False,
+        needle="target.cpu_clock_hz must be greater than zero",
+    )
+
+    flash_overrun = copy.deepcopy(valid)
+    flash_overrun["measurements"]["flash_bytes"] = valid["target"]["flash_bytes_available"] + 1
+    run_case(
+        "flash-overrun",
+        flash_overrun,
+        expect_ok=False,
+        needle="measurements.flash_bytes cannot exceed target.flash_bytes_available",
+    )
+
+    invalid_timestamp = copy.deepcopy(valid)
+    invalid_timestamp["provenance"]["measured_at_utc"] = "2000-02-31T00:00:00Z"
+    run_case(
+        "invalid-measurement-timestamp",
+        invalid_timestamp,
+        expect_ok=False,
+        needle="must contain a valid UTC calendar date and time",
+    )
+
+    unordered_latency = copy.deepcopy(valid)
+    unordered_latency["measurements"]["latency_us"] = {
+        "min": 1,
+        "median": 4,
+        "p95": 3,
+        "max": 5,
+    }
+    run_case(
+        "unordered-latency-range",
+        unordered_latency,
+        expect_ok=False,
+        needle="measurements.latency_us must satisfy min <= median <= p95 <= max",
+    )
+
+    print("constrained-target-manifest-self-test: PASS cases=13 physical_evidence_claimed=0")
 
 
 if __name__ == "__main__":
