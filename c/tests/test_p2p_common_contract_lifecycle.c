@@ -145,11 +145,11 @@ int main(void) {
     }
 
     fclose(fp);
-    assert(cases == 39u);
-    assert(established == 14u);
-    assert(failed == 25u);
-    assert(offline_established == 13u);
+    assert(cases == 43u);
+    assert(established == 15u);
+    assert(failed == 28u);
+    assert(offline_established == 14u);
     assert(cross_class >= 37u);
-    puts("p2p common-contract C lifecycle qualification v4: ok cases=39 establish=14 fail_closed=25 offline_establish=13 retained_authority_loss=5");
+    puts("p2p common-contract C lifecycle qualification v4: ok cases=43 establish=15 fail_closed=28 offline_establish=14 retained_authority_loss=5");
     return EXIT_SUCCESS;
 }
