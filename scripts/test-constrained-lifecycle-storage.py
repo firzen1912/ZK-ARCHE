@@ -12,6 +12,25 @@ ROOT = Path(__file__).resolve().parents[1]
 VALIDATOR = ROOT / "scripts/check-constrained-lifecycle-storage.py"
 TEMPLATE = ROOT / "evidence/constrained-target/lifecycle-storage-template.json"
 
+EXECUTION_FLAGS = (
+    "restart_test_executed",
+    "rollback_test_executed",
+    "entropy_path_exercised",
+    "key_storage_path_exercised",
+    "revocation_reconciliation_test_executed",
+    "revocation_restart_test_executed",
+    "revocation_rollback_test_executed",
+    "revocation_power_loss_test_executed",
+    "authorization_generation_test_executed",
+    "authorization_generation_restart_test_executed",
+    "authorization_generation_rollback_test_executed",
+    "authorization_generation_power_loss_test_executed",
+    "enrollment_replay_test_executed",
+    "enrollment_restart_test_executed",
+    "enrollment_rollback_test_executed",
+    "enrollment_power_loss_test_executed",
+)
+
 
 def run(doc: dict) -> subprocess.CompletedProcess[str]:
     with tempfile.NamedTemporaryFile("w", suffix=".json", encoding="utf-8", delete=False) as f:
@@ -27,101 +46,52 @@ def run(doc: dict) -> subprocess.CompletedProcess[str]:
         path.unlink(missing_ok=True)
 
 
+def measured_claim() -> dict:
+    doc = copy.deepcopy(base)
+    doc["evidence_status"] = "measured"
+    doc["physical_target_executed"] = True
+    for flag in EXECUTION_FLAGS:
+        doc[flag] = True
+    return doc
+
+
 base = json.loads(TEMPLATE.read_text(encoding="utf-8"))
 r = run(base)
 if r.returncode != 0 or "PASS status=unmeasured" not in r.stdout:
     raise SystemExit("constrained target validator self-test: template did not pass honestly")
 
-fake = copy.deepcopy(base)
-fake["observations"]["auth_latency_us"] = 1
-r = run(fake)
-if r.returncode == 0:
-    raise SystemExit(
-        "constrained target validator self-test: fabricated unmeasured observation was accepted"
-    )
+for observation in (
+    "auth_latency_us",
+    "enrollment_replay_state_bytes",
+    "authorization_generation_state_bytes",
+):
+    fake = copy.deepcopy(base)
+    fake["observations"][observation] = 1
+    r = run(fake)
+    if r.returncode == 0:
+        raise SystemExit(
+            "constrained target validator self-test: "
+            f"fabricated unmeasured observation {observation} was accepted"
+        )
 
-fake = copy.deepcopy(base)
-fake["observations"]["enrollment_replay_state_bytes"] = 1
+fake = measured_claim()
 r = run(fake)
-if r.returncode == 0:
-    raise SystemExit(
-        "constrained target validator self-test: fabricated enrollment replay observation was accepted"
-    )
-
-fake = copy.deepcopy(base)
-fake["observations"]["authorization_generation_state_bytes"] = 1
-r = run(fake)
-if r.returncode == 0:
-    raise SystemExit(
-        "constrained target validator self-test: fabricated authorization-generation observation was accepted"
-    )
-
-fake = copy.deepcopy(base)
-fake["evidence_status"] = "measured"
-fake["physical_target_executed"] = True
-fake["restart_test_executed"] = True
-fake["rollback_test_executed"] = True
-fake["entropy_path_exercised"] = True
-fake["key_storage_path_exercised"] = True
-fake["authorization_generation_test_executed"] = True
-fake["authorization_generation_power_loss_test_executed"] = True
-fake["enrollment_replay_test_executed"] = True
-fake["enrollment_power_loss_test_executed"] = True
-r = run(fake)
-if r.returncode == 0:
+if r.returncode == 0 or "target.family" not in r.stderr:
     raise SystemExit(
         "constrained target validator self-test: context-free measured claim was accepted"
     )
 
-fake = copy.deepcopy(base)
-fake["evidence_status"] = "measured"
-fake["physical_target_executed"] = True
-fake["restart_test_executed"] = True
-fake["rollback_test_executed"] = True
-fake["entropy_path_exercised"] = True
-fake["key_storage_path_exercised"] = True
-fake["authorization_generation_test_executed"] = False
-fake["authorization_generation_power_loss_test_executed"] = True
-fake["enrollment_replay_test_executed"] = True
-fake["enrollment_power_loss_test_executed"] = True
-r = run(fake)
-if r.returncode == 0:
-    raise SystemExit(
-        "constrained target validator self-test: measured claim without authorization-generation test was accepted"
-    )
+for flag in EXECUTION_FLAGS:
+    fake = measured_claim()
+    fake[flag] = False
+    r = run(fake)
+    if r.returncode == 0 or flag not in r.stderr:
+        raise SystemExit(
+            "constrained target validator self-test: "
+            f"measured claim did not require {flag}"
+        )
 
-fake = copy.deepcopy(base)
-fake["evidence_status"] = "measured"
-fake["physical_target_executed"] = True
-fake["restart_test_executed"] = True
-fake["rollback_test_executed"] = True
-fake["entropy_path_exercised"] = True
-fake["key_storage_path_exercised"] = True
-fake["authorization_generation_test_executed"] = True
-fake["authorization_generation_power_loss_test_executed"] = False
-fake["enrollment_replay_test_executed"] = True
-fake["enrollment_power_loss_test_executed"] = True
-r = run(fake)
-if r.returncode == 0:
-    raise SystemExit(
-        "constrained target validator self-test: measured claim without authorization-generation power-loss test was accepted"
-    )
-
-fake = copy.deepcopy(base)
-fake["evidence_status"] = "measured"
-fake["physical_target_executed"] = True
-fake["restart_test_executed"] = True
-fake["rollback_test_executed"] = True
-fake["entropy_path_exercised"] = True
-fake["key_storage_path_exercised"] = True
-fake["authorization_generation_test_executed"] = True
-fake["authorization_generation_power_loss_test_executed"] = True
-fake["enrollment_replay_test_executed"] = False
-fake["enrollment_power_loss_test_executed"] = True
-r = run(fake)
-if r.returncode == 0:
-    raise SystemExit(
-        "constrained target validator self-test: measured claim without enrollment replay test was accepted"
-    )
-
-print("constrained-target-manifest-self-test: PASS negative_cases=7")
+print(
+    "constrained-target-manifest-self-test: PASS "
+    f"negative_cases={3 + 1 + len(EXECUTION_FLAGS)}"
+)
