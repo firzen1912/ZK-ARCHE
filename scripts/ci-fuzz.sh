@@ -13,9 +13,32 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-TARGETS=("wire_parse" "auth_payloads" "data_audit_chain")
 MAX_TOTAL_TIME="${ZK_ARCHE_FUZZ_SECONDS:-60}"
 EVIDENCE="${ZK_ARCHE_FUZZ_EVIDENCE_DIR:-$ROOT/evidence/fuzz}"
+
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "fuzz qualification: UNAVAILABLE (python3 is required for fuzz provenance validation)" >&2
+  exit 125
+fi
+
+# Validate registration/source/corpus parity before choosing targets. The
+# executable fuzz set is then derived from the validated source namespace so a
+# newly registered target cannot silently escape this bounded qualification
+# lane because a second hard-coded target list was not updated.
+python3 "$ROOT/scripts/check-fuzz-provenance.py"
+TARGETS=()
+for target_source in "$ROOT"/rust/fuzz/fuzz_targets/*.rs; do
+  if [ ! -f "$target_source" ]; then
+    echo "fuzz qualification: FAIL (no fuzz target sources found)" >&2
+    exit 1
+  fi
+  TARGETS+=("$(basename "$target_source" .rs)")
+done
+
+if [ "${#TARGETS[@]}" -eq 0 ]; then
+  echo "fuzz qualification: FAIL (no validated fuzz targets found)" >&2
+  exit 1
+fi
 
 if ! command -v cargo >/dev/null 2>&1; then
   echo "fuzz qualification: UNAVAILABLE (cargo is not installed)" >&2
@@ -40,6 +63,7 @@ status=0
   cargo +nightly --version
   cargo fuzz --version
   echo "max_total_time_per_target=${MAX_TOTAL_TIME}s"
+  echo "targets=${TARGETS[*]}"
 
   for target in "${TARGETS[@]}"; do
     echo
