@@ -2,11 +2,11 @@ version=4
 # case|explicit_enroll|normal_auth|commissioner_authenticated|commissioner_authorized|commissioner_authorization_fresh|commissioner_authorization_generation_bound|commissioner_authorization_generation_current|commissioner_not_revoked|enrollment_nonce_unused|subject_possession|authority_within_scope|scope_bounded|audience_bound|deployment_bound|validity_bounded|epoch_current|revocation_current|lineage_current|depth_within_limit|rollback|action|reason
 # Precedence is fail-closed and left-to-right after rollback/operation/commissioner checks: replay -> subject possession -> authority scope -> bounded scope -> audience -> deployment -> validity -> epoch -> revocation -> lineage -> delegation depth.
 case=ENR4-001|1|0|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|0|ISSUE|CURRENT
-case=ENR4-002|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|0|DENY|NORMAL_AUTH_FORBIDDEN
-case=ENR4-003|0|0|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|0|DENY|EXPLICIT_ENROLL_REQUIRED
-case=ENR4-004|1|0|0|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|0|DENY|COMMISSIONER_UNAUTHENTICATED
-case=ENR4-005|1|0|1|0|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|0|DENY|COMMISSIONER_UNAUTHORIZED
-case=ENR4-006|1|0|1|1|0|0|0|1|1|1|1|1|1|1|1|1|1|1|1|0|DENY|COMMISSIONER_AUTHORIZATION_STALE
+case=ENR4-002|0|1|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|DENY|NORMAL_AUTH_FORBIDDEN
+case=ENR4-003|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|DENY|EXPLICIT_ENROLL_REQUIRED
+case=ENR4-004|1|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|DENY|COMMISSIONER_UNAUTHENTICATED
+case=ENR4-005|1|0|1|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|DENY|COMMISSIONER_UNAUTHORIZED
+case=ENR4-006|1|0|1|1|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|DENY|COMMISSIONER_AUTHORIZATION_STALE
 case=ENR4-007|1|0|1|1|1|1|1|0|1|1|1|1|1|1|1|1|1|1|1|0|DENY|COMMISSIONER_REVOKED
 case=ENR4-008|1|0|1|1|1|1|1|1|0|0|0|0|0|0|0|0|0|0|0|0|DENY|ENROLLMENT_REPLAY_DETECTED
 case=ENR4-009|1|0|1|1|1|1|1|1|1|0|0|0|0|0|0|0|0|0|0|0|DENY|SUBJECT_POSSESSION_MISSING
