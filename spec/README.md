@@ -19,6 +19,7 @@ Research or roadmap text does not override this package. If current implementati
 ## Current documents
 
 - `zk-arche-protocol.md` — protocol overview, message flows, state machines, cryptographic computations.
+- `wire-framing-v2.md` — implementation-backed normative stable-v2 24-byte transport-neutral packet envelope, version/packet/flag framing boundaries, size limits, and Rust/C traceability.
 - `registries.md` — version, suite, profile, extension, alert, and transport-binding registries.
 - `critical-extension-set-encoding.md` — canonical AUTH-v3 critical-extension-set encoding and empty representation; conformance evidence and production promotion remain separate gates.
 - `iot-profiles.md` — constrained and edge profile requirements.
