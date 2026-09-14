@@ -152,9 +152,9 @@ fn canonical_p2p_common_contract_lifecycle_corpus() {
         cases += 1;
     }
 
-    assert_eq!(cases, 35);
-    assert_eq!(established, 12);
-    assert_eq!(failed, 23);
-    assert_eq!(offline_established, 11);
-    assert!(cross_class >= 33);
+    assert_eq!(cases, 39);
+    assert_eq!(established, 14);
+    assert_eq!(failed, 25);
+    assert_eq!(offline_established, 13);
+    assert!(cross_class >= 37);
 }
