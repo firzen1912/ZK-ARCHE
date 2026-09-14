@@ -35,6 +35,7 @@ event ProtectedUseRejected(association).
 
 query a:association; event(ProtectedUseAllowed(a)) ==> event(AssociationEstablished(a)).
 query a:association; event(ProtectedUseAllowed(a)) ==> event(AuthorityCurrent(a)).
+query a:association; event(ProtectedUseAllowed(a)) && event(ProtectedUseRejected(a)) ==> false.
 query a:association; event(ProtectedUseAllowed(a)) && event(AuthorizationGenerationStale(a)) ==> false.
 query a:association; event(ProtectedUseAllowed(a)) && event(RevocationStateStale(a)) ==> false.
 query a:association; event(ProtectedUseAllowed(a)) && event(ExplicitRevocationObserved(a)) ==> false.
