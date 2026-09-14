@@ -1,14 +1,16 @@
 version=1
 # name|current_credential|successor_key|completion|session_id|authz_hash|channel_binding|attribution_context|predecessor|scope|expected
+# Session binding is protocol identity/context, not a transport locator. A changed UDP/TCP/BLE/CAN/serial locator is intentionally absent from this corpus and cannot authorize lineage replacement.
+# Compound negatives establish fail-closed precedence: credential control -> session authentication (including channel binding) -> session authorization -> predecessor binding -> privilege scope.
 case=BA-01|1|1|1|1|1|1|1|1|1|AUTHORIZED_REPLACEMENT
 case=BA-02|0|1|1|1|1|1|1|1|1|REJECT_CURRENT_CREDENTIAL_CONTROL
 case=BA-03|1|0|1|1|1|1|1|1|1|REJECT_SUCCESSOR_KEY_CONTROL
-case=BA-04|1|1|0|1|1|1|1|1|1|REJECT_SESSION_AUTHENTICATION
-case=BA-05|1|1|1|0|1|1|1|1|1|REJECT_SESSION_AUTHENTICATION
-case=BA-06|1|1|1|1|0|1|1|1|1|REJECT_SESSION_AUTHENTICATION
-case=BA-07|1|1|1|1|1|0|1|1|1|REJECT_SESSION_AUTHENTICATION
-case=BA-08|1|1|1|1|1|1|0|1|1|REJECT_SESSION_AUTHORIZATION
-case=BA-09|1|1|1|1|1|1|1|0|1|REJECT_PREDECESSOR_BINDING
+case=BA-04|1|1|0|0|0|0|0|0|0|REJECT_SESSION_AUTHENTICATION
+case=BA-05|1|1|1|0|0|0|0|0|0|REJECT_SESSION_AUTHENTICATION
+case=BA-06|1|1|1|1|0|0|0|0|0|REJECT_SESSION_AUTHENTICATION
+case=BA-07|1|1|1|1|1|0|0|0|0|REJECT_SESSION_AUTHENTICATION
+case=BA-08|1|1|1|1|1|1|0|0|0|REJECT_SESSION_AUTHORIZATION
+case=BA-09|1|1|1|1|1|1|1|0|0|REJECT_PREDECESSOR_BINDING
 case=BA-10|1|1|1|1|1|1|1|1|0|REJECT_PRIVILEGE_EXPANSION
 case=BA-11|0|1|0|0|0|0|0|0|0|REJECT_CURRENT_CREDENTIAL_CONTROL
 case=BA-12|1|0|0|0|0|0|0|0|0|REJECT_SUCCESSOR_KEY_CONTROL
