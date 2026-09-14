@@ -173,6 +173,7 @@ The historical 2026-08-15 through 2026-08-25 reports remain valid provenance. Fu
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-09-14 | [Daily research](daily/2026-09-14.md) | semantic association vs rotatable wire-visible session handles; path validation without identity promotion; full-AUTH fallback as fresh authentication/privacy context | reproduce / prototype; explicit review required |
 | 2026-09-13 | [Daily research](daily/2026-09-13.md) | stateful formal modeling of authorized trust mutation; verify-then-commit constrained trust replacement; internal-vs-external error/privacy separation | reproduce; explicit review required |
 | 2026-09-12 | [Daily research](daily/2026-09-12.md) | replay-continuity detector vs response evidence; key-generation transition isolation; fresh AUTH/rebinding non-substitution for stale authorization/revocation authority | reproduce; explicit review required |
 | 2026-09-11 | [Daily research](daily/2026-09-11.md) | fresh channel rebinding during resumption; resumption-credential lineage vs new traffic-key epoch; cumulative full-AUTH/resumption-lineage lifetime | reproduce; explicit review required |
