@@ -132,7 +132,7 @@ run_model \
 run_model \
   "association-admission" \
   "$ROOT/rust/models/proverif/zk_arche_association_admission_draft.pv" \
-  16
+  19
 
 run_model \
   "retained-authority" \
