@@ -15,6 +15,22 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MAX_TOTAL_TIME="${ZK_ARCHE_FUZZ_SECONDS:-60}"
 EVIDENCE="${ZK_ARCHE_FUZZ_EVIDENCE_DIR:-$ROOT/evidence/fuzz}"
+GIT_BIN="${GIT:-git}"
+
+if ! command -v "$GIT_BIN" >/dev/null 2>&1; then
+  echo "fuzz qualification: UNAVAILABLE (git is required to bind evidence to an exact repository state)" >&2
+  exit 125
+fi
+
+FUZZ_HEAD="$("$GIT_BIN" -C "$ROOT" rev-parse --verify HEAD)"
+FUZZ_TREE="$("$GIT_BIN" -C "$ROOT" rev-parse 'HEAD^{tree}')"
+FUZZ_BRANCH="$("$GIT_BIN" -C "$ROOT" symbolic-ref --quiet --short HEAD 2>/dev/null || printf 'DETACHED')"
+FUZZ_STATUS="$("$GIT_BIN" -C "$ROOT" status --porcelain=v1 --untracked-files=all)"
+if [ -n "$FUZZ_STATUS" ]; then
+  echo "fuzz qualification: FAIL (working tree must be clean before exact-head qualification)" >&2
+  printf '%s\n' "$FUZZ_STATUS" >&2
+  exit 1
+fi
 
 if ! command -v python3 >/dev/null 2>&1; then
   echo "fuzz qualification: UNAVAILABLE (python3 is required for fuzz provenance validation)" >&2
@@ -60,6 +76,10 @@ status=0
 {
   echo "== ZK-ARCHE fuzz lane =="
   date -u +"timestamp_utc=%Y-%m-%dT%H:%M:%SZ"
+  echo "qualification_head=$FUZZ_HEAD"
+  echo "qualification_tree=$FUZZ_TREE"
+  echo "qualification_branch=$FUZZ_BRANCH"
+  echo "qualification_preflight_clean=true"
   cargo +nightly --version
   cargo fuzz --version
   echo "max_total_time_per_target=${MAX_TOTAL_TIME}s"
@@ -90,9 +110,17 @@ status=0
     echo "final_corpus_inputs=$(find "$corpus" -type f | wc -l | tr -d ' ')"
   done
 
+  current_head="$("$GIT_BIN" -C "$ROOT" rev-parse --verify HEAD)"
+  if [ "$current_head" != "$FUZZ_HEAD" ]; then
+    echo "fuzz qualification: FAIL (HEAD moved during qualification: expected=$FUZZ_HEAD observed=$current_head)" >&2
+    status=1
+  else
+    echo "qualification_postflight_head=$current_head"
+  fi
+
   echo
   if [ "$status" -eq 0 ]; then
-    echo "fuzz qualification: PASS (no crash reproducers; corpus retained under rust/fuzz/corpus/)"
+    echo "fuzz qualification: PASS (exact HEAD retained; no crash reproducers; corpus retained under rust/fuzz/corpus/)"
   else
     echo "fuzz qualification: FAIL"
   fi
