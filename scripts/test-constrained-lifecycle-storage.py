@@ -31,6 +31,19 @@ EXECUTION_FLAGS = (
     "enrollment_power_loss_test_executed",
 )
 
+CONTEXT_SECTIONS = (
+    "target",
+    "implementation",
+    "toolchain",
+    "crypto_execution",
+    "entropy",
+    "rng_adapter",
+    "key_storage",
+    "boot_debug",
+    "storage",
+    "transport",
+)
+
 
 def run(doc: dict) -> subprocess.CompletedProcess[str]:
     with tempfile.NamedTemporaryFile("w", suffix=".json", encoding="utf-8", delete=False) as f:
@@ -46,12 +59,27 @@ def run(doc: dict) -> subprocess.CompletedProcess[str]:
         path.unlink(missing_ok=True)
 
 
-def measured_claim() -> dict:
+def execution_only_claim() -> dict:
     doc = copy.deepcopy(base)
     doc["evidence_status"] = "measured"
     doc["physical_target_executed"] = True
     for flag in EXECUTION_FLAGS:
         doc[flag] = True
+    return doc
+
+
+def measured_claim() -> dict:
+    """Return a synthetic, internally valid measured fixture; it is never retained as evidence."""
+    doc = execution_only_claim()
+    for section in CONTEXT_SECTIONS:
+        for key, value in doc[section].items():
+            if value == "":
+                doc[section][key] = f"self-test-{section}-{key}"
+    doc["implementation"]["commit_sha"] = "0" * 40
+    doc["rng_adapter"]["max_request_bytes"] = 1
+    doc["transport"]["mtu_bytes"] = 1
+    for observation in doc["observations"]:
+        doc["observations"][observation] = 1
     return doc
 
 
@@ -74,11 +102,17 @@ for observation in (
             f"fabricated unmeasured observation {observation} was accepted"
         )
 
-fake = measured_claim()
+fake = execution_only_claim()
 r = run(fake)
 if r.returncode == 0 or "target.family" not in r.stderr:
     raise SystemExit(
         "constrained target validator self-test: context-free measured claim was accepted"
+    )
+
+r = run(measured_claim())
+if r.returncode != 0 or "PASS status=measured" not in r.stdout:
+    raise SystemExit(
+        "constrained target validator self-test: synthetic complete measured fixture did not pass"
     )
 
 for flag in EXECUTION_FLAGS:
@@ -91,7 +125,41 @@ for flag in EXECUTION_FLAGS:
             f"measured claim did not require {flag}"
         )
 
+fake = measured_claim()
+fake["implementation"]["commit_sha"] = "deadbeef"
+r = run(fake)
+if r.returncode == 0 or "implementation.commit_sha" not in r.stderr:
+    raise SystemExit(
+        "constrained target validator self-test: abbreviated commit provenance was accepted"
+    )
+
+for section, key in (
+    ("rng_adapter", "max_request_bytes"),
+    ("transport", "mtu_bytes"),
+):
+    fake = measured_claim()
+    fake[section][key] = 0
+    r = run(fake)
+    if r.returncode == 0 or f"{section}.{key}" not in r.stderr:
+        raise SystemExit(
+            "constrained target validator self-test: "
+            f"non-positive measured context {section}.{key} was accepted"
+        )
+
+for observation, value in (
+    ("heap_peak_bytes", -1),
+    ("auth_latency_us", 0),
+):
+    fake = measured_claim()
+    fake["observations"][observation] = value
+    r = run(fake)
+    if r.returncode == 0 or f"observations.{observation}" not in r.stderr:
+        raise SystemExit(
+            "constrained target validator self-test: "
+            f"invalid measured observation {observation}={value} was accepted"
+        )
+
 print(
     "constrained-target-manifest-self-test: PASS "
-    f"negative_cases={3 + 1 + len(EXECUTION_FLAGS)}"
+    f"negative_cases={3 + 1 + len(EXECUTION_FLAGS) + 1 + 2 + 2}"
 )
