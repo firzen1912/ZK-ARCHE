@@ -8,6 +8,7 @@ use proto::data_release_authorization::{
 #[derive(Clone, Copy)]
 enum Mutation {
     AuthorizationGeneration,
+    RevocationCurrent,
     Revoked,
     Lineage,
     RestartContinuity,
@@ -74,6 +75,10 @@ fn apply_mutation(
             association.authorization_generation_current = false;
             release.authorization_generation_current = false;
         }
+        Mutation::RevocationCurrent => {
+            association.revocation_current = false;
+            release.revocation_current = false;
+        }
         Mutation::Revoked => {
             association.explicitly_revoked = true;
             release.explicitly_revoked = true;
@@ -99,6 +104,7 @@ fn apply_mutation(
 fn retained_association_loss_cannot_carry_new_data_release() {
     let mutations = [
         Mutation::AuthorizationGeneration,
+        Mutation::RevocationCurrent,
         Mutation::Revoked,
         Mutation::Lineage,
         Mutation::RestartContinuity,
@@ -166,6 +172,15 @@ fn fresh_auth_and_rebinding_do_not_revive_unsafe_release_state() {
         generation_decision.reason,
         DataReleaseReason::AuthorizationGenerationStale
     );
+
+    let mut stale_revocation = current_release();
+    stale_revocation.revocation_current = false;
+    stale_revocation.channel_binding_valid = false;
+    stale_revocation.authenticated = true;
+    stale_revocation.channel_binding_valid = true;
+    let revocation_decision = classify_data_release(&stale_revocation);
+    assert_eq!(revocation_decision.action, DataReleaseAction::Deny);
+    assert_eq!(revocation_decision.reason, DataReleaseReason::RevocationStale);
 
     let mut revoked = current_release();
     revoked.explicitly_revoked = true;
