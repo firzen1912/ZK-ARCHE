@@ -81,6 +81,25 @@ def main() -> int:
     require_decision(enrollment, "ENR4-020", "DENY", "COMMISSIONER_AUTHORIZATION_GENERATION_STALE")
     require_decision(enrollment, "ENR4-021", "DENY", "COMMISSIONER_AUTHORIZATION_GENERATION_UNBOUND")
 
+    # Compound negatives prove fail-closed precedence when multiple enrollment
+    # defects coexist; a later defect must never repair or mask an earlier one.
+    enrollment_compound = {
+        "ENR4-022": "ROLLBACK_SUSPECTED",
+        "ENR4-023": "COMMISSIONER_UNAUTHENTICATED",
+        "ENR4-024": "COMMISSIONER_AUTHORIZATION_GENERATION_UNBOUND",
+        "ENR4-025": "COMMISSIONER_REVOKED",
+        "ENR4-026": "AUTHORITY_ESCALATION",
+        "ENR4-027": "EPOCH_STALE",
+        "ENR4-028": "REVOCATION_STALE",
+        "ENR4-029": "COMMISSIONER_UNAUTHORIZED",
+        "ENR4-030": "COMMISSIONER_AUTHORIZATION_GENERATION_STALE",
+        "ENR4-031": "NORMAL_AUTH_FORBIDDEN",
+        "ENR4-032": "COMMISSIONER_REVOKED",
+        "ENR4-033": "LINEAGE_STALE",
+    }
+    for case, reason in enrollment_compound.items():
+        require_decision(enrollment, case, "DENY", reason)
+
     resumption = decision_rows("rust/test-vectors/state/resumption-authorization-v5.txt")
     require_decision(resumption, "current", "RESUME", "CURRENT")
     require_decision(resumption, "authz-stale", "FULL_AUTH_REQUIRED", "AUTHORIZATION_STALE")
@@ -183,7 +202,7 @@ def main() -> int:
     assert online["infrastructure_available"] == "true"
     assert offline["expected"] == online["expected"] == "ESTABLISH"
 
-    print("cross-module-lifecycle-invariants: PASS surfaces=8 authz_generation=13 revocation=13 revocation_ingestion=5 lineage=6 replay_restart=7 usage_counter=6 privacy_resumption=8 terminal_resumption=10 transport_non_authority=2 infrastructure_non_authority=1 delegation_non_repair=7")
+    print("cross-module-lifecycle-invariants: PASS surfaces=8 authz_generation=13 enrollment_compound=12 revocation=13 revocation_ingestion=5 lineage=6 replay_restart=7 usage_counter=6 privacy_resumption=8 terminal_resumption=10 transport_non_authority=2 infrastructure_non_authority=1 delegation_non_repair=7")
     return 0
 
 
