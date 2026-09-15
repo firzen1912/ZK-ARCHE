@@ -86,10 +86,25 @@ def main() -> int:
     })
 
     transport = decision_rows("rust/test-vectors/state/transport-continuation-v3.txt")
-    for case in ("steady", "route-changed", "connection-changed"):
+    for case in ("steady", "route-changed", "connection-changed", "route-and-connection-changed"):
         require_decision(transport, case, "CONTINUE", "CURRENT")
-    check(transport, "REJECT", {"replay-stale":"REPLAY_CONTINUITY_STALE", "usage-counter-stale":"USAGE_COUNTER_CONTINUITY_STALE", "address-as-identity":"TRANSPORT_ADDRESS_AS_IDENTITY", "metadata-as-authority":"TRANSPORT_METADATA_AS_AUTHORITY"})
-    check(transport, "FULL_AUTH_REQUIRED", {"authorization-generation-unbound":"AUTHORIZATION_GENERATION_UNBOUND", "authorization-generation-stale":"AUTHORIZATION_GENERATION_STALE"})
+    check(transport, "REJECT", {
+        "replay-stale":"REPLAY_CONTINUITY_STALE", "usage-counter-stale":"USAGE_COUNTER_CONTINUITY_STALE",
+        "address-as-identity":"TRANSPORT_ADDRESS_AS_IDENTITY", "metadata-as-authority":"TRANSPORT_METADATA_AS_AUTHORITY",
+        "address-over-metadata":"TRANSPORT_ADDRESS_AS_IDENTITY", "metadata-over-invalidated":"TRANSPORT_METADATA_AS_AUTHORITY",
+        "invalidated-over-replay":"ASSOCIATION_INVALIDATED", "replay-over-generation-unbound":"REPLAY_CONTINUITY_STALE",
+        "usage-over-generation-stale":"USAGE_COUNTER_CONTINUITY_STALE", "peer-over-profile":"PEER_CONTEXT_MISMATCH",
+        "binding-over-resumption":"BINDING_INVALID", "invalidated-after-rebind":"ASSOCIATION_INVALIDATED",
+        "replay-stale-after-rebind":"REPLAY_CONTINUITY_STALE", "usage-stale-after-rebind":"USAGE_COUNTER_CONTINUITY_STALE",
+        "binding-invalid-after-rebind":"BINDING_INVALID", "address-as-identity-after-rebind":"TRANSPORT_ADDRESS_AS_IDENTITY",
+        "metadata-as-authority-after-rebind":"TRANSPORT_METADATA_AS_AUTHORITY", "peer-mismatch-after-rebind":"PEER_CONTEXT_MISMATCH",
+    })
+    check(transport, "FULL_AUTH_REQUIRED", {
+        "authorization-generation-unbound":"AUTHORIZATION_GENERATION_UNBOUND", "authorization-generation-stale":"AUTHORIZATION_GENERATION_STALE",
+        "generation-unbound-over-peer":"AUTHORIZATION_GENERATION_UNBOUND", "generation-stale-over-peer":"AUTHORIZATION_GENERATION_STALE",
+        "profile-over-binding":"PROFILE_CONTEXT_MISMATCH", "generation-stale-after-rebind":"AUTHORIZATION_GENERATION_STALE",
+        "resumption-denied-after-rebind":"RESUMPTION_NOT_AUTHORIZED", "profile-mismatch-after-rebind":"PROFILE_CONTEXT_MISMATCH",
+    })
 
     data = decision_rows("rust/test-vectors/state/data-release-authorization-v4.txt")
     require_decision(data, "current", "RELEASE", "CURRENT")
@@ -120,7 +135,7 @@ def main() -> int:
     assert offline["infrastructure_available"] == "false" and online["infrastructure_available"] == "true"
     assert offline["expected"] == online["expected"] == "ESTABLISH"
 
-    print("cross-module-lifecycle-invariants: PASS surfaces=8 authz_generation=13 enrollment_compound=12 revocation=13 revocation_ingestion=5 lineage=6 replay_restart=7 usage_counter=6 privacy_resumption=8 terminal_resumption=10 transport_non_authority=2 infrastructure_non_authority=1 delegation_non_repair=7")
+    print("cross-module-lifecycle-invariants: PASS surfaces=8 authz_generation=13 enrollment_compound=12 revocation=13 revocation_ingestion=5 lineage=6 replay_restart=7 usage_counter=6 privacy_resumption=8 terminal_resumption=10 transport_non_authority=6 transport_compound=22 infrastructure_non_authority=1 delegation_non_repair=7")
     return 0
 
 
