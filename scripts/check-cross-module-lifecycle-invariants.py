@@ -68,14 +68,18 @@ def main() -> int:
     require_decision(association, "ASC4-013", "FAIL_CLOSED", "USAGE_COUNTER_CONTINUITY_STALE")
     require_decision(association, "ASC4-016", "FAIL_CLOSED", "ROLLBACK_SUSPECTED")
 
-    enrollment = decision_rows("rust/test-vectors/state/enrollment-grant-v3.txt")
-    require_decision(enrollment, "ENR3-001", "ISSUE", "CURRENT")
-    require_decision(enrollment, "ENR3-006", "DENY", "COMMISSIONER_AUTHORIZATION_STALE")
-    require_decision(enrollment, "ENR3-008", "DENY", "ENROLLMENT_REPLAY_DETECTED")
-    require_decision(enrollment, "ENR3-016", "DENY", "REVOCATION_STALE")
-    require_decision(enrollment, "ENR3-017", "DENY", "LINEAGE_STALE")
-    require_decision(enrollment, "ENR3-019", "DENY", "ROLLBACK_SUSPECTED")
-    require_decision(enrollment, "ENR3-020", "DENY", "COMMISSIONER_AUTHORIZATION_GENERATION_STALE")
+    # v4 is the canonical enrollment corpus. It adds an explicit authorization-
+    # generation binding bit before generation freshness; keep this cross-module
+    # gate on the current contract so stale v3 fixtures cannot mask that boundary.
+    enrollment = decision_rows("rust/test-vectors/state/enrollment-grant-v4.txt")
+    require_decision(enrollment, "ENR4-001", "ISSUE", "CURRENT")
+    require_decision(enrollment, "ENR4-006", "DENY", "COMMISSIONER_AUTHORIZATION_STALE")
+    require_decision(enrollment, "ENR4-008", "DENY", "ENROLLMENT_REPLAY_DETECTED")
+    require_decision(enrollment, "ENR4-016", "DENY", "REVOCATION_STALE")
+    require_decision(enrollment, "ENR4-017", "DENY", "LINEAGE_STALE")
+    require_decision(enrollment, "ENR4-019", "DENY", "ROLLBACK_SUSPECTED")
+    require_decision(enrollment, "ENR4-020", "DENY", "COMMISSIONER_AUTHORIZATION_GENERATION_STALE")
+    require_decision(enrollment, "ENR4-021", "DENY", "COMMISSIONER_AUTHORIZATION_GENERATION_UNBOUND")
 
     resumption = decision_rows("rust/test-vectors/state/resumption-authorization-v5.txt")
     require_decision(resumption, "current", "RESUME", "CURRENT")
@@ -97,11 +101,6 @@ def main() -> int:
     require_decision(resumption, "privacy-stale-with-binding-mismatch", "FULL_AUTH_REQUIRED", "PRIVACY_IDENTIFIER_STATE_STALE")
     require_decision(resumption, "repeated-id-with-profile-mismatch", "FULL_AUTH_REQUIRED", "REPEATED_IDENTIFIER_LINKABLE")
 
-    # Terminal retained-session state must stay fail-closed even when an ordinary
-    # FULL_AUTH_REQUIRED condition is simultaneously present. Keep these compound
-    # precedence rows in the cross-module gate so corpus refactors cannot silently
-    # turn terminal rejection into a resumable/full-auth fallback path. In particular,
-    # a channel-binding mismatch cannot downgrade stale lineage into a retry path.
     require_decision(resumption, "rollback-with-authz-stale", "REJECT", "ROLLBACK_SUSPECTED")
     require_decision(resumption, "restart-stale-at-reuse-limit", "REJECT", "RESTART_CONTINUITY_STALE")
     require_decision(resumption, "usage-continuity-stale-with-generation-stale", "REJECT", "USAGE_COUNTER_CONTINUITY_STALE")
@@ -156,11 +155,8 @@ def main() -> int:
         assert row["expected"] == "REJECT_UNAUTHENTICATED", case
         assert row["result_epoch"] == row["local_epoch"], f"{case}: rejection must preserve epoch"
 
-    # A newly incorporated revocation epoch must not be a bookkeeping-only event:
-    # every retained-authority surface must already have a fail-closed path for
-    # stale/revoked lifecycle state before it can authorize protected work again.
     require_decision(association, "ASC4-008", "FAIL_CLOSED", "REVOCATION_STALE")
-    require_decision(enrollment, "ENR3-016", "DENY", "REVOCATION_STALE")
+    require_decision(enrollment, "ENR4-016", "DENY", "REVOCATION_STALE")
     require_decision(resumption, "revocation-stale", "REJECT", "REVOCATION_STALE")
     require_decision(resumption, "revoked", "REJECT", "REVOKED")
     require_decision(data, "revocation-stale", "DENY", "REVOCATION_STALE")
@@ -187,7 +183,7 @@ def main() -> int:
     assert online["infrastructure_available"] == "true"
     assert offline["expected"] == online["expected"] == "ESTABLISH"
 
-    print("cross-module-lifecycle-invariants: PASS surfaces=8 authz_generation=12 revocation=13 revocation_ingestion=5 lineage=6 replay_restart=7 usage_counter=6 privacy_resumption=8 terminal_resumption=10 transport_non_authority=2 infrastructure_non_authority=1 delegation_non_repair=7")
+    print("cross-module-lifecycle-invariants: PASS surfaces=8 authz_generation=13 revocation=13 revocation_ingestion=5 lineage=6 replay_restart=7 usage_counter=6 privacy_resumption=8 terminal_resumption=10 transport_non_authority=2 infrastructure_non_authority=1 delegation_non_repair=7")
     return 0
 
 
