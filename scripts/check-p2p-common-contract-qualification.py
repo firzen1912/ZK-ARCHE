@@ -23,6 +23,14 @@ EXPECTED = {
     "P2P-008": ("any", "any", "none", "local-authorized", "transport-address-change", "transport-address-not-protocol-identity", "required-unexecuted"),
     "P2P-009": ("any", "any", "none", "stale-beyond-permitted-freshness", "normal-auth", "fail-closed-or-restricted-per-profile", "required-unexecuted"),
     "P2P-010": ("any", "any", "none", "local-authorized", "incompatible-mandatory-floor", "fail-closed", "required-unexecuted"),
+    "P2P-011": ("mcu-core", "linux-edge", "none", "local-authorized", "replay-accepted-auth", "reject-replay-without-new-authority", "required-unexecuted"),
+    "P2P-012": ("mcu-core", "linux-edge", "none", "local-authorized", "peer-restart-with-retained-stale-session", "reauth-or-fail-closed", "required-unexecuted"),
+    "P2P-013": ("mcu-core", "linux-edge", "none", "locally-revoked", "retained-session-or-resumption", "fail-closed-no-authority-resurrection", "required-unexecuted"),
+    "P2P-014": ("mcu-core", "linux-edge", "none", "local-authorized", "authorization-generation-advanced", "retained-session-or-resumption", "reauth-or-fail-closed", "required-unexecuted"),
+    "P2P-015": ("mcu-core", "linux-edge", "none", "local-authorized", "mandatory-security-capability-removed", "negotiation", "fail-closed-no-downgrade", "required-unexecuted"),
+    "P2P-016": ("mcu-core", "linux-edge", "none", "local-authorized", "channel-binding-changed", "retained-session-or-resumption", "reauth-or-fail-closed", "required-unexecuted"),
+    "P2P-017": ("peer-a", "peer-c", "none", "explicit-bounded-delegation", "delegation-revoked", "normal-auth", "fail-closed-no-transitive-fallback", "required-unexecuted"),
+    "P2P-018": ("any", "any", "none", "local-authorized", "normal-auth-success", "trust-store-observation", "no-learning-no-trust-mutation", "required-unexecuted"),
 }
 FIELDS = ["case_id", "peer_a", "peer_b", "infrastructure", "trust_precondition", "stimulus", "required_outcome", "evidence_state"]
 
