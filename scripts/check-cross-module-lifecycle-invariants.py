@@ -108,7 +108,24 @@ def main() -> int:
 
     data = decision_rows("rust/test-vectors/state/data-release-authorization-v4.txt")
     require_decision(data, "current", "RELEASE", "CURRENT")
-    check(data, "DENY", {"authorization-stale":"AUTHORIZATION_STALE", "authorization-generation-unbound":"AUTHORIZATION_GENERATION_UNBOUND", "authorization-generation-stale":"AUTHORIZATION_GENERATION_STALE", "revocation-stale":"REVOCATION_STALE", "revoked":"REVOKED", "lineage-stale":"LINEAGE_STALE", "binding-invalid":"CHANNEL_BINDING_MISSING_OR_INVALID", "release-replay":"RELEASE_REPLAY_DETECTED", "rollback":"ROLLBACK_SUSPECTED"})
+    require_decision(data, "unauthenticated", "FRESH_AUTH_REQUIRED", "UNAUTHENTICATED")
+    check(data, "DENY", {
+        "device-authority-missing":"DEVICE_RELEASE_AUTHORITY_MISSING",
+        "device-authority-stale":"DEVICE_RELEASE_AUTHORITY_STALE",
+        "protected-data-plaintext":"PROTECTED_DATA_NOT_ENCRYPTED",
+        "release-key-scope-mismatch":"RELEASE_KEY_SCOPE_MISMATCH",
+        "authorization-missing":"AUTHORIZATION_MISSING",
+        "authorization-stale":"AUTHORIZATION_STALE",
+        "authorization-generation-unbound":"AUTHORIZATION_GENERATION_UNBOUND",
+        "authorization-generation-stale":"AUTHORIZATION_GENERATION_STALE",
+        "revocation-stale":"REVOCATION_STALE", "revoked":"REVOKED",
+        "revoked-with-downstream-state-invalid":"REVOKED", "lineage-stale":"LINEAGE_STALE",
+        "holder-mismatch":"HOLDER_MISMATCH", "audience-mismatch":"AUDIENCE_MISMATCH",
+        "purpose-mismatch":"PURPOSE_MISMATCH", "data-type-mismatch":"DATA_TYPE_MISMATCH",
+        "policy-mismatch":"POLICY_MISMATCH", "epoch-mismatch":"EPOCH_MISMATCH",
+        "binding-invalid":"CHANNEL_BINDING_MISSING_OR_INVALID",
+        "release-replay":"RELEASE_REPLAY_DETECTED", "rollback":"ROLLBACK_SUSPECTED",
+    })
 
     delegation = decision_rows("rust/test-vectors/p2p/bounded-delegation-v3.txt")
     require_decision(delegation, "DEL3-001", "ACCEPT", "CURRENT")
@@ -135,7 +152,7 @@ def main() -> int:
     assert offline["infrastructure_available"] == "false" and online["infrastructure_available"] == "true"
     assert offline["expected"] == online["expected"] == "ESTABLISH"
 
-    print("cross-module-lifecycle-invariants: PASS surfaces=8 authz_generation=13 enrollment_compound=12 revocation=13 revocation_ingestion=5 lineage=6 replay_restart=7 usage_counter=6 privacy_resumption=8 terminal_resumption=10 transport_non_authority=6 transport_compound=22 infrastructure_non_authority=1 delegation_non_repair=7")
+    print("cross-module-lifecycle-invariants: PASS surfaces=8 authz_generation=13 enrollment_compound=12 revocation=13 revocation_ingestion=5 lineage=6 replay_restart=7 usage_counter=6 privacy_resumption=8 terminal_resumption=10 transport_non_authority=6 transport_compound=22 data_release_boundary=23 infrastructure_non_authority=1 delegation_non_repair=7")
     return 0
 
 
