@@ -39,63 +39,19 @@ ZK-ARCHE uses four distinct layers so research does not turn into an autonomous 
 
 ## Research scope
 
-Research should prioritize developments that can materially affect ZK-ARCHE architecture, security, privacy, interoperability, constrained-device feasibility, or specification maturity, including:
-
-- privacy-preserving authentication and authorization;
-- zero-knowledge and Sigma/Schnorr-style proofs suitable for constrained systems;
-- anonymous/selective-disclosure credentials and unlinkable authorization;
-- EDHOC, OSCORE, CoAP, TLS 1.3/mTLS, DTLS 1.3, and secure-channel binding;
-- IoT onboarding, commissioning, enrollment, rekey, revocation, and lifecycle security;
-- replay resistance, anti-amplification, retry cookies, resumption, and denial-of-service controls;
-- transcript binding, downgrade/UKS/reflection resistance, and protocol state-machine design;
-- deterministic vectors, differential testing, parser fuzzing, and interoperability methodology;
-- formal verification and symbolic analysis with tools such as ProVerif, Tamarin, and SAPIC+ when useful;
-- embedded cryptography, constant-time behavior, RNG/DRBG design, secure storage, and side-channel considerations;
-- Rust and C cryptographic implementation practices;
-- STM32/ESP32-class footprint and performance constraints;
-- post-quantum/hybrid cryptography only as explicitly measured optional research unless promoted by review;
-- data-sovereignty, policy-bound release, auditability, and privacy-preserving data access;
-- P2P zero-trust authentication, scoped trust evidence, delegation, and revocation.
+Research should prioritize developments that can materially affect ZK-ARCHE architecture, security, privacy, interoperability, constrained-device feasibility, or specification maturity, including privacy-preserving authentication/authorization; constrained Sigma/Schnorr proofs; anonymous/selective-disclosure credentials; EDHOC/OSCORE/CoAP/TLS/DTLS and channel binding; enrollment/rekey/revocation; replay/DoS/resumption; transcript and state-machine design; vectors/differential testing/fuzzing; formal verification; embedded cryptography/RNG/storage/side channels; Rust/C implementation; STM32/ESP32 constraints; optional measured PQ/hybrid profiles; data sovereignty; and P2P zero-trust delegation/revocation.
 
 ## Source discipline
 
-Prefer primary and authoritative sources:
-
-- IETF RFCs, Internet-Drafts, working-group material, and reference implementations;
-- NIST publications, standards, and cryptographic guidance;
-- peer-reviewed IEEE/ACM/USENIX/NDSS/CRYPTO/EUROCRYPT and related publications;
-- arXiv or ePrint preprints when clearly labeled as pre-review/preprint evidence;
-- official project, university-lab, standards-body, vendor, or government material;
-- source repositories, releases, commits, issues, benchmarks, and test suites for relevant implementations;
-- original hardware/MCU and cryptographic-library documentation.
-
-A repository issue, benchmark screenshot, blog post, or single implementation behavior is an engineering signal, not proof of a general protocol property unless independently verified.
+Prefer primary and authoritative sources: IETF RFCs and drafts, NIST guidance, peer-reviewed security/cryptography venues, clearly labeled preprints, official research/project repositories, formal-methods projects, and original hardware/library documentation. Secondary sources are discovery aids; material claims should be traced to primary evidence.
 
 ## Daily finding contract
 
-Future daily reports follow [`daily/README.md`](daily/README.md). Each material finding should record:
-
-1. stable per-report finding ID and novelty class (`new`, `corroborates`, `refines`, `contradicts`, `supersedes`);
-2. source, publication/release date, source type, and primary link;
-3. verified source-supported claim;
-4. exact existing owner when one exists (`R-*`, `TD-*`, phase/spec section, or `none`);
-5. concrete repository fact or implementation/spec/test anchor;
-6. protocol/security/privacy problem addressed;
-7. strongest distinct engineering idea;
-8. evidence maturity: `concept`, `formal`, `software`, `constrained-hardware`, `deployed`, or `externally-reviewed`;
-9. assumptions, limitations, uncertainty, and reproduction caveats;
-10. likely wire/RAM/CPU/flash/dependency/trust-model implications where relevant;
-11. compatibility or migration implications for Rust/C and existing vectors;
-12. required next evidence and recommended disposition;
-13. whether it is a candidate for later weekly findings consolidation.
-
-Separate **source-supported facts**, **repository facts**, and **ZK-ARCHE inference** explicitly.
+Future daily reports follow [`daily/README.md`](daily/README.md). Each material finding records a stable finding ID and novelty class; source/date/type/link; verified claim; exact R-/TD-/phase/spec owner; repository anchor; problem and engineering idea; evidence maturity; limitations; likely resource/trust/privacy impact; Rust/C/vector compatibility; required next evidence; disposition; and weekly-finding candidacy. Source-supported facts, repository facts, and ZK-ARCHE inference must remain explicit.
 
 ## Promotion boundary
 
 Research does not directly become a protocol requirement or engineering request.
-
-Use this progression:
 
 ```text
 external source / research idea
@@ -103,14 +59,14 @@ external source / research idea
 docs/research/daily/YYYY-MM-DD.md
         ↓
 docs/research/backlog.md
-        ↓  human-reviewed consolidation when repo implication is concrete
+        ↓  human-reviewed consolidation
 docs/findings/week-of-*-findings.md
-        ↓  explicit human intent / authorized work
+        ↓  explicit human intent
 docs/requests/week-of-*-request.md
-        ↓  long-term sequencing or decision required?
+        ↓
 docs/roadmaps/ and/or docs/adr/
-        ↓  normative behavior approved?
-spec change + versioned vectors/tests
+        ↓
+spec + vectors/tests
         ↓
 Rust/C implementation and validation
         ↓
@@ -119,60 +75,25 @@ docs/assurance/ + retained evidence
 docs/release/
 ```
 
-A finding may stop at any stage. Rejection, deferral, research-only classification, or an explicit evidence gap are valid outcomes.
-
-Each daily report may include advisory promotion metadata:
-
-```yaml
-roadmap_impact:
-  candidate_phase: null
-  recommendation: investigate | reproduce | benchmark | prototype | promote | defer | reject | research-only
-  evidence_maturity: concept | formal | software | constrained-hardware | deployed | externally-reviewed
-  protocol_impact: none | compatible | extension | versioned-breaking-change
-  required_next_evidence: null
-  roadmap_action: none
-  promotion_requirement: explicit human review
-```
-
-A research report must not claim that a weekly request, roadmap item, ADR, spec requirement, debt status, or maturity gate changed unless that separate artifact was deliberately updated through the appropriate process.
+A finding may stop at any stage. Rejection, deferral, research-only classification, or an explicit evidence gap are valid outcomes. Promotion always requires explicit human review; daily research must not claim that roadmap/spec/ADR/debt/maturity state changed unless that separate artifact was deliberately updated through its governing process.
 
 ## Research backlog
 
-[`backlog.md`](backlog.md) tracks unresolved research questions and promising leads. The backlog is not a roadmap or weekly request queue. Its entries can be closed as rejected or deferred without implementation.
-
-When evidence becomes actionable, first consolidate the repository implication in weekly findings where useful; then promote work only through explicit human request/review and link the appropriate roadmap phase or ADR rather than copying research prose into normative documents.
+[`backlog.md`](backlog.md) is the persistent research-execution queue, not a roadmap or engineering request queue. When evidence becomes actionable, repository implications should first be consolidated through the human-reviewed findings/request/promotion path rather than copied directly into normative artifacts.
 
 ## Automated daily pipeline
 
-The recurring research workflow is governed by [`PIPELINE.md`](PIPELINE.md).
-
-The automation operates on the `dev` branch under a strict least-write-access rule:
-
-- it may read the entire repository, including current weekly findings/requests, to understand code, specification, roadmap, assurance, technical-debt, and current human intent;
-- everything outside `docs/research/**` is read-only context;
-- it may write only `docs/research/**`;
-- it must never write to `main`;
-- it must not create/update `docs/findings/**` or `docs/requests/**`;
-- each completed daily run may create at most one commit and one `dev` ref update;
-- findings that imply code, spec, roadmap, ADR, CI, release, findings, request, or assurance changes are recorded as recommendations/hand-off candidates rather than applied automatically.
-
-The report, index update, and any justified backlog update must be assembled into the same atomic commit. The automation must verify after writing that no path outside `docs/research/**` changed.
+The recurring research workflow is governed by [`PIPELINE.md`](PIPELINE.md). It may read the full `dev` repository but may write only `docs/research/**`; it must never write `main`, findings, requests, roadmaps, ADRs, specs, implementation, assurance, debt, CI, issues, PRs, or releases. Each completed run may create at most one commit and one `dev` ref update. The report, index, and any justified backlog transition are assembled atomically, then verified so no path outside `docs/research/**` changed.
 
 ## Daily-report quality direction
 
-The historical 2026-08-15 through 2026-08-25 reports remain valid provenance. Future reports should be more delta-oriented:
-
-- state repository change once rather than repeating unchanged context;
-- distinguish new evidence from corroboration/refinement;
-- map findings to exact R-/TD-/spec/phase owners;
-- synthesize sources that support one engineering conclusion;
-- include an actionability matrix and explicit claim/no-change boundary;
-- identify weekly finding candidates without autonomously creating them.
+Historical reports remain dated provenance. New reports should be delta-oriented, map findings to exact owners, synthesize convergent sources, include actionability and claim/no-change boundaries, and identify weekly-finding candidates without autonomously creating them.
 
 ## Index
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-09-15 | [Daily research](daily/2026-09-15.md) | downgrade-resistant negotiation: selected-tuple vs preference/offer integrity; forged retry-hint policy isolation; authenticated same-conversation fallback evidence | reproduce / benchmark; explicit review required |
 | 2026-09-14 | [Daily research](daily/2026-09-14.md) | semantic association vs rotatable wire-visible session handles; path validation without identity promotion; full-AUTH fallback as fresh authentication/privacy context | reproduce / prototype; explicit review required |
 | 2026-09-13 | [Daily research](daily/2026-09-13.md) | stateful formal modeling of authorized trust mutation; verify-then-commit constrained trust replacement; internal-vs-external error/privacy separation | reproduce; explicit review required |
 | 2026-09-12 | [Daily research](daily/2026-09-12.md) | replay-continuity detector vs response evidence; key-generation transition isolation; fresh AUTH/rebinding non-substitution for stale authorization/revocation authority | reproduce; explicit review required |
