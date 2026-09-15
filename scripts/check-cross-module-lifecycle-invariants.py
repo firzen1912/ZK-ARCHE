@@ -11,195 +11,113 @@ ROOT = Path(__file__).resolve().parents[1]
 def decision_rows(path: str) -> dict[str, tuple[str, str]]:
     rows: dict[str, tuple[str, str]] = {}
     for raw in (ROOT / path).read_text(encoding="utf-8").splitlines():
-        if not raw.startswith("case="):
-            continue
-        parts = raw.split("|")
-        rows[parts[0].removeprefix("case=")] = (parts[-2], parts[-1])
+        if raw.startswith("case="):
+            parts = raw.split("|")
+            rows[parts[0].removeprefix("case=")] = (parts[-2], parts[-1])
     return rows
 
 
 def require_decision(rows: dict[str, tuple[str, str]], case: str, action: str, reason: str) -> None:
-    expected = (action, reason)
     observed = rows.get(case)
+    expected = (action, reason)
     assert observed == expected, f"{case}: expected {expected}, observed {observed}"
 
 
 def load_p2p() -> dict[str, dict[str, str]]:
-    path = ROOT / "rust/test-vectors/p2p/common-contract-lifecycle-v4.txt"
-    lines = [line for line in path.read_text(encoding="utf-8").splitlines() if not line.startswith("#")]
+    lines = [line for line in (ROOT / "rust/test-vectors/p2p/common-contract-lifecycle-v4.txt").read_text(encoding="utf-8").splitlines() if not line.startswith("#")]
     return {row["case_id"]: row for row in csv.DictReader(lines, delimiter="|")}
 
 
 def load_revocation_reconciliation() -> dict[str, dict[str, str]]:
-    path = ROOT / "rust/test-vectors/state/revocation-reconciliation-v1.txt"
-    lines = [
-        line
-        for line in path.read_text(encoding="utf-8").splitlines()
-        if line and not line.startswith("#")
-    ]
-    fields = (
-        "case_id",
-        "local_authority",
-        "local_epoch",
-        "update_authority",
-        "update_epoch",
-        "update_kind",
-        "base_epoch",
-        "authenticated",
-        "same_object",
-        "expected",
-        "result_epoch",
-    )
-    return {
-        row["case_id"]: row
-        for row in csv.DictReader(lines, fieldnames=fields, delimiter="|")
-    }
+    lines = [line for line in (ROOT / "rust/test-vectors/state/revocation-reconciliation-v1.txt").read_text(encoding="utf-8").splitlines() if line and not line.startswith("#")]
+    fields = ("case_id", "local_authority", "local_epoch", "update_authority", "update_epoch", "update_kind", "base_epoch", "authenticated", "same_object", "expected", "result_epoch")
+    return {row["case_id"]: row for row in csv.DictReader(lines, fieldnames=fields, delimiter="|")}
+
+
+def check(rows, action, cases):
+    for case, reason in cases.items():
+        require_decision(rows, case, action, reason)
 
 
 def main() -> int:
     association = decision_rows("rust/test-vectors/state/association-admission-v4.txt")
+    check(association, "FAIL_CLOSED", {
+        "ASC4-006":"AUTHORIZATION_GENERATION_UNBOUND", "ASC4-007":"AUTHORIZATION_GENERATION_STALE",
+        "ASC4-008":"REVOCATION_STALE", "ASC4-010":"LINEAGE_STALE", "ASC4-011":"REPLAY_CONTINUITY_STALE",
+        "ASC4-012":"RESTART_CONTINUITY_STALE", "ASC4-013":"USAGE_COUNTER_CONTINUITY_STALE", "ASC4-016":"ROLLBACK_SUSPECTED",
+    })
     require_decision(association, "ASC4-001", "ESTABLISH", "CURRENT")
-    require_decision(association, "ASC4-006", "FAIL_CLOSED", "AUTHORIZATION_GENERATION_UNBOUND")
-    require_decision(association, "ASC4-007", "FAIL_CLOSED", "AUTHORIZATION_GENERATION_STALE")
-    require_decision(association, "ASC4-008", "FAIL_CLOSED", "REVOCATION_STALE")
-    require_decision(association, "ASC4-010", "FAIL_CLOSED", "LINEAGE_STALE")
-    require_decision(association, "ASC4-011", "FAIL_CLOSED", "REPLAY_CONTINUITY_STALE")
-    require_decision(association, "ASC4-012", "FAIL_CLOSED", "RESTART_CONTINUITY_STALE")
-    require_decision(association, "ASC4-013", "FAIL_CLOSED", "USAGE_COUNTER_CONTINUITY_STALE")
-    require_decision(association, "ASC4-016", "FAIL_CLOSED", "ROLLBACK_SUSPECTED")
 
-    # v4 is the canonical enrollment corpus. It adds an explicit authorization-
-    # generation binding bit before generation freshness; keep this cross-module
-    # gate on the current contract so stale v3 fixtures cannot mask that boundary.
     enrollment = decision_rows("rust/test-vectors/state/enrollment-grant-v4.txt")
+    check(enrollment, "DENY", {
+        "ENR4-006":"COMMISSIONER_AUTHORIZATION_STALE", "ENR4-008":"ENROLLMENT_REPLAY_DETECTED",
+        "ENR4-016":"REVOCATION_STALE", "ENR4-017":"LINEAGE_STALE", "ENR4-019":"ROLLBACK_SUSPECTED",
+        "ENR4-020":"COMMISSIONER_AUTHORIZATION_GENERATION_STALE", "ENR4-021":"COMMISSIONER_AUTHORIZATION_GENERATION_UNBOUND",
+        "ENR4-022":"ROLLBACK_SUSPECTED", "ENR4-023":"COMMISSIONER_UNAUTHENTICATED",
+        "ENR4-024":"COMMISSIONER_AUTHORIZATION_GENERATION_UNBOUND", "ENR4-025":"COMMISSIONER_REVOKED",
+        "ENR4-026":"AUTHORITY_ESCALATION", "ENR4-027":"EPOCH_STALE", "ENR4-028":"REVOCATION_STALE",
+        "ENR4-029":"COMMISSIONER_UNAUTHORIZED", "ENR4-030":"COMMISSIONER_AUTHORIZATION_GENERATION_STALE",
+        "ENR4-031":"NORMAL_AUTH_FORBIDDEN", "ENR4-032":"COMMISSIONER_REVOKED", "ENR4-033":"LINEAGE_STALE",
+    })
     require_decision(enrollment, "ENR4-001", "ISSUE", "CURRENT")
-    require_decision(enrollment, "ENR4-006", "DENY", "COMMISSIONER_AUTHORIZATION_STALE")
-    require_decision(enrollment, "ENR4-008", "DENY", "ENROLLMENT_REPLAY_DETECTED")
-    require_decision(enrollment, "ENR4-016", "DENY", "REVOCATION_STALE")
-    require_decision(enrollment, "ENR4-017", "DENY", "LINEAGE_STALE")
-    require_decision(enrollment, "ENR4-019", "DENY", "ROLLBACK_SUSPECTED")
-    require_decision(enrollment, "ENR4-020", "DENY", "COMMISSIONER_AUTHORIZATION_GENERATION_STALE")
-    require_decision(enrollment, "ENR4-021", "DENY", "COMMISSIONER_AUTHORIZATION_GENERATION_UNBOUND")
-
-    # Compound negatives prove fail-closed precedence when multiple enrollment
-    # defects coexist; a later defect must never repair or mask an earlier one.
-    enrollment_compound = {
-        "ENR4-022": "ROLLBACK_SUSPECTED",
-        "ENR4-023": "COMMISSIONER_UNAUTHENTICATED",
-        "ENR4-024": "COMMISSIONER_AUTHORIZATION_GENERATION_UNBOUND",
-        "ENR4-025": "COMMISSIONER_REVOKED",
-        "ENR4-026": "AUTHORITY_ESCALATION",
-        "ENR4-027": "EPOCH_STALE",
-        "ENR4-028": "REVOCATION_STALE",
-        "ENR4-029": "COMMISSIONER_UNAUTHORIZED",
-        "ENR4-030": "COMMISSIONER_AUTHORIZATION_GENERATION_STALE",
-        "ENR4-031": "NORMAL_AUTH_FORBIDDEN",
-        "ENR4-032": "COMMISSIONER_REVOKED",
-        "ENR4-033": "LINEAGE_STALE",
-    }
-    for case, reason in enrollment_compound.items():
-        require_decision(enrollment, case, "DENY", reason)
 
     resumption = decision_rows("rust/test-vectors/state/resumption-authorization-v5.txt")
     require_decision(resumption, "current", "RESUME", "CURRENT")
-    require_decision(resumption, "authz-stale", "FULL_AUTH_REQUIRED", "AUTHORIZATION_STALE")
-    require_decision(resumption, "authz-generation-unbound", "FULL_AUTH_REQUIRED", "AUTHORIZATION_GENERATION_UNBOUND")
-    require_decision(resumption, "authz-generation-stale", "FULL_AUTH_REQUIRED", "AUTHORIZATION_GENERATION_STALE")
-    require_decision(resumption, "revocation-stale", "REJECT", "REVOCATION_STALE")
-    require_decision(resumption, "revoked", "REJECT", "REVOKED")
-    require_decision(resumption, "lineage-stale", "REJECT", "LINEAGE_STALE")
-    require_decision(resumption, "restart-stale", "REJECT", "RESTART_CONTINUITY_STALE")
-    require_decision(resumption, "usage-counter-continuity-stale", "REJECT", "USAGE_COUNTER_CONTINUITY_STALE")
-    require_decision(resumption, "rollback", "REJECT", "ROLLBACK_SUSPECTED")
-    require_decision(resumption, "privacy-identifier-state-stale", "FULL_AUTH_REQUIRED", "PRIVACY_IDENTIFIER_STATE_STALE")
-    require_decision(resumption, "repeated-identifier-linkable", "FULL_AUTH_REQUIRED", "REPEATED_IDENTIFIER_LINKABLE")
-    require_decision(resumption, "privacy-stale-at-reuse-limit", "FULL_AUTH_REQUIRED", "PRIVACY_IDENTIFIER_STATE_STALE")
-    require_decision(resumption, "repeated-id-at-reuse-limit", "FULL_AUTH_REQUIRED", "REPEATED_IDENTIFIER_LINKABLE")
-    require_decision(resumption, "privacy-stale-with-epoch-stale", "FULL_AUTH_REQUIRED", "PRIVACY_IDENTIFIER_STATE_STALE")
-    require_decision(resumption, "repeated-id-with-epoch-stale", "FULL_AUTH_REQUIRED", "REPEATED_IDENTIFIER_LINKABLE")
-    require_decision(resumption, "privacy-stale-with-binding-mismatch", "FULL_AUTH_REQUIRED", "PRIVACY_IDENTIFIER_STATE_STALE")
-    require_decision(resumption, "repeated-id-with-profile-mismatch", "FULL_AUTH_REQUIRED", "REPEATED_IDENTIFIER_LINKABLE")
-
-    require_decision(resumption, "rollback-with-authz-stale", "REJECT", "ROLLBACK_SUSPECTED")
-    require_decision(resumption, "restart-stale-at-reuse-limit", "REJECT", "RESTART_CONTINUITY_STALE")
-    require_decision(resumption, "usage-continuity-stale-with-generation-stale", "REJECT", "USAGE_COUNTER_CONTINUITY_STALE")
-    require_decision(resumption, "session-invalidated-with-profile-mismatch", "REJECT", "SESSION_INVALIDATED")
-    require_decision(resumption, "revocation-stale-with-profile-mismatch", "REJECT", "REVOCATION_STALE")
-    require_decision(resumption, "revoked-with-profile-mismatch", "REJECT", "REVOKED")
-    require_decision(resumption, "lineage-stale-with-profile-mismatch", "REJECT", "LINEAGE_STALE")
-    require_decision(resumption, "revocation-stale-at-reuse-limit", "REJECT", "REVOCATION_STALE")
-    require_decision(resumption, "revoked-with-authz-stale", "REJECT", "REVOKED")
-    require_decision(resumption, "lineage-stale-with-binding-mismatch", "REJECT", "LINEAGE_STALE")
+    check(resumption, "FULL_AUTH_REQUIRED", {
+        "authz-stale":"AUTHORIZATION_STALE", "authz-generation-unbound":"AUTHORIZATION_GENERATION_UNBOUND",
+        "authz-generation-stale":"AUTHORIZATION_GENERATION_STALE", "privacy-identifier-state-stale":"PRIVACY_IDENTIFIER_STATE_STALE",
+        "repeated-identifier-linkable":"REPEATED_IDENTIFIER_LINKABLE", "privacy-stale-at-reuse-limit":"PRIVACY_IDENTIFIER_STATE_STALE",
+        "repeated-id-at-reuse-limit":"REPEATED_IDENTIFIER_LINKABLE", "privacy-stale-with-epoch-stale":"PRIVACY_IDENTIFIER_STATE_STALE",
+        "repeated-id-with-epoch-stale":"REPEATED_IDENTIFIER_LINKABLE", "privacy-stale-with-binding-mismatch":"PRIVACY_IDENTIFIER_STATE_STALE",
+        "repeated-id-with-profile-mismatch":"REPEATED_IDENTIFIER_LINKABLE",
+    })
+    check(resumption, "REJECT", {
+        "revocation-stale":"REVOCATION_STALE", "revoked":"REVOKED", "lineage-stale":"LINEAGE_STALE",
+        "restart-stale":"RESTART_CONTINUITY_STALE", "usage-counter-continuity-stale":"USAGE_COUNTER_CONTINUITY_STALE", "rollback":"ROLLBACK_SUSPECTED",
+        "rollback-with-authz-stale-and-binding-mismatch":"ROLLBACK_SUSPECTED",
+        "restart-stale-at-reuse-limit-and-binding-mismatch":"RESTART_CONTINUITY_STALE",
+        "usage-continuity-stale-with-generation-stale-and-binding-mismatch":"USAGE_COUNTER_CONTINUITY_STALE",
+        "session-invalidated-with-profile-and-binding-mismatch":"SESSION_INVALIDATED",
+        "revocation-stale-with-generation-profile-and-binding-mismatch":"REVOCATION_STALE",
+        "revoked-with-generation-and-authz-stale":"REVOKED",
+        "lineage-stale-with-generation-and-binding-mismatch":"LINEAGE_STALE",
+        "revocation-stale-at-reuse-limit":"REVOCATION_STALE", "revoked-with-authz-stale":"REVOKED",
+        "lineage-stale-with-binding-mismatch":"LINEAGE_STALE",
+    })
 
     transport = decision_rows("rust/test-vectors/state/transport-continuation-v3.txt")
-    require_decision(transport, "steady", "CONTINUE", "CURRENT")
-    require_decision(transport, "route-changed", "CONTINUE", "CURRENT")
-    require_decision(transport, "connection-changed", "CONTINUE", "CURRENT")
-    require_decision(transport, "replay-stale", "REJECT", "REPLAY_CONTINUITY_STALE")
-    require_decision(transport, "usage-counter-stale", "REJECT", "USAGE_COUNTER_CONTINUITY_STALE")
-    require_decision(transport, "authorization-generation-unbound", "FULL_AUTH_REQUIRED", "AUTHORIZATION_GENERATION_UNBOUND")
-    require_decision(transport, "authorization-generation-stale", "FULL_AUTH_REQUIRED", "AUTHORIZATION_GENERATION_STALE")
-    require_decision(transport, "address-as-identity", "REJECT", "TRANSPORT_ADDRESS_AS_IDENTITY")
-    require_decision(transport, "metadata-as-authority", "REJECT", "TRANSPORT_METADATA_AS_AUTHORITY")
+    for case in ("steady", "route-changed", "connection-changed"):
+        require_decision(transport, case, "CONTINUE", "CURRENT")
+    check(transport, "REJECT", {"replay-stale":"REPLAY_CONTINUITY_STALE", "usage-counter-stale":"USAGE_COUNTER_CONTINUITY_STALE", "address-as-identity":"TRANSPORT_ADDRESS_AS_IDENTITY", "metadata-as-authority":"TRANSPORT_METADATA_AS_AUTHORITY"})
+    check(transport, "FULL_AUTH_REQUIRED", {"authorization-generation-unbound":"AUTHORIZATION_GENERATION_UNBOUND", "authorization-generation-stale":"AUTHORIZATION_GENERATION_STALE"})
 
     data = decision_rows("rust/test-vectors/state/data-release-authorization-v4.txt")
     require_decision(data, "current", "RELEASE", "CURRENT")
-    require_decision(data, "authorization-stale", "DENY", "AUTHORIZATION_STALE")
-    require_decision(data, "authorization-generation-unbound", "DENY", "AUTHORIZATION_GENERATION_UNBOUND")
-    require_decision(data, "authorization-generation-stale", "DENY", "AUTHORIZATION_GENERATION_STALE")
-    require_decision(data, "revocation-stale", "DENY", "REVOCATION_STALE")
-    require_decision(data, "revoked", "DENY", "REVOKED")
-    require_decision(data, "lineage-stale", "DENY", "LINEAGE_STALE")
-    require_decision(data, "binding-invalid", "DENY", "CHANNEL_BINDING_MISSING_OR_INVALID")
-    require_decision(data, "release-replay", "DENY", "RELEASE_REPLAY_DETECTED")
-    require_decision(data, "rollback", "DENY", "ROLLBACK_SUSPECTED")
+    check(data, "DENY", {"authorization-stale":"AUTHORIZATION_STALE", "authorization-generation-unbound":"AUTHORIZATION_GENERATION_UNBOUND", "authorization-generation-stale":"AUTHORIZATION_GENERATION_STALE", "revocation-stale":"REVOCATION_STALE", "revoked":"REVOKED", "lineage-stale":"LINEAGE_STALE", "binding-invalid":"CHANNEL_BINDING_MISSING_OR_INVALID", "release-replay":"RELEASE_REPLAY_DETECTED", "rollback":"ROLLBACK_SUSPECTED"})
 
     delegation = decision_rows("rust/test-vectors/p2p/bounded-delegation-v3.txt")
     require_decision(delegation, "DEL3-001", "ACCEPT", "CURRENT")
-    require_decision(delegation, "DEL3-011", "DENY", "AUTHORIZATION_GENERATION_UNBOUND")
-    require_decision(delegation, "DEL3-012", "DENY", "AUTHORIZATION_GENERATION_STALE")
-    require_decision(delegation, "DEL3-014", "DENY", "REVOCATION_STALE")
-    require_decision(delegation, "DEL3-016", "DENY", "LINEAGE_STALE")
-    require_decision(delegation, "DEL3-020", "DENY", "ROLLBACK_SUSPECTED")
+    check(delegation, "DENY", {"DEL3-011":"AUTHORIZATION_GENERATION_UNBOUND", "DEL3-012":"AUTHORIZATION_GENERATION_STALE", "DEL3-014":"REVOCATION_STALE", "DEL3-016":"LINEAGE_STALE", "DEL3-020":"ROLLBACK_SUSPECTED"})
 
     revocation = load_revocation_reconciliation()
     for case in ("bootstrap-full", "full-advance", "diff-next"):
         row = revocation[case]
-        assert row["authenticated"] == "1", f"{case}: incorporated update must be authenticated"
-        assert row["expected"] == "APPLY", f"{case}: expected authoritative incorporation"
-        assert int(row["result_epoch"]) > int(row["local_epoch"]), f"{case}: epoch must advance"
-
+        assert row["authenticated"] == "1" and row["expected"] == "APPLY" and int(row["result_epoch"]) > int(row["local_epoch"]), case
     for case in ("unauthenticated-full", "unauthenticated-diff"):
         row = revocation[case]
-        assert row["expected"] == "REJECT_UNAUTHENTICATED", case
-        assert row["result_epoch"] == row["local_epoch"], f"{case}: rejection must preserve epoch"
-
-    require_decision(association, "ASC4-008", "FAIL_CLOSED", "REVOCATION_STALE")
-    require_decision(enrollment, "ENR4-016", "DENY", "REVOCATION_STALE")
-    require_decision(resumption, "revocation-stale", "REJECT", "REVOCATION_STALE")
-    require_decision(resumption, "revoked", "REJECT", "REVOKED")
-    require_decision(data, "revocation-stale", "DENY", "REVOCATION_STALE")
-    require_decision(data, "revoked", "DENY", "REVOKED")
-    require_decision(delegation, "DEL3-014", "DENY", "REVOCATION_STALE")
+        assert row["expected"] == "REJECT_UNAUTHENTICATED" and row["result_epoch"] == row["local_epoch"], case
 
     p2p = load_p2p()
     assert p2p["XC4-001"]["expected"] == "ESTABLISH"
     for case in ("XC4-008", "XC4-009", "XC4-010", "XC4-011", "XC4-012", "XC4-013", "XC4-017", "XC4-021"):
-        assert p2p[case]["expected"] == "FAIL_CLOSED", f"{case}: expected FAIL_CLOSED"
-
-    for case in ("XC4-008", "XC4-009", "XC4-010", "XC4-011", "XC4-012", "XC4-013", "XC4-021"):
-        assert p2p[case]["expected"] == "FAIL_CLOSED", f"{case}: delegation must not repair lifecycle state"
-
+        assert p2p[case]["expected"] == "FAIL_CLOSED", case
     for case in ("XC4-022", "XC4-023", "XC4-024"):
-        assert p2p[case]["usage_counter_continuity_current"] == "false", case
-        assert p2p[case]["expected"] == "FAIL_CLOSED", f"{case}: usage-counter continuity must fail closed"
+        assert p2p[case]["usage_counter_continuity_current"] == "false" and p2p[case]["expected"] == "FAIL_CLOSED", case
 
-    offline = p2p["XC4-002"]
-    online = p2p["XC4-004"]
+    offline, online = p2p["XC4-002"], p2p["XC4-004"]
     compared = ("peer_a","peer_b","auth_complete","preexisting_trust","authorization_present","authorization_fresh","authorization_generation_bound","authorization_generation_current","revocation_current","revoked","lineage_current","replay_continuity_current","restart_continuity_current","usage_counter_continuity_current","mandatory_floor_compatible","binding_required","binding_valid","trust_mutation_requested","expected")
     assert all(offline[field] == online[field] for field in compared)
-    assert offline["infrastructure_available"] == "false"
-    assert online["infrastructure_available"] == "true"
+    assert offline["infrastructure_available"] == "false" and online["infrastructure_available"] == "true"
     assert offline["expected"] == online["expected"] == "ESTABLISH"
 
     print("cross-module-lifecycle-invariants: PASS surfaces=8 authz_generation=13 enrollment_compound=12 revocation=13 revocation_ingestion=5 lineage=6 replay_restart=7 usage_counter=6 privacy_resumption=8 terminal_resumption=10 transport_non_authority=2 infrastructure_non_authority=1 delegation_non_repair=7")
