@@ -101,7 +101,7 @@ def load_rows() -> list[dict[str, object]]:
 
 def main() -> int:
     rows = load_rows()
-    assert len(rows) == 25, f"expected 25 canonical rows, got {len(rows)}"
+    assert len(rows) == 43, f"expected 43 canonical rows, got {len(rows)}"
 
     for row in rows:
         observed = classify(row)
@@ -210,7 +210,7 @@ def main() -> int:
             f"cross-class direction {direction[0]}->{direction[1]} missing mutation dimensions: "
             f"{sorted(expected_dimensions - covered)}"
         )
-    assert mutation_count >= 92, f"insufficient mutation breadth: {mutation_count}"
+    assert mutation_count >= 200, f"insufficient mutation breadth: {mutation_count}"
     print(
         "p2p-common-contract-mutations: PASS "
         f"canonical={len(rows)} positive={len(positive)} mutations={mutation_count} "
