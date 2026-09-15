@@ -24,10 +24,13 @@ lineage_replace_reconciliation_decision_t lineage_replace_classify_reconciliatio
         return LINEAGE_REPLACE_RECONCILIATION_REQUIRED;
     }
 
+    /* A predecessor pair is ready only while both peers await authenticated
+     * confirmation of the same otherwise-valid replacement attempt. Invalid
+     * authority/context/attempt decisions must remain reconciliation-required. */
     if (facts->local_state == LINEAGE_REPLACE_STATE_ACTIVE_PREDECESSOR &&
         facts->peer_state == LINEAGE_REPLACE_STATE_ACTIVE_PREDECESSOR &&
-        facts->local_attempt != LINEAGE_REPLACE_ATTEMPT_CONVERGED &&
-        facts->peer_attempt != LINEAGE_REPLACE_ATTEMPT_CONVERGED)
+        facts->local_attempt == LINEAGE_REPLACE_ATTEMPT_AWAITING_CONFIRMATION &&
+        facts->peer_attempt == LINEAGE_REPLACE_ATTEMPT_AWAITING_CONFIRMATION)
         return LINEAGE_REPLACE_PAIR_PREDECESSOR_READY;
 
     return LINEAGE_REPLACE_RECONCILIATION_REQUIRED;

@@ -50,10 +50,14 @@ pub fn classify_lineage_replace_reconciliation(
         return LineageReplaceReconciliationDecision::ReconciliationRequired;
     }
 
+    // Retaining the predecessor is a ready/usable state only while both peers are
+    // waiting for authenticated confirmation of the same otherwise-valid attempt.
+    // Authorization/context/attempt mismatches must not be normalized into a
+    // healthy predecessor pair merely because durable state still points at it.
     if facts.local_state == LineageReplaceState::ActivePredecessor
         && facts.peer_state == LineageReplaceState::ActivePredecessor
-        && facts.local_attempt != LineageReplaceAttemptDecision::Converged
-        && facts.peer_attempt != LineageReplaceAttemptDecision::Converged
+        && facts.local_attempt == LineageReplaceAttemptDecision::AwaitingConfirmation
+        && facts.peer_attempt == LineageReplaceAttemptDecision::AwaitingConfirmation
     {
         return LineageReplaceReconciliationDecision::PairPredecessorReady;
     }

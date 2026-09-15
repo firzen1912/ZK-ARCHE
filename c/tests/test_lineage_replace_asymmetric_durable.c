@@ -97,7 +97,7 @@ int main(void) {
 
     fclose(fp);
     assert(saw_version == 1);
-    assert(count == 14u);
+    assert(count == 15u);
     assert(lineage_replace_classify_reconciliation(NULL) == LINEAGE_REPLACE_PAIR_CONTINUITY_BROKEN);
     puts("lineage-replace asymmetric durable corpus: ok");
     return EXIT_SUCCESS;

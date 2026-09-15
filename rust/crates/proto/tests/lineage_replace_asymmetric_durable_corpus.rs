@@ -121,5 +121,5 @@ fn asymmetric_durable_corpus() {
         count += 1;
     }
 
-    assert_eq!(count, 14);
+    assert_eq!(count, 15);
 }
