@@ -32,3 +32,7 @@ case=usage-stale-after-rebind|1|1|1|1|1|1|1|0|1|1|0|1|1|0|0|REJECT|USAGE_COUNTER
 case=generation-stale-after-rebind|1|1|1|1|1|1|1|1|1|0|0|1|1|0|0|FULL_AUTH_REQUIRED|AUTHORIZATION_GENERATION_STALE
 case=binding-invalid-after-rebind|1|1|1|1|0|1|1|1|1|1|0|1|1|0|0|REJECT|BINDING_INVALID
 case=resumption-denied-after-rebind|1|1|1|1|1|0|1|1|1|1|0|1|1|0|0|FULL_AUTH_REQUIRED|RESUMPTION_NOT_AUTHORIZED
+case=address-as-identity-after-rebind|1|1|1|1|1|1|1|1|1|1|0|1|1|1|0|REJECT|TRANSPORT_ADDRESS_AS_IDENTITY
+case=metadata-as-authority-after-rebind|1|1|1|1|1|1|1|1|1|1|0|1|1|0|1|REJECT|TRANSPORT_METADATA_AS_AUTHORITY
+case=peer-mismatch-after-rebind|1|0|1|1|1|1|1|1|1|1|0|1|1|0|0|REJECT|PEER_CONTEXT_MISMATCH
+case=profile-mismatch-after-rebind|1|1|0|1|1|1|1|1|1|1|0|1|1|0|0|FULL_AUTH_REQUIRED|PROFILE_CONTEXT_MISMATCH
