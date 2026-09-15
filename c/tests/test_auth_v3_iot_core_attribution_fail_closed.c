@@ -44,6 +44,29 @@ static void assert_matching_invalid_context_rejected(
     assert(resolved == NULL);
 }
 
+static void assert_invalid_context_dominates_lookup(void) {
+    auth_v3_iot_core_authorization_context_v1_t context = valid_context();
+    auth_v3_iot_core_attribution_record_v1_t record;
+    const auth_v3_iot_core_attribution_record_v1_t *resolved = NULL;
+    uint8_t missing_reference[32];
+    uint8_t wrong_identity[32];
+
+    context.authorization_generation = 0u;
+    record = matching_record(&context);
+    memset(missing_reference, 0xcc, sizeof(missing_reference));
+    memset(wrong_identity, 0xdd, sizeof(wrong_identity));
+
+    assert(auth_v3_iot_core_attribution_resolve(
+               NULL, 0u, missing_reference, wrong_identity, &context, &resolved) ==
+           AUTH_V3_IOT_CORE_ATTRIBUTION_AUTHORIZATION_MISMATCH);
+    assert(resolved == NULL);
+
+    assert(auth_v3_iot_core_attribution_resolve(
+               &record, 1u, record.credential_reference, wrong_identity, &context, &resolved) ==
+           AUTH_V3_IOT_CORE_ATTRIBUTION_AUTHORIZATION_MISMATCH);
+    assert(resolved == NULL);
+}
+
 int main(void) {
     auth_v3_iot_core_authorization_context_v1_t context;
 
@@ -75,5 +98,6 @@ int main(void) {
     context.revocation_epoch = 0u;
     assert_matching_invalid_context_rejected(&context);
 
+    assert_invalid_context_dominates_lookup();
     return 0;
 }

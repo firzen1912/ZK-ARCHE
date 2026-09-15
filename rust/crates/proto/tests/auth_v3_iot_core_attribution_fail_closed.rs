@@ -76,3 +76,36 @@ fn semantically_invalid_context_cannot_self_validate_against_matching_local_stat
     context.revocation_epoch = 0;
     assert_matching_invalid_context_rejected(context);
 }
+
+#[test]
+fn invalid_auth_context_dominates_reference_and_identity_lookup() {
+    let mut context = valid_context();
+    context.authorization_generation = 0;
+    let record = matching_record(&context);
+    let missing_reference = [0xcc; 32];
+    let wrong_identity = [0xdd; 32];
+
+    assert_eq!(
+        resolve_iot_core_attribution(
+            &[],
+            &missing_reference,
+            &wrong_identity,
+            &context,
+        )
+        .map(|_| ()),
+        Err(IotCoreAttributionError::AuthorizationMismatch),
+        "invalid AUTH context must fail before missing-reference classification"
+    );
+
+    assert_eq!(
+        resolve_iot_core_attribution(
+            std::slice::from_ref(&record),
+            &record.credential_reference,
+            &wrong_identity,
+            &context,
+        )
+        .map(|_| ()),
+        Err(IotCoreAttributionError::AuthorizationMismatch),
+        "invalid AUTH context must fail before peer-identity classification"
+    );
+}
