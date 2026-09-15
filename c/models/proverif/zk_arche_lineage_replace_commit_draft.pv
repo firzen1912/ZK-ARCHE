@@ -1,15 +1,19 @@
-(* ZK-ARCHE lineage-replacement commit-order symbolic model.
+(* ZK-ARCHE lineage-replacement commit-order and predecessor-reconciliation symbolic model.
    Scope: existing verified authorization -> accepted replacement plan -> ordered
-   storage transaction semantics. This model is non-normative and does not model
+   storage transaction semantics, plus fail-closed recovery when durable peers both
+   still hold the predecessor. This model is non-normative and does not model
    cryptographic proof verification, filesystem/flash atomicity, power-loss
    physics, rollback-resistant freshness anchors, or storage implementation
-   correctness. It establishes only the abstract authorization-before-mutation
-   and transaction-order correspondences already owned by spec/code. *)
+   correctness. It establishes only abstract authorization-before-mutation,
+   transaction-order, and predecessor-ready reconciliation correspondences already
+   owned by spec/code. *)
 
 free c: channel.
 free cmd_authorize: bitstring.
 free cmd_continue: bitstring.
 free cmd_fail: bitstring.
+free cmd_await_confirmation: bitstring.
+free cmd_attempt_invalid: bitstring.
 
 type domain.
 
@@ -31,6 +35,12 @@ event StorageFailureAfterSuccessor(domain).
 event StorageFailureAfterPredecessor(domain).
 event StorageFailureAfterInvalidation(domain).
 
+event LocalAwaitingConfirmation(domain).
+event PeerAwaitingConfirmation(domain).
+event InvalidReplacementAttempt(domain).
+event PairPredecessorReady(domain).
+event ReconciliationRequired(domain).
+
 (* Authorization MUST precede the first durable mutation. *)
 query d:domain;
   event(PendingPersisted(d)) ==> event(ReplacementAuthorized(d)).
@@ -38,18 +48,25 @@ query d:domain;
 (* The logical durable transaction order is monotonic and fail closed. *)
 query d:domain;
   event(SuccessorActivated(d)) ==> event(PendingPersisted(d)).
-
 query d:domain;
   event(PredecessorRetired(d)) ==> event(SuccessorActivated(d)).
-
 query d:domain;
   event(DependentStateInvalidated(d)) ==> event(PredecessorRetired(d)).
-
 query d:domain;
   event(PendingCleared(d)) ==> event(DependentStateInvalidated(d)).
-
 query d:domain;
   event(PendingCleared(d)) ==> event(ReplacementAuthorized(d)).
+
+(* A recovered predecessor pair is usable only when both sides explicitly remain
+   in the authenticated replacement attempt's AwaitingConfirmation state. An
+   invalid attempt has no transition to PairPredecessorReady and instead requires
+   reconciliation. This mirrors the Rust/C fail-closed AC-15 boundary. *)
+query d:domain;
+  event(PairPredecessorReady(d)) ==> event(LocalAwaitingConfirmation(d)).
+query d:domain;
+  event(PairPredecessorReady(d)) ==> event(PeerAwaitingConfirmation(d)).
+query d:domain;
+  event(ReconciliationRequired(d)) ==> event(InvalidReplacementAttempt(d)).
 
 let AuthorizationDispatcher(d:domain) =
   in(c, command:bitstring);
@@ -100,6 +117,21 @@ let InvalidatedDispatcher(d:domain) =
   else if command = cmd_fail then
     event StorageFailureAfterInvalidation(d).
 
+let PredecessorReconciliation(d:domain) =
+  in(c, local_decision:bitstring);
+  if local_decision = cmd_await_confirmation then
+    event LocalAwaitingConfirmation(d);
+    in(c, peer_decision:bitstring);
+    if peer_decision = cmd_await_confirmation then
+      event PeerAwaitingConfirmation(d);
+      event PairPredecessorReady(d)
+    else if peer_decision = cmd_attempt_invalid then
+      event InvalidReplacementAttempt(d);
+      event ReconciliationRequired(d)
+  else if local_decision = cmd_attempt_invalid then
+    event InvalidReplacementAttempt(d);
+    event ReconciliationRequired(d).
+
 process
   new d:domain;
   ((!AuthorizationDispatcher(d)) |
@@ -107,4 +139,5 @@ process
    (!PendingDispatcher(d)) |
    (!SuccessorDispatcher(d)) |
    (!PredecessorDispatcher(d)) |
-   (!InvalidatedDispatcher(d)))
+   (!InvalidatedDispatcher(d)) |
+   (!PredecessorReconciliation(d)))
