@@ -1,0 +1,19 @@
+# ZKP2PDELEG/2
+# Evidence reconciliation for the local/non-transitive trust and bounded-delegation contract.
+# This corpus does not claim execution in the current runner. Each row maps to the implemented v3 bounded-delegation decision surface.
+case_id|trust_basis|bound_condition|stimulus|required_outcome|v3_case|evidence_state
+DLG2-001|direct-local-trust|all-bounds-valid|normal-auth|eligible-for-authz-evaluation-not-automatic-trust|DEL3-001|implemented-unexecuted-current-run
+DLG2-002|transitive-only|otherwise-valid|normal-auth|reject-issuer-trust-not-local|DEL3-003|implemented-unexecuted-current-run
+DLG2-003|explicit-delegation|scope-mismatch|normal-auth|reject-scope-mismatch|DEL3-007|implemented-unexecuted-current-run
+DLG2-004|explicit-delegation|audience-mismatch|normal-auth|reject-audience-mismatch|DEL3-008|implemented-unexecuted-current-run
+DLG2-005|explicit-delegation|deployment-mismatch|normal-auth|reject-deployment-mismatch|DEL3-009|implemented-unexecuted-current-run
+DLG2-006|explicit-delegation|expired-or-not-yet-valid|normal-auth|reject-expired-or-not-yet-valid|DEL3-010|implemented-unexecuted-current-run
+DLG2-007|explicit-delegation|authorization-generation-stale|normal-auth|reject-authorization-generation-stale|DEL3-012|implemented-unexecuted-current-run
+DLG2-008|explicit-delegation|epoch-stale|normal-auth|reject-epoch-stale|DEL3-013|implemented-unexecuted-current-run
+DLG2-009|explicit-delegation|revocation-state-stale|normal-auth|reject-revocation-stale|DEL3-014|implemented-unexecuted-current-run
+DLG2-010|explicit-delegation|revoked|normal-auth|reject-revoked|DEL3-015|implemented-unexecuted-current-run
+DLG2-011|explicit-delegation|lineage-stale|normal-auth|reject-lineage-stale|DEL3-016|implemented-unexecuted-current-run
+DLG2-012|explicit-delegation|depth-exceeded|normal-auth|reject-depth-exceeded|DEL3-017|implemented-unexecuted-current-run
+DLG2-013|explicit-delegation|redelegation-forbidden|normal-auth|reject-redelegation-forbidden|DEL3-018|implemented-unexecuted-current-run
+DLG2-014|explicit-delegation|bounded-redelegation-valid|normal-auth|eligible-for-authz-evaluation-not-automatic-trust|DEL3-019|implemented-unexecuted-current-run
+DLG2-015|explicit-delegation|rollback-suspected|normal-auth|reject-rollback-suspected|DEL3-020|implemented-unexecuted-current-run
