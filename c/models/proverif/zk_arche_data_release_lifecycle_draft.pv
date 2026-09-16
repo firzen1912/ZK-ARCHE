@@ -1,0 +1,84 @@
+(* ZK-ARCHE DATA release lifecycle symbolic model.
+   Scope: wire-neutral authorization decision after authentication, with
+   device-local release authority and lifecycle freshness modeled as explicit
+   facts. This model is a non-normative abstraction over the Rust/C DATA
+   release classifiers. It does not model proof soundness, parsers, storage
+   physics, revocation distribution, cryptographic key wrapping, secure
+   erasure, transport security, side channels, or computational security. *)
+
+free c: channel.
+free cmd_current: bitstring.
+free cmd_generation_stale: bitstring.
+free cmd_revocation_stale: bitstring.
+free cmd_revoked: bitstring.
+free cmd_lineage_stale: bitstring.
+free cmd_epoch_stale: bitstring.
+free cmd_binding_invalid: bitstring.
+free cmd_replay: bitstring.
+free cmd_rollback: bitstring.
+
+type release.
+set preciseActions = true.
+
+event Authenticated(release).
+event LocalReleaseAuthorityCurrent(release).
+event ReleaseContextCurrent(release).
+event AuthorizationGenerationStale(release).
+event RevocationStateStale(release).
+event ExplicitRevocationObserved(release).
+event LineageStale(release).
+event EpochStale(release).
+event RequiredBindingInvalid(release).
+event ReleaseReplayObserved(release).
+event RollbackSuspected(release).
+event ReleaseAllowed(release).
+event ReleaseRejected(release).
+
+query r:release; event(ReleaseAllowed(r)) ==> event(Authenticated(r)).
+query r:release; event(ReleaseAllowed(r)) ==> event(LocalReleaseAuthorityCurrent(r)).
+query r:release; event(ReleaseAllowed(r)) ==> event(ReleaseContextCurrent(r)).
+query r:release; event(ReleaseAllowed(r)) && event(ReleaseRejected(r)) ==> false.
+query r:release; event(ReleaseAllowed(r)) && event(AuthorizationGenerationStale(r)) ==> false.
+query r:release; event(ReleaseAllowed(r)) && event(RevocationStateStale(r)) ==> false.
+query r:release; event(ReleaseAllowed(r)) && event(ExplicitRevocationObserved(r)) ==> false.
+query r:release; event(ReleaseAllowed(r)) && event(LineageStale(r)) ==> false.
+query r:release; event(ReleaseAllowed(r)) && event(EpochStale(r)) ==> false.
+query r:release; event(ReleaseAllowed(r)) && event(RequiredBindingInvalid(r)) ==> false.
+query r:release; event(ReleaseAllowed(r)) && event(ReleaseReplayObserved(r)) ==> false.
+query r:release; event(ReleaseAllowed(r)) && event(RollbackSuspected(r)) ==> false.
+
+let DataReleaseDecision(r:release) =
+  event Authenticated(r);
+  event LocalReleaseAuthorityCurrent(r);
+  in(c, lifecycle:bitstring);
+  if lifecycle = cmd_current then
+    event ReleaseContextCurrent(r);
+    event ReleaseAllowed(r)
+  else if lifecycle = cmd_generation_stale then
+    event AuthorizationGenerationStale(r);
+    event ReleaseRejected(r)
+  else if lifecycle = cmd_revocation_stale then
+    event RevocationStateStale(r);
+    event ReleaseRejected(r)
+  else if lifecycle = cmd_revoked then
+    event ExplicitRevocationObserved(r);
+    event ReleaseRejected(r)
+  else if lifecycle = cmd_lineage_stale then
+    event LineageStale(r);
+    event ReleaseRejected(r)
+  else if lifecycle = cmd_epoch_stale then
+    event EpochStale(r);
+    event ReleaseRejected(r)
+  else if lifecycle = cmd_binding_invalid then
+    event RequiredBindingInvalid(r);
+    event ReleaseRejected(r)
+  else if lifecycle = cmd_replay then
+    event ReleaseReplayObserved(r);
+    event ReleaseRejected(r)
+  else if lifecycle = cmd_rollback then
+    event RollbackSuspected(r);
+    event ReleaseRejected(r)
+  else
+    event ReleaseRejected(r).
+
+process !(new r:release; DataReleaseDecision(r))
