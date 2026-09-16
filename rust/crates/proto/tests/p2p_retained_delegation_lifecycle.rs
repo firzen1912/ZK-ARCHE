@@ -31,6 +31,11 @@ fn reason(s: &str) -> P2pDelegationReason {
 fn retained_delegation_temporally_fails_closed_across_peer_classes() {
     let corpus = include_str!("../../../test-vectors/p2p/retained-delegation-lifecycle-v1.txt");
     let mut cases = 0usize;
+    let mut saw_constrained_pair = false;
+    let mut saw_constrained_to_higher = false;
+    let mut saw_higher_to_constrained = false;
+    let mut saw_offline = false;
+    let mut saw_online = false;
     for line in corpus.lines() {
         let Some(case) = line.strip_prefix("case=") else { continue };
         let f: Vec<&str> = case.split('|').collect();
@@ -38,6 +43,13 @@ fn retained_delegation_temporally_fails_closed_across_peer_classes() {
         assert!(matches!(f[1], "mcu-core"|"mcu-plus"|"linux-edge"|"accelerated-edge"));
         assert!(matches!(f[2], "mcu-core"|"mcu-plus"|"linux-edge"|"accelerated-edge"));
         assert!(matches!(f[3], "0"|"1"));
+        let initiator_constrained = matches!(f[1], "mcu-core" | "mcu-plus");
+        let responder_constrained = matches!(f[2], "mcu-core" | "mcu-plus");
+        saw_constrained_pair |= initiator_constrained && responder_constrained;
+        saw_constrained_to_higher |= initiator_constrained && !responder_constrained;
+        saw_higher_to_constrained |= !initiator_constrained && responder_constrained;
+        saw_offline |= f[3] == "0";
+        saw_online |= f[3] == "1";
         let mut facts = baseline();
         let before = classify_p2p_delegation(&facts);
         assert_eq!(before.action, P2pDelegationAction::Accept, "{} precondition", f[0]);
@@ -59,4 +71,9 @@ fn retained_delegation_temporally_fails_closed_across_peer_classes() {
         cases += 1;
     }
     assert_eq!(cases, 10);
+    assert!(saw_constrained_pair, "corpus must retain constrained-to-constrained coverage");
+    assert!(saw_constrained_to_higher, "corpus must retain constrained-to-higher coverage");
+    assert!(saw_higher_to_constrained, "corpus must retain higher-to-constrained coverage");
+    assert!(saw_offline, "corpus must retain infrastructure-independent coverage");
+    assert!(saw_online, "corpus must retain infrastructure-available comparison coverage");
 }
