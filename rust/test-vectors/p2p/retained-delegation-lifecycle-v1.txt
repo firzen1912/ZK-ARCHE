@@ -1,0 +1,14 @@
+version=1
+# case|peer_a|peer_b|infrastructure_available|mutation|expected_action|expected_reason
+# Every case begins from the same locally rooted, currently authorized delegation and first requires ACCEPT/CURRENT.
+# infrastructure_available is descriptive peer-class qualification context only; the classifier consumes local facts and never connectivity.
+case=RDL1-001|mcu-core|mcu-core|0|authorization_generation_stale|DENY|AUTHORIZATION_GENERATION_STALE
+case=RDL1-002|mcu-core|linux-edge|0|authorization_generation_stale|DENY|AUTHORIZATION_GENERATION_STALE
+case=RDL1-003|linux-edge|mcu-core|0|revocation_stale|DENY|REVOCATION_STALE
+case=RDL1-004|mcu-core|mcu-plus|0|revoked|DENY|REVOKED
+case=RDL1-005|mcu-plus|mcu-core|0|lineage_stale|DENY|LINEAGE_STALE
+case=RDL1-006|mcu-core|accelerated-edge|0|issuer_trust_not_local|DENY|ISSUER_TRUST_NOT_LOCAL
+case=RDL1-007|accelerated-edge|mcu-core|0|epoch_stale|DENY|EPOCH_STALE
+case=RDL1-008|mcu-plus|linux-edge|0|rollback_suspected|DENY|ROLLBACK_SUSPECTED
+case=RDL1-009|linux-edge|mcu-plus|1|revoked|DENY|REVOKED
+case=RDL1-010|mcu-core|mcu-core|1|lineage_stale|DENY|LINEAGE_STALE
