@@ -15,84 +15,25 @@ docs/research/
     └── ...
 ```
 
-Related sibling control layers are deliberately outside the daily automation write scope:
-
-```text
-docs/findings/   # weekly repository-grounded conclusions/reproductions/reviews
-docs/requests/   # weekly explicit human-authorized work and acceptance conditions
-```
+Related sibling control layers are deliberately outside the daily automation write scope: `docs/findings/` owns human-reviewed conclusions and `docs/requests/` owns explicit human-authorized work. Roadmaps, ADRs, `spec/`, implementation/tests, assurance evidence, technical debt, and release governance retain their existing authority.
 
 A dated report should be created only after research for that date has actually been performed. Do not pre-create empty future reports.
 
-## Documentation ownership boundary
+## Research and promotion boundary
 
-ZK-ARCHE uses four distinct layers so research does not turn into an autonomous work queue:
+Research should prioritize developments that materially affect ZK-ARCHE architecture, security, privacy, interoperability, constrained-device feasibility, or specification maturity. Prefer primary and authoritative sources: IETF RFCs/drafts, NIST, peer-reviewed security/cryptography venues, official project repositories, formal-methods projects, and original hardware/library documentation. Secondary sources are discovery aids; material claims should be traced to primary evidence.
 
-| Layer | Owns | Does not own |
-|---|---|---|
-| `docs/research/` | external evidence, hypotheses, source provenance, unresolved research questions | implementation commitments or maturity claims |
-| `docs/findings/` | consolidated repository-grounded conclusions, reproduced/measured/review outcomes | human work authorization or long-term sequencing |
-| `docs/requests/` | explicit requested work, acceptance criteria, execution status/control | durable architecture ownership or evidence-free completion claims |
-| `docs/technical-debt/` | durable reproducible gaps and clearing evidence | weekly task planning |
+Future daily reports follow [`daily/README.md`](daily/README.md) and the recurring workflow in [`PIPELINE.md`](PIPELINE.md). Each material finding records source provenance, verified claim, exact owner, repository anchor, engineering idea, evidence maturity, limitations, resource/trust/privacy impact, Rust/C/vector compatibility, required next evidence, disposition, and roadmap-impact record. Source-supported facts, repository facts, and ZK-ARCHE inference remain explicit.
 
-`docs/roadmaps/`, `docs/adr/`, `spec/`, implementation/tests, assurance evidence, and release governance retain their existing authority.
+Research does not directly become a protocol requirement or engineering request. Promotion flows through human-reviewed findings/requests and then, when explicitly accepted, roadmaps/ADRs/specification/implementation/assurance/release governance. [`backlog.md`](backlog.md) is a research-execution queue, not a roadmap or implementation queue.
 
-## Research scope
-
-Research should prioritize developments that can materially affect ZK-ARCHE architecture, security, privacy, interoperability, constrained-device feasibility, or specification maturity, including privacy-preserving authentication/authorization; constrained Sigma/Schnorr proofs; anonymous/selective-disclosure credentials; EDHOC/OSCORE/CoAP/TLS/DTLS and channel binding; enrollment/rekey/revocation; replay/DoS/resumption; transcript and state-machine design; vectors/differential testing/fuzzing; formal verification; embedded cryptography/RNG/storage/side channels; Rust/C implementation; STM32/ESP32 constraints; optional measured PQ/hybrid profiles; data sovereignty; and P2P zero-trust delegation/revocation.
-
-## Source discipline
-
-Prefer primary and authoritative sources: IETF RFCs and drafts, NIST guidance, peer-reviewed security/cryptography venues, clearly labeled preprints, official research/project repositories, formal-methods projects, and original hardware/library documentation. Secondary sources are discovery aids; material claims should be traced to primary evidence.
-
-## Daily finding contract
-
-Future daily reports follow [`daily/README.md`](daily/README.md). Each material finding records a stable finding ID and novelty class; source/date/type/link; verified claim; exact R-/TD-/phase/spec owner; repository anchor; problem and engineering idea; evidence maturity; limitations; likely resource/trust/privacy impact; Rust/C/vector compatibility; required next evidence; disposition; and weekly-finding candidacy. Source-supported facts, repository facts, and ZK-ARCHE inference must remain explicit.
-
-## Promotion boundary
-
-Research does not directly become a protocol requirement or engineering request.
-
-```text
-external source / research idea
-        ↓
-docs/research/daily/YYYY-MM-DD.md
-        ↓
-docs/research/backlog.md
-        ↓  human-reviewed consolidation
-docs/findings/week-of-*-findings.md
-        ↓  explicit human intent
-docs/requests/week-of-*-request.md
-        ↓
-docs/roadmaps/ and/or docs/adr/
-        ↓
-spec + vectors/tests
-        ↓
-Rust/C implementation and validation
-        ↓
-docs/assurance/ + retained evidence
-        ↓
-docs/release/
-```
-
-A finding may stop at any stage. Rejection, deferral, research-only classification, or an explicit evidence gap are valid outcomes. Promotion always requires explicit human review; daily research must not claim that roadmap/spec/ADR/debt/maturity state changed unless that separate artifact was deliberately updated through its governing process.
-
-## Research backlog
-
-[`backlog.md`](backlog.md) is the persistent research-execution queue, not a roadmap or engineering request queue. When evidence becomes actionable, repository implications should first be consolidated through the human-reviewed findings/request/promotion path rather than copied directly into normative artifacts.
-
-## Automated daily pipeline
-
-The recurring research workflow is governed by [`PIPELINE.md`](PIPELINE.md). It may read the full `dev` repository but may write only `docs/research/**`; it must never write `main`, findings, requests, roadmaps, ADRs, specs, implementation, assurance, debt, CI, issues, PRs, or releases. Each completed run may create at most one commit and one `dev` ref update. The report, index, and any justified backlog transition are assembled atomically, then verified so no path outside `docs/research/**` changed.
-
-## Daily-report quality direction
-
-Historical reports remain dated provenance. New reports should be delta-oriented, map findings to exact owners, synthesize convergent sources, include actionability and claim/no-change boundaries, and identify weekly-finding candidates without autonomously creating them.
+The daily pipeline may read the full `dev` repository but may write only `docs/research/**`; it must never write `main`, findings, requests, roadmaps, ADRs, specs, implementation, assurance, debt, CI, issues, PRs, or releases. Each completed run may create at most one commit and one `dev` ref update.
 
 ## Index
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-09-16 | [Daily research](daily/2026-09-16.md) | bounded delegation attenuation/key continuity; descendant revocation and audit-vs-authority separation; offline stale-revocation bounds | reproduce / benchmark; explicit review required |
 | 2026-09-15 | [Daily research](daily/2026-09-15.md) | downgrade-resistant negotiation: selected-tuple vs preference/offer integrity; forged retry-hint policy isolation; authenticated same-conversation fallback evidence | reproduce / benchmark; explicit review required |
 | 2026-09-14 | [Daily research](daily/2026-09-14.md) | semantic association vs rotatable wire-visible session handles; path validation without identity promotion; full-AUTH fallback as fresh authentication/privacy context | reproduce / prototype; explicit review required |
 | 2026-09-13 | [Daily research](daily/2026-09-13.md) | stateful formal modeling of authorized trust mutation; verify-then-commit constrained trust replacement; internal-vs-external error/privacy separation | reproduce; explicit review required |
