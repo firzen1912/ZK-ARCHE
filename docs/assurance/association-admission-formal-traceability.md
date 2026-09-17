@@ -1,91 +1,72 @@
 # Association Admission Formal Traceability
 
-This document binds the current secure-association admission classifier to the formal-assurance property inventory without claiming a new symbolic proof. It advances TD-003 by identifying exactly which current lifecycle decisions are implementation/test evidence, which existing formal properties they refine, and which semantics still require model expansion and a retained exact-model run.
+This document binds the current secure-association admission and retained-authority surfaces to TD-003 without claiming a fresh symbolic result. It is traceability evidence: model presence and implementation/test mappings do not by themselves make the lifecycle `FORMALLY ANALYZED`.
 
-## Scope
+## Current synchronized model surface
 
-Canonical runtime/test surfaces:
+The repository carries byte-identical Rust/C copies of:
 
-- `rust/crates/proto/src/association_admission.rs`
-- `c/src/proto/association_admission.c`
-- `rust/test-vectors/state/association-admission-v4.txt`
-- Rust and C consumers of the canonical v4 corpus
+- `models/proverif/zk_arche_association_admission_draft.pv` — admission composition and NO-LEARNING rejection boundary;
+- `models/proverif/zk_arche_retained_authority_draft.pv` — temporal retained-use authority after association establishment;
+- adjacent AUTH-v3, replay-continuity, lineage-replacement, and DATA lifecycle models for owning subsystem properties.
 
-Formal authority remains the synchronized AUTH-v3 and replay-continuity ProVerif model pairs named by `docs/assurance/formal-model-contract.md`. This document is traceability evidence only. It does not promote the association classifier to `FORMALLY ANALYZED` and does not let a prior formal run inherit semantics added after its exact model blob.
+The association-admission model requires establishment to imply completed AUTH, a pre-existing trust record, present/fresh/current-generation authorization, current revocation state, non-revoked holder state, current lineage, replay/restart/usage-counter continuity, valid binding, and rollback-clear state. It excludes establishment when normal AUTH requests trust mutation or explicit revocation is observed.
 
-## Runtime decision boundary
+The retained-authority model separately requires protected use to remain under current lifecycle authority and excludes retained use after authorization-generation drift, stale revocation state, explicit revocation, lineage drift, replay/restart/usage-counter continuity loss, or required-binding loss.
 
-Association admission is a postcondition over decisions owned by AUTH/TRUST/LINK/BIND and lifecycle layers. It does not authenticate a peer, create trust, mutate trust, issue authorization, perform revocation synchronization, or establish rollback-resistant persistence.
+These models consume authoritative lifecycle facts. They do not derive revocation convergence, persistent monotonicity, channel cryptography, parser correctness, proof soundness, storage physics, or key erasure.
 
-The current fail-closed precedence is:
+## Runtime and qualification surfaces
 
-```text
-rollback suspected
-  > trust mutation requested
-  > AUTH incomplete
-  > pre-existing trust record missing
-  > authorization missing
-  > authorization stale
-  > authorization generation unbound
-  > authorization generation stale
-  > revocation state stale
-  > explicitly revoked
-  > lineage stale
-  > replay continuity stale
-  > restart continuity stale
-  > usage-counter continuity stale
-  > required channel binding invalid
-  > establish/retain association
-```
+Canonical implementation/evidence surfaces include:
 
-The ordering is security-significant because a later healthy fact must not repair an earlier invalid authority/lifecycle fact. The v4 corpus includes compound negatives that make authorization-generation and revocation precedence falsifiable rather than testing each condition only in isolation.
+- `rust/crates/proto/src/association_admission.rs`;
+- `c/src/proto/association_admission.c`;
+- `rust/test-vectors/state/association-admission-v4.txt` and independent Rust/C consumers;
+- `rust/crates/proto/tests/association_admission_temporal.rs` for temporal invalidation after an initially admissible association.
+
+The temporal Rust qualification closes an earlier traceability gap by making post-admission authority drift executable: authorization-generation change, stale/explicit revocation, lineage change, replay/restart/usage-counter continuity loss, binding invalidation, NO-LEARNING trust-mutation rejection, and rollback-dominant failure are represented as state changes rather than only independent static classifier rows.
+
+This does **not** establish C temporal-test parity or a fresh exact-head PASS. The underlying classifier and canonical static corpus remain cross-language; the temporal Rust test is additional qualification evidence whose C counterpart remains dependency-ready work.
 
 ## Property mapping
 
-| Runtime fact / transition | Formal property owner | Current evidence state | Formal gap before promotion |
+| Property | Model | Runtime / evidence | Remaining assurance gap |
 |---|---|---|---|
-| `auth_complete` | FM-02/FM-03 authentication agreement | Existing scoped AUTH-v3 formal evidence + runtime classifier evidence | Association admission itself is not emitted as a formal event |
-| `preexisting_trust_record` and `trust_mutation_requested` | FM-09 NO-LEARNING AUTH | Existing scoped formal evidence + runtime fail-closed evidence | Model does not yet represent the full classifier transition/precedence |
-| `authorization_present`, `authorization_fresh` | FM-10 authentication/authorization separation | Runtime/spec evidence only | Authorization policy semantics and admission event must be modeled rather than idealized |
-| `authorization_generation_bound/current` | FM-10, FM-13 | Runtime/vector evidence only | Model needs authority/provenance namespace plus generation binding/currentness |
-| `revocation_current`, `explicitly_revoked` | FM-13 revocation freshness | Runtime/vector evidence only | Model needs stale/offline revocation state, explicit revocation and convergence bound |
-| `lineage_current` | FM-10/FM-12/FM-13 | Runtime/vector evidence only | Delegation/lineage semantics remain blocked on complete normative ownership |
-| `replay_continuity_current` | FM-04 replay/injective acceptance | Existing replay-continuity formal evidence + runtime evidence | Need composition between AUTH replay state and association admission |
-| `restart_continuity_current` | FM-04/FM-14/FM-15/FM-22 | Runtime/vector evidence only | Model needs restart/state-loss and recovery transitions |
-| `usage_counter_continuity_current` | FM-14/FM-15 | Runtime/vector evidence only | Model needs retained-key/ticket/PSK use bounds and invalidation semantics |
-| `binding_required`, `binding_valid` | FM-05 transcript/security-context integrity; FM-14 | Partial existing AUTH-v3 formal evidence + runtime evidence | Model needs association-level channel/exporter-binding change and reauthentication behavior |
-| `rollback_suspected` | FM-13/FM-22 | Runtime/vector evidence only | Model needs rollback/state-restoration attacker and recovery semantics |
+| establishment requires completed AUTH | association-admission | Rust/C classifier + v4 corpus | composition with cryptographic AUTH remains abstracted |
+| normal AUTH is NO-LEARNING | association-admission | Rust/C classifier + corpus + Rust temporal test | trust-store persistence/mutation implementation is outside model |
+| authorization generation must remain current | admission + retained-authority | Rust/C classifier + corpus + Rust temporal test | provenance namespace and durable generation storage remain abstracted |
+| stale/explicit revocation invalidates authority | admission + retained-authority | Rust/C classifier + corpus + Rust temporal test | convergence timing/distribution is not proved |
+| lineage drift invalidates authority | admission + retained-authority | Rust/C classifier + corpus + Rust temporal test | durable lineage state and delegation semantics remain separately owned |
+| replay continuity loss invalidates authority | admission + retained-authority + replay-continuity | Rust/C classifier + corpus + Rust temporal test | persistent replay-store equivalence remains open |
+| restart continuity loss invalidates authority | admission + retained-authority | Rust/C classifier + corpus + Rust temporal test | crash consistency/recovery physics remain open |
+| usage-counter continuity loss invalidates authority | admission + retained-authority | Rust/C classifier + corpus + Rust temporal test | monotonic storage/key-erasure evidence remains open |
+| required binding loss invalidates authority | admission + retained-authority | Rust/C classifier + corpus + Rust temporal test | live channel/exporter composition remains outside model |
+| rollback suspicion fails closed | association-admission boundary + runtime precedence | Rust/C classifier/corpus + Rust temporal precedence test | rollback attacker and physical anti-rollback mechanism remain incomplete |
 
-## Required next formal packet
+Deterministic failure-reason precedence is a classifier/corpus property, not a ProVerif theorem. Symbolic property coverage must not be described as proving implementation-specific reason ordering.
 
-A future association-lifecycle model MUST NOT merely encode the classifier as an oracle and then prove the oracle returns its own expected result. It should expose attacker-controlled temporal transitions sufficient to falsify at least these claims:
+## Exact-result gate
 
-1. successful association admission implies prior authenticated completion and a pre-existing local trust record;
-2. successful AUTH alone cannot create or expand the trust record used for admission;
-3. stale/unbound authorization generation prevents admission even when later revocation/lineage/replay facts appear healthy;
-4. explicit revocation or stale revocation state prevents retained authority from surviving reauthentication, rebinding, or restart;
-5. replay/restart/usage continuity loss cannot be repaired by possession of retained session material;
-6. a required channel-binding change cannot silently preserve association authority without the specified reauthentication/rebinding transition;
-7. rollback of persistent lifecycle state cannot yield an accepted association that would be rejected under the newer authoritative state.
+A `FORMALLY ANALYZED` claim for an edited/new model requires retained evidence bound to the exact model blob and repository head, including tool/version, query identifiers, attacker assumptions, result/counterexample output, owning specification, Rust/C implementation mapping, test/vector mapping, and explicit abstraction gaps.
 
-At minimum the attacker model must compose A0 active-network behavior with A2 stale/offline state and an explicitly bounded subset of A3/A22-style state compromise/recovery behavior. If the runtime semantics required to state a theorem are not normative yet, the property remains `BLOCKED-NORMATIVE`; the formal model must not invent them.
+Cloud-runner inability to execute ProVerif is `UNAVAILABLE`, not `RED`, and does not invalidate the user-confirmed green local validation baseline. It also cannot be converted into a fresh formal PASS.
 
-## Traceability acceptance rule
+## Explicit abstraction gaps
 
-A future retained result may promote an association-lifecycle row to `FORMALLY ANALYZED` only when all of the following are recorded together:
+The synchronized models do **not** establish:
 
-- exact repository commit;
-- exact synchronized model blob(s);
-- tool and version;
-- query/property identifiers;
-- attacker profile and compromise assumptions;
-- mapping to the owning specification text;
-- mapping to both Rust and C classifier surfaces where both claim support;
-- mapping to the canonical association-admission corpus and relevant negative cases;
-- named abstraction gaps, including persistence, RNG, constant-time, memory safety and computational proof boundaries.
-
-A model edit invalidates inheritance of an older retained run for the edited semantics. Symbolic success cannot establish TD-001 independent review, TD-002 physical measurements, parser/runtime equivalence, rollback-resistant storage, or deployment qualification.
+- computational soundness or independent review of the role-membership proof;
+- parser/wire equivalence or memory/constant-time safety;
+- RNG/entropy quality;
+- durable monotonic storage, atomicity, or physical rollback resistance;
+- revocation-distribution convergence bounds;
+- live TLS/DTLS/channel exporter correctness;
+- key erasure/transport teardown after authority invalidation;
+- MCU resource/physical-target behavior;
+- privacy/unlinkability outside modeled events;
+- deployment qualification or RFC/IETF status.
 
 ## Current claim
 
-The association-admission lifecycle is **IMPLEMENTED and cross-language vector-governed** for the current classifier surface. Relevant AUTH/replay properties have scoped retained formal evidence from earlier exact model blobs. The complete association lifecycle is **not FORMALLY ANALYZED** because authorization generation, revocation convergence, restart/usage continuity, rollback/recovery and association-level binding composition are not yet represented together in a retained synchronized model.
+Association admission is **IMPLEMENTED and cross-language vector-governed** for the current classifier surface. Temporal invalidation now has an executable Rust qualification surface, and synchronized symbolic admission/retained-authority models cover the corresponding abstract lifecycle properties. The complete association lifecycle remains **not freshly FORMALLY ANALYZED at exact-current HEAD** until the current synchronized models are executed with retained exact-model results; C temporal parity, persistence/recovery equivalence, revocation convergence, live binding composition, and the other abstraction gaps above also remain open.
