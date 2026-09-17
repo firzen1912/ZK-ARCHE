@@ -1,0 +1,15 @@
+# ZKARCHE TLS exporter binding negative corpus v1
+# Qualification target: spec/tls-exporter-binding-negative-trace.md TB-N01..TB-N10.
+# This corpus qualifies canonical context digest separation only; it is not live TLS/DTLS evidence.
+# Base fixture is rust/test-vectors/transport/tls-exporter-context-v1.txt.
+# Columns: id|mutation|expected_relation|security_intent
+TB-N01|none|equal_base|canonical_same_auth_instance
+TB-N02|auth_instance_id=auth-0002|different_base|reject_cross_auth_instance_reuse
+TB-N03|application_id=zk-arche-alt|different_base|reject_wrong_application_context
+TB-N04|initiator_id=0506|different_base|reject_wrong_initiator_identity
+TB-N05|responder_id=0708|different_base|reject_wrong_responder_identity
+TB-N06|profile_id=0003|different_base|reject_profile_substitution
+TB-N07|auth_instance_id=auth-0002|different_base|reject_second_auth_on_same_transport
+TB-N08|auth_instance_id=auth-resumed-0001|different_base|reject_resumption_context_reuse
+TB-N09|transport_address=changed|equal_base|transport_address_not_protocol_identity
+TB-N10|routing_metadata=changed|equal_base|routing_metadata_not_authenticated_context
