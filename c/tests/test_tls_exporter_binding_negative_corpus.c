@@ -2,38 +2,27 @@
 
 #include <assert.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #define CORPUS_PATH "../rust/test-vectors/transport/tls-exporter-binding-negatives-v1.txt"
 
-static void init_base(auth_tls_exporter_context_v1_t *ctx,
-                      uint8_t transcript[32],
-                      const uint8_t **app, size_t *app_len,
-                      const uint8_t **initiator, size_t *initiator_len,
-                      const uint8_t **responder, size_t *responder_len,
-                      const uint8_t **instance, size_t *instance_len) {
-    static const uint8_t base_app[] = "zk-arche";
+static void init_base(auth_tls_exporter_context_v1_t *ctx, uint8_t transcript[32]) {
+    static const uint8_t app[] = "zk-arche";
     static const uint8_t alpn[] = "zkarche/1";
     static const uint8_t deployment[] = "lab";
-    static const uint8_t base_initiator[] = {0x01, 0x02};
-    static const uint8_t base_responder[] = {0x03, 0x04};
-    static const uint8_t base_instance[] = "auth-0001";
+    static const uint8_t initiator[] = {0x01, 0x02};
+    static const uint8_t responder[] = {0x03, 0x04};
+    static const uint8_t instance[] = "auth-0001";
     size_t i;
 
     for (i = 0; i < 32u; ++i) transcript[i] = (uint8_t)i;
-    *app = base_app; *app_len = sizeof base_app - 1u;
-    *initiator = base_initiator; *initiator_len = sizeof base_initiator;
-    *responder = base_responder; *responder_len = sizeof base_responder;
-    *instance = base_instance; *instance_len = sizeof base_instance - 1u;
-
-    ctx->application_id = *app; ctx->application_id_len = *app_len;
+    ctx->application_id = app; ctx->application_id_len = sizeof app - 1u;
     ctx->alpn = alpn; ctx->alpn_len = sizeof alpn - 1u;
     ctx->deployment_id = deployment; ctx->deployment_id_len = sizeof deployment - 1u;
-    ctx->initiator_id = *initiator; ctx->initiator_id_len = *initiator_len;
-    ctx->responder_id = *responder; ctx->responder_id_len = *responder_len;
+    ctx->initiator_id = initiator; ctx->initiator_id_len = sizeof initiator;
+    ctx->responder_id = responder; ctx->responder_id_len = sizeof responder;
     ctx->protocol_version = 3u; ctx->suite_id = 1u; ctx->profile_id = 2u;
-    ctx->auth_instance_id = *instance; ctx->auth_instance_id_len = *instance_len;
+    ctx->auth_instance_id = instance; ctx->auth_instance_id_len = sizeof instance - 1u;
     ctx->auth_transcript_hash = transcript; ctx->auth_transcript_hash_len = 32u;
 }
 
@@ -51,30 +40,25 @@ int main(void) {
     char line[512];
     uint8_t transcript[32], base[32], out[32];
     auth_tls_exporter_context_v1_t ctx;
-    const uint8_t *app, *initiator, *responder, *instance;
-    size_t app_len, initiator_len, responder_len, instance_len;
     size_t case_index = 0u;
 
     assert(fp != NULL);
-    init_base(&ctx, transcript, &app, &app_len, &initiator, &initiator_len,
-              &responder, &responder_len, &instance, &instance_len);
+    init_base(&ctx, transcript);
     assert(auth_tls_exporter_context_v1_digest(base, &ctx, false) == AUTH_TLS_EXPORTER_CONTEXT_OK);
 
     while (fgets(line, sizeof line, fp) != NULL) {
-        char *id, *mutation, *relation, *intent, *save;
+        char *id, *mutation, *relation, *intent;
         if (line[0] == '#' || line[0] == '\n' || line[0] == '\r') continue;
         line[strcspn(line, "\r\n")] = '\0';
-        save = NULL;
-        id = strtok_r(line, "|", &save);
-        mutation = strtok_r(NULL, "|", &save);
-        relation = strtok_r(NULL, "|", &save);
-        intent = strtok_r(NULL, "|", &save);
+        id = strtok(line, "|");
+        mutation = strtok(NULL, "|");
+        relation = strtok(NULL, "|");
+        intent = strtok(NULL, "|");
         assert(id != NULL && mutation != NULL && relation != NULL && intent != NULL);
         assert(case_index < (sizeof expected_ids / sizeof expected_ids[0]));
         assert(strcmp(id, expected_ids[case_index]) == 0);
 
-        init_base(&ctx, transcript, &app, &app_len, &initiator, &initiator_len,
-                  &responder, &responder_len, &instance, &instance_len);
+        init_base(&ctx, transcript);
         if (strcmp(mutation, "none") == 0 ||
             strcmp(mutation, "transport_address=changed") == 0 ||
             strcmp(mutation, "routing_metadata=changed") == 0) {
