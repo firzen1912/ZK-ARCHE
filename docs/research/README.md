@@ -33,6 +33,7 @@ The daily pipeline may read the full `dev` repository but may write only `docs/r
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-09-17 | [Daily research](daily/2026-09-17.md) | exporter context vs exporter-generation currentness; bounded previous-generation processability vs authorization authority; adapter-local epoch semantics | reproduce; explicit review required |
 | 2026-09-16 | [Daily research](daily/2026-09-16.md) | bounded delegation attenuation/key continuity; descendant revocation and audit-vs-authority separation; offline stale-revocation bounds | reproduce / benchmark; explicit review required |
 | 2026-09-15 | [Daily research](daily/2026-09-15.md) | downgrade-resistant negotiation: selected-tuple vs preference/offer integrity; forged retry-hint policy isolation; authenticated same-conversation fallback evidence | reproduce / benchmark; explicit review required |
 | 2026-09-14 | [Daily research](daily/2026-09-14.md) | semantic association vs rotatable wire-visible session handles; path validation without identity promotion; full-AUTH fallback as fresh authentication/privacy context | reproduce / prototype; explicit review required |
