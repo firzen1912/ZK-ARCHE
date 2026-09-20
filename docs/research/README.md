@@ -33,6 +33,7 @@ The daily pipeline may read the full `dev` repository but may write only `docs/r
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-09-20 | [Daily research](daily/2026-09-20.md) | privacy-handle rotation as lifecycle/replay state; migration prepare/activate boundary; identifier anti-reuse persistence and constrained storage cost | reproduce / benchmark; explicit review required |
 | 2026-09-19 | [Daily research](daily/2026-09-19.md) | formal-toolchain trust boundary: SAPIC state-translation semantics; Tamarin privacy/equivalence patch-level qualification; replayable formal-proof artifacts | reproduce; explicit review required |
 | 2026-09-18 | [Daily research](daily/2026-09-18.md) | CDS OR-proof witness-index side-channel schedule; canonical unique role-set semantics; Rust/C malformed scalar/point validation parity and Fiat–Shamir proof-context separation | reproduce; explicit review required |
 | 2026-09-17 | [Daily research](daily/2026-09-17.md) | exporter context vs exporter-generation currentness; bounded previous-generation processability vs authorization authority; adapter-local epoch semantics | reproduce; explicit review required |
