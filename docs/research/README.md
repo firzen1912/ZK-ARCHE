@@ -33,6 +33,7 @@ The daily pipeline may read the full `dev` repository but may write only `docs/r
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-09-23 | [Daily research](daily/2026-09-23.md) | pre-auth return-routability before state/HPKE/lookup/proof work; independent amplification/state/CPU budgets; HPKE-vs-VOPRF observer/privacy and DoS-cost boundary | prototype / benchmark; explicit review required |
 | 2026-09-22 | [Daily research](daily/2026-09-22.md) | sender/channel binding vs authorization/revocation currentness; measured revocation-convergence budget; bounded disconnected authority lifetime | reproduce / benchmark; explicit review required |
 | 2026-09-21 | [Daily research](daily/2026-09-21.md) | non-authoritative/non-unique credential selectors; exact proof-bound TrustRecord attribution; constrained trust-mutation capability and storage bounds | reproduce; explicit review required |
 | 2026-09-20 | [Daily research](daily/2026-09-20.md) | privacy-handle rotation as lifecycle/replay state; migration prepare/activate boundary; identifier anti-reuse persistence and constrained storage cost | reproduce / benchmark; explicit review required |
