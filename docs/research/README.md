@@ -33,6 +33,7 @@ The daily pipeline may read the full `dev` repository but may write only `docs/r
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-09-25 | [Daily research](daily/2026-09-25.md) | compiler/target-aware side-channel qualification for the CDS role proof: libsodium hardening evidence, exact Dalek/subtle scope, artifact-level leakage provenance | reproduce; R-007 evidence contract refined; explicit review required |
 | 2026-09-24 | [Daily research](daily/2026-09-24.md) | constrained entropy/RNG lifecycle and health: ESP32-S3 readiness transitions, STM32 seed/fault handling, Rust/C backend provenance and fail-closed operation atomicity | benchmark / reproduce; explicit review required |
 | 2026-09-23 | [Daily research](daily/2026-09-23.md) | pre-auth return-routability before state/HPKE/lookup/proof work; independent amplification/state/CPU budgets; HPKE-vs-VOPRF observer/privacy and DoS-cost boundary | prototype / benchmark; explicit review required |
 | 2026-09-22 | [Daily research](daily/2026-09-22.md) | sender/channel binding vs authorization/revocation currentness; measured revocation-convergence budget; bounded disconnected authority lifetime | reproduce / benchmark; explicit review required |
