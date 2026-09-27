@@ -33,6 +33,7 @@ The daily pipeline may read the full `dev` repository but may write only `docs/r
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-09-27 | [Daily research](daily/2026-09-27.md) | fresh LAKE post-quantum suite compatibility; protocol-level PQ claim boundary; concrete ML-KEM/ML-DSA/X-Wing wire and fragmentation budget | benchmark; R-003 evidence contract refined; explicit review required |
 | 2026-09-26 | [Daily research](daily/2026-09-26.md) | immutable profile identity vs per-session state; support advertisement vs authoritative selection; ordered/unordered negotiation semantics and exporter-parameter ownership | benchmark; R-001 evidence contract refined; explicit review required |
 | 2026-09-25 | [Daily research](daily/2026-09-25.md) | compiler/target-aware side-channel qualification for the CDS role proof: libsodium hardening evidence, exact Dalek/subtle scope, artifact-level leakage provenance | reproduce; R-007 evidence contract refined; explicit review required |
 | 2026-09-24 | [Daily research](daily/2026-09-24.md) | constrained entropy/RNG lifecycle and health: ESP32-S3 readiness transitions, STM32 seed/fault handling, Rust/C backend provenance and fail-closed operation atomicity | benchmark / reproduce; explicit review required |
