@@ -33,6 +33,7 @@ The daily pipeline may read the full `dev` repository but may write only `docs/r
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-10-03 | [Daily research](daily/2026-10-03.md) | credential/reference non-authority and multi-path consistency; provisional trust staging for authorized learning; cross-authority identifier namespace and same-object continuity | reproduce; R-013 evidence contract reconciled/refined; explicit review required |
 | 2026-09-30 | [Daily research](daily/2026-09-30.md) | canonical formal-model source and Tamarin→ProVerif translation boundary; per-property translation guarantees; local exact-head formal evidence without dev hosted Actions | reproduce; R-004 evidence contract refined; explicit review required |
 | 2026-09-29 | [Daily research](daily/2026-09-29.md) | resumption-chain origin lifetime; traffic-key update vs fresh key exchange/authority generations; regular-vs-early exporter and 0-RTT channel-binding boundary | reproduce; R-009/R-010 evidence contracts refined; explicit review required |
 | 2026-09-28 | [Daily research](daily/2026-09-28.md) | BBS/JWP credential privacy boundary: transaction freshness + audience/holder binding; anonymity-set leakage from credential layout/algorithm/device-binding diversity; exact BBS core size and standards-maturity gates | reproduce / researching; R-015 and R-002 evidence contracts refined; explicit review required |
