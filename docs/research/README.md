@@ -33,6 +33,7 @@ The daily pipeline may read the full `dev` repository but may write only `docs/r
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-10-06 | [Daily research](daily/2026-10-06.md) | direction-specific P2P authorization and bidirectional grant ownership; no-clock enrollment freshness and target-authority key/commitment pinning | reproduce; R-008 evidence contract refined; explicit review required |
 | 2026-10-05 | [Daily research](daily/2026-10-05.md) | extension-point GREASE eligibility and non-special-case unknown handling; known-invalid vs unknown-ignorable decision parity; generic-unknown and bounded legal-variability coverage | reproduce; R-011 evidence contract refined; explicit review required |
 | 2026-10-04 | [Daily research](daily/2026-10-04.md) | revocation-view provenance and bounded currentness; status-currentness vs credential/authorization validity; batched status privacy/resource tradeoff | reproduce; R-012 evidence contract refined; explicit review required |
 | 2026-10-03 | [Daily research](daily/2026-10-03.md) | credential/reference non-authority and multi-path consistency; provisional trust staging for authorized learning; cross-authority identifier namespace and same-object continuity | reproduce; R-013 evidence contract reconciled/refined; explicit review required |
