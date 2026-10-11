@@ -33,6 +33,7 @@ The daily pipeline may read the full `dev` repository but may write only `docs/r
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-10-11 | [Daily research](daily/2026-10-11.md) | ESP32-S3 entropy readiness vs RNG API success; fallible Rust/C/STM32 fault handling and cloned DRBG continuity | benchmark; R-005 evidence contract refined; explicit review required |
 | 2026-10-10 | [Daily research](daily/2026-10-10.md) | cross-transport identifier-rotation composition and encrypted binary-activity linkability; R-015 joint-observer reproduction metrics and no-premature-unlinkability boundary | reproduce; R-015 evidence contract refined; explicit review required |
 | 2026-10-07 | [Daily research](daily/2026-10-07.md) | fresh HPKE WG baseline for encrypted lookup hints; source validation before unauthenticated HPKE decapsulation; exact one-shot HPKE vs interactive VOPRF wire/authority boundary | prototype; R-014 evidence contract refined; explicit review required |
 | 2026-10-06 | [Daily research](daily/2026-10-06.md) | direction-specific P2P authorization and bidirectional grant ownership; no-clock enrollment freshness and target-authority key/commitment pinning | reproduce; R-008 evidence contract refined; explicit review required |
