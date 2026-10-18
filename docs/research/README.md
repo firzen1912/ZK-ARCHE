@@ -33,6 +33,7 @@ The daily pipeline may read the full `dev` repository but may write only `docs/r
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-10-18 | [Daily research](daily/2026-10-18.md) | issuer-scoped identity collisions, canonical alias attribution, provisional/committed enrollment barrier, no-clock freshness | reproduce; R-013 refined and R-008 cross-linked; explicit review required |
 | 2026-10-13 | [Daily research](daily/2026-10-13.md) | scoped verified-Dalek proof inheritance and safe-Rust source-to-spec refinement vs CDS OR-proof soundness and hidden-witness noninterference | reproduce; R-007 evidence contract refined; explicit review required |
 | 2026-10-11 | [Daily research](daily/2026-10-11.md) | ESP32-S3 entropy readiness vs RNG API success; fallible Rust/C/STM32 fault handling and cloned DRBG continuity | benchmark; R-005 evidence contract refined; explicit review required |
 | 2026-10-10 | [Daily research](daily/2026-10-10.md) | cross-transport identifier-rotation composition and encrypted binary-activity linkability; R-015 joint-observer reproduction metrics and no-premature-unlinkability boundary | reproduce; R-015 evidence contract refined; explicit review required |
