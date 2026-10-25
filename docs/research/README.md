@@ -33,6 +33,7 @@ The daily pipeline may read the full `dev` repository but may write only `docs/r
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-10-25 | [Daily research](daily/2026-10-25.md) | independently reproduced AUTH-v3 critical-extension canonical-hash contradiction and critical-only selected-set semantics | reproduce; R-011 evidence contract refined; normative resolution requires explicit human review |
 | 2026-10-24 | [Daily research](daily/2026-10-24.md) | non-vacuous same-association temporal authority invalidation and DATA effect-frontier closure | reproduce; R-004 evidence contract refined; human review required |
 | 2026-10-23 | [Daily research](daily/2026-10-23.md) | cold-start first-flight fingerprints and observer-vantage-correct privacy measurement | reproduce; R-015 evidence contract refined; explicit review required |
 | 2026-10-19 | [Daily research](daily/2026-10-19.md) | AUTH-v3/TLS exporter pre-binding checkpoint, context-digest vs live exporter output, multi-instance and exporter phase/generation boundary | reproduce; R-010 evidence contract refined; explicit review required |
