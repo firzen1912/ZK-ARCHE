@@ -33,6 +33,7 @@ The daily pipeline may read the full `dev` repository but may write only `docs/r
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-10-28 | [Daily research](daily/2026-10-28.md) | W3C 2026 Bitstring Status List v1.1: real-population index-linkability, expanded 16 KiB/8 MiB resource floor, and TTL versus authenticated revocation freshness | reproduce; R-012 evidence contract refined; explicit human review required |
 | 2026-10-27 | [Daily research](daily/2026-10-27.md) | multi-key AEAD q/v ledger, conservative sender-count estimation and durable forward-secrecy/rekey crash cuts | reproduce; R-009 evidence contract refined; explicit review required |
 | 2026-10-26 | [Daily research](daily/2026-10-26.md) | CFRG Sigma/Fiat–Shamir -03 composition boundary: CDS OR not specified; transcript instance/codec binding and hidden-role execution evidence | reproduce; R-007 evidence contract refined; independent cryptographic review required |
 | 2026-10-25 | [Daily research](daily/2026-10-25.md) | independently reproduced AUTH-v3 critical-extension canonical-hash contradiction and critical-only selected-set semantics | reproduce; R-011 evidence contract refined; normative resolution requires explicit human review |
