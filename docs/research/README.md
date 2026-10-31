@@ -33,6 +33,7 @@ The daily pipeline may read the full `dev` repository but may write only `docs/r
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-10-31 | [Daily research](daily/2026-10-31.md) | IANA exporter-label allocation gap and Rust/C TLS provider API/phase/context/handshake qualification, with independent digest reproduction | reproduce; R-010 evidence contract refined; explicit human review required |
 | 2026-10-30 | [Daily research](daily/2026-10-30.md) | October ACE/LAKE credential-bound authorization invalidation and cross-source credential/hash transcript authority; local Rust/C lifecycle and constrained cost comparators | reproduce/benchmark; R-008/R-001 evidence contracts refined; explicit human review required |
 | 2026-10-29 | [Daily research](daily/2026-10-29.md) | Matter multi-authority shared-device authorization noninterference and pinned postcommit fail-safe test: four-cut enrollment/alias/nonce persistence oracle | reproduce; R-013 evidence contract refined; explicit human review required |
 | 2026-10-28 | [Daily research](daily/2026-10-28.md) | W3C 2026 Bitstring Status List v1.1: real-population index-linkability, expanded 16 KiB/8 MiB resource floor, and TTL versus authenticated revocation freshness | reproduce; R-012 evidence contract refined; explicit human review required |
