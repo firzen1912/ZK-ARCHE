@@ -33,6 +33,7 @@ The daily pipeline may read the full `dev` repository but may write only `docs/r
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-11-03 | [Daily research](daily/2026-11-03.md) | IOTOPS 2026-11-02 IoT DNS privacy/availability guidance and EuroS&P 2026 DNS-frame-observability evidence; two-stage DNS-versus-same-peer linkability test with mandatory DNS-silent baseline | reproduce; R-015 observer evidence refined, no privacy promotion |
 | 2026-11-02 | [Daily research](daily/2026-11-02.md) | Tamarin 2026-10-28 proof-serialization/replay fix and 2026-10-06 diff JSON tool-version gate; non-vacuous local formal evidence still required | reproduce; R-004 evidence contract refined; no assurance promotion |
 | 2026-11-01 | [Daily research](daily/2026-11-01.md) | HPKE WG -06 current revision, replay/export non-goals and DTLS/CoAP retry source/proxy/resource budget comparators | prototype; R-014 evidence contract refined, explicit review required |
 | 2026-10-31 | [Daily research](daily/2026-10-31.md) | IANA exporter-label allocation gap and Rust/C TLS provider API/phase/context/handshake qualification, with independent digest reproduction | reproduce; R-010 evidence contract refined; explicit human review required |
