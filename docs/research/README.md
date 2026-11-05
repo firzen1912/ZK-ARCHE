@@ -33,6 +33,7 @@ The daily pipeline may read the full `dev` repository but may write only `docs/r
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-11-05 | [Daily research](daily/2026-11-05.md) | Tamarin proof-serialization false-verdict fix #914 versus still-open diff-mode missing-inline-restriction #892; exact-tool dual canary and ancestry gate | reproduce; R-004 evidence refined, R-015 cross-reference only; no assurance promotion |
 | 2026-11-04 | [Daily research](daily/2026-11-04.md) | LAKE GREASE -04 and IAB greasing -02 default-unknown/negative-selection conformance; independent AUTH-v3 critical-hash conflict check; LAKE PQ suites -02 method compatibility comparator | reproduce; R-011 evidence refined, R-003 cross-reference only; no protocol promotion |
 | 2026-11-03 | [Daily research](daily/2026-11-03.md) | IOTOPS 2026-11-02 IoT DNS privacy/availability guidance and EuroS&P 2026 DNS-frame-observability evidence; two-stage DNS-versus-same-peer linkability test with mandatory DNS-silent baseline | reproduce; R-015 observer evidence refined, no privacy promotion |
 | 2026-11-02 | [Daily research](daily/2026-11-02.md) | Tamarin 2026-10-28 proof-serialization/replay fix and 2026-10-06 diff JSON tool-version gate; non-vacuous local formal evidence still required | reproduce; R-004 evidence contract refined; no assurance promotion |
