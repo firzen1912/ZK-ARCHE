@@ -33,6 +33,7 @@ The daily pipeline may read the full `dev` repository but may write only `docs/r
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-11-06 | [Daily research](daily/2026-11-06.md) | CFRG Fiat–Shamir/Sigma -04 update and exact-current Rust/C CDS-OR witness-index operation asymmetry; paired valid/adversarial vector gate | reproduce; R-007 evidence refined, R-015 cross-reference only; no crypto/privacy promotion |
 | 2026-11-05 | [Daily research](daily/2026-11-05.md) | Tamarin proof-serialization false-verdict fix #914 versus still-open diff-mode missing-inline-restriction #892; exact-tool dual canary and ancestry gate | reproduce; R-004 evidence refined, R-015 cross-reference only; no assurance promotion |
 | 2026-11-04 | [Daily research](daily/2026-11-04.md) | LAKE GREASE -04 and IAB greasing -02 default-unknown/negative-selection conformance; independent AUTH-v3 critical-hash conflict check; LAKE PQ suites -02 method compatibility comparator | reproduce; R-011 evidence refined, R-003 cross-reference only; no protocol promotion |
 | 2026-11-03 | [Daily research](daily/2026-11-03.md) | IOTOPS 2026-11-02 IoT DNS privacy/availability guidance and EuroS&P 2026 DNS-frame-observability evidence; two-stage DNS-versus-same-peer linkability test with mandatory DNS-silent baseline | reproduce; R-015 observer evidence refined, no privacy promotion |
