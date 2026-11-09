@@ -33,6 +33,7 @@ The daily pipeline may read the full `dev` repository but may write only `docs/r
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-11-09 | [Daily research](daily/2026-11-09.md) | LAKE additional messages -00: single-use AEAD nonce, identical ciphertext retry, deferred completion; ACE WG EST-oscore -12: renewal without fresh AKE, subject PoP and private-key/RNG custody | reproduce; R-009/R-008 evidence refined, R-005/R-010/R-013 cross-references; no wire, dependency or readiness promotion |
 | 2026-11-08 | [Daily research](daily/2026-11-08.md) | KEYTRANS -11/-06 forked key-history, lost consistency state and offline freshness; JOSE WG modular BBS/JWP -00 serialization/holder-binding gaps | reproduce/investigate; R-013 and R-002 evidence refined, R-012/R-015 cross-references; no wire, trust, privacy or profile promotion |
 | 2026-11-07 | [Daily research](daily/2026-11-07.md) | 2026-11-02 KUDOS -15 old/new context, no-FS storage, replay/retention and TLS Extended Key Update -14 generation-aware exporter/PSK/PHA boundaries | reproduce; R-009 and R-010 evidence refined, R-012 cross-reference; no protocol, crypto or readiness promotion |
 | 2026-11-06 | [Daily research](daily/2026-11-06.md) | CFRG Fiat–Shamir/Sigma -04 update and exact-current Rust/C CDS-OR witness-index operation asymmetry; paired valid/adversarial vector gate | reproduce; R-007 evidence refined, R-015 cross-reference only; no crypto/privacy promotion |
