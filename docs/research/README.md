@@ -33,6 +33,7 @@ The daily pipeline may read the full `dev` repository but may write only `docs/r
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-11-11 | [Daily research](daily/2026-11-11.md) | ACE WG -09 group-audience anchor/key binding and typed rights-update predecessor continuity; Tamarin SAPIC #931/#941/#942 nonmonotonic state-optimization canaries | reproduce; R-013/R-004 evidence refined, R-012 cross-reference; no protocol, CI or assurance promotion |
 | 2026-11-10 | [Daily research](daily/2026-11-10.md) | RFC 9770 final ACE TRL comparator: bounded diff/cursor wrap and lost-history recovery; valid-token noncanonical-wrapper hash mismatch; revoked-token hash retention vs ZK-ARCHE lineage tombstone semantics | reproduce; R-013 and R-012 evidence refined, no code or security-claim promotion |
 | 2026-11-09 | [Daily research](daily/2026-11-09.md) | LAKE additional messages -00: single-use AEAD nonce, identical ciphertext retry, deferred completion; ACE WG EST-oscore -12: renewal without fresh AKE, subject PoP and private-key/RNG custody | reproduce; R-009/R-008 evidence refined, R-005/R-010/R-013 cross-references; no wire, dependency or readiness promotion |
 | 2026-11-08 | [Daily research](daily/2026-11-08.md) | KEYTRANS -11/-06 forked key-history, lost consistency state and offline freshness; JOSE WG modular BBS/JWP -00 serialization/holder-binding gaps | reproduce/investigate; R-013 and R-002 evidence refined, R-012/R-015 cross-references; no wire, trust, privacy or profile promotion |
