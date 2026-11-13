@@ -33,6 +33,7 @@ The daily pipeline may read the full `dev` repository but may write only `docs/r
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-11-13 | [Daily research](daily/2026-11-13.md) | ACME PoP -01 immutable per-order key/PoP/identifier separation; ANIMA cBRSKI -32 clockless nonce-vs-expiry voucher and fail-closed trust-anchor rollover; suite-specific CCM_8 failed-authentication bound comparator | R-008/R-009 reproduce evidence refined, R-005/R-013 cross-ref; no protocol, CI, profile or assurance promotion |
 | 2026-11-12 | [Daily research](daily/2026-11-12.md) | LAKE RA-EDHOC -07 session-bound signed attestation vs completed exporter; RATS verifier/authorization split, early EAD privacy and cached-result no-clock freshness | R-015 reproduce / R-006 research-only refined, no mandatory attestation, wire, CI, privacy or assurance promotion |
 | 2026-11-11 | [Daily research](daily/2026-11-11.md) | ACE WG -09 group-audience anchor/key binding and typed rights-update predecessor continuity; Tamarin SAPIC #931/#941/#942 nonmonotonic state-optimization canaries | reproduce; R-013/R-004 evidence refined, R-012 cross-reference; no protocol, CI or assurance promotion |
 | 2026-11-10 | [Daily research](daily/2026-11-10.md) | RFC 9770 final ACE TRL comparator: bounded diff/cursor wrap and lost-history recovery; valid-token noncanonical-wrapper hash mismatch; revoked-token hash retention vs ZK-ARCHE lineage tombstone semantics | reproduce; R-013 and R-012 evidence refined, no code or security-claim promotion |
