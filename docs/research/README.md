@@ -33,6 +33,7 @@ The daily pipeline may read the full `dev` repository but may write only `docs/r
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-11-16 | [Daily research](daily/2026-11-16.md) | 2026-11-15 LAKE-PSK -11 identity-hint note; multi-candidate/2-byte resumption handle collisions; two-party confirmation/retirement and conditional PCS vs active KCI | R-015/R-013/R-009 reproduce evidence refined; R-014 cross-ref, no PSK/wire/CI/claim promotion |
 | 2026-11-15 | [Daily research](daily/2026-11-15.md) | RFC 9266 channel-level tls-exporter vs custom per-AUTH exporter uniqueness; RFC 9846 current TLS baseline and verified EID 9040 legacy-version/early-exporter qualification | R-010 reproduce evidence refined; R-011 cross-ref; no protocol, CI, TLS/PKI or assurance promotion |
 | 2026-11-14 | [Daily research](daily/2026-11-14.md) | Tamarin SAPIC #938 public-channel alias leak and #944 typed process-macro binder capture; November 8/12 patch ancestry and local semantic canaries | R-004 reproduce evidence refined; no wire, CI, formal-proof or assurance promotion |
 | 2026-11-13 | [Daily research](daily/2026-11-13.md) | ACME PoP -01 immutable per-order key/PoP/identifier separation; ANIMA cBRSKI -32 clockless nonce-vs-expiry voucher and fail-closed trust-anchor rollover; suite-specific CCM_8 failed-authentication bound comparator | R-008/R-009 reproduce evidence refined, R-005/R-013 cross-ref; no protocol, CI, profile or assurance promotion |
