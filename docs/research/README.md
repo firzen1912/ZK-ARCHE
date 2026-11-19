@@ -33,6 +33,7 @@ The daily pipeline may read the full `dev` repository but may write only `docs/r
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-11-19 | [Daily research](daily/2026-11-19.md) | Exact-Rust/C CDS-OR invalid-role/list bound asymmetry; PQUIP WG -12 seed-only vs expanded-key import/custody; optional ML-DSA signing tail and physical benchmark budget | R-007 reproduce, R-005/R-003 benchmark evidence refined; no suite, wire, code, CI, claims or assurance promotion |
 | 2026-11-18 | [Daily research](daily/2026-11-18.md) | SSH strict-KEX -03 protected-state frontier; WIMSE message content/nonce/audience binding -00; JOSE WG JWP/JPA -15 single-use vs BBS offline credential economics | R-009/R-008 reproduce and R-002 researching evidence refined; R-011/R-012/R-015 cross-ref; no wire, code, CI, trust, privacy or assurance promotion |
 | 2026-11-17 | [Daily research](daily/2026-11-17.md) | CFRG BBS per-verifier pseudonym scope; RATS signed clockless epoch-marker freshness vs local grant/replay; CFRG-adopted ML-KEM authentication-method and 2,048-byte draft profile budget | R-015/R-012 reproduce and R-003 benchmark evidence refined; R-002/R-005 cross-ref, no BBS/PQ/Bell/wire/CI/claim promotion |
 | 2026-11-16 | [Daily research](daily/2026-11-16.md) | 2026-11-15 LAKE-PSK -11 identity-hint note; multi-candidate/2-byte resumption handle collisions; two-party confirmation/retirement and conditional PCS vs active KCI | R-015/R-013/R-009 reproduce evidence refined; R-014 cross-ref, no PSK/wire/CI/claim promotion |
