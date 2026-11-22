@@ -33,6 +33,7 @@ The daily pipeline may read the full `dev` repository but may write only `docs/r
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-11-22 | [Daily research](daily/2026-11-22.md) | Tamarin 1.12 last()-restriction induction guard versus Oct28 merged #915; disabled missing-action warning and open superseding #926, with semantic canary/version gates | R-004 P0 reproduce refined; no proof, protocol, Tamarin adoption, CI or assurance promotion |
 | 2026-11-21 | [Daily research](daily/2026-11-21.md) | Individual Nov20 early TLS attestation G1/G2/G3 key-phase relay formal-model warning; IETF127 SPICE SD-CWT holder unprotected sd_aead and independent interop/canonical-CBOR comparator | R-006 research-only/R-002 researching evidence refined; R-015 cross-reference, no attestation/COSE/credential/wire/CI/assurance promotion |
 | 2026-11-20 | [Daily research](daily/2026-11-20.md) | Newly published RFC 10021 Group OSCORE + RFC 10020 CoAP group: authenticated sender vs intended recipient; invalid replay-window recovery; missed group-rekey stale-member reconciliation | R-009/R-008/R-012 reproduce evidence refined; R-015/R-005 cross-reference; no wire, profile, Group Manager, CI, code or assurance promotion |
 | 2026-11-19 | [Daily research](daily/2026-11-19.md) | Exact-Rust/C CDS-OR invalid-role/list bound asymmetry; PQUIP WG -12 seed-only vs expanded-key import/custody; optional ML-DSA signing tail and physical benchmark budget | R-007 reproduce, R-005/R-003 benchmark evidence refined; no suite, wire, code, CI, claims or assurance promotion |
