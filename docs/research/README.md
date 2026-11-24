@@ -33,6 +33,7 @@ The daily pipeline may read the full `dev` repository but may write only `docs/r
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-11-24 | [Daily research](daily/2026-11-24.md) | RFC9496 / libsodium / dalek proof-group zero and identity arithmetic; exact-head C/Rust source mapping and host libsodium 1.0.18 primitive canaries | R-007 P0 reproduce refined; no wire, suite, code, CI or assurance promotion |
 | 2026-11-23 | [Daily research](daily/2026-11-23.md) | NIST Nov20 CMVP SP800-90C D.T/D.U source-vs-module entropy, single-consumption and failure states; D.S conditional RFC10024 PQ/T hybrid TLS combiner, IESG constrained-PQ Informational approval | R-005 benchmark/R-010 reproduce/R-003 benchmark evidence refined; no native suite, TLS/PQ, FIPS, wire, workflow, code or assurance promotion |
 | 2026-11-22 | [Daily research](daily/2026-11-22.md) | Tamarin 1.12 last()-restriction induction guard versus Oct28 merged #915; disabled missing-action warning and open superseding #926, with semantic canary/version gates | R-004 P0 reproduce refined; no proof, protocol, Tamarin adoption, CI or assurance promotion |
 | 2026-11-21 | [Daily research](daily/2026-11-21.md) | Individual Nov20 early TLS attestation G1/G2/G3 key-phase relay formal-model warning; IETF127 SPICE SD-CWT holder unprotected sd_aead and independent interop/canonical-CBOR comparator | R-006 research-only/R-002 researching evidence refined; R-015 cross-reference, no attestation/COSE/credential/wire/CI/assurance promotion |
