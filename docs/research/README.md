@@ -33,6 +33,7 @@ The daily pipeline may read the full `dev` repository but may write only `docs/r
 
 | Date | Report | Focus | Promotion status |
 |---|---|---|---|
+| 2026-11-26 | [Daily research](daily/2026-11-26.md) | Exact-head replay-continuity dispatcher/query finite diagnostic: 1,110 traces, trusted-rollback omission and branch-only repair sensitivity; ProVerif temporal state guidance | R-009/R-004 P0 reproduce refined; no model, wire, code, CI or assurance promotion |
 | 2026-11-25 | [Daily research](daily/2026-11-25.md) | IACR AutoBench-CT abstract and detector ground-truth controls; exact-head C deterministic proof length comment contradiction, partial-output and secret-lifetime boundary | R-007 P0 reproduce refined; no wire, code, CI, dependency or assurance promotion |
 | 2026-11-24 | [Daily research](daily/2026-11-24.md) | RFC9496 / libsodium / dalek proof-group zero and identity arithmetic; exact-head C/Rust source mapping and host libsodium 1.0.18 primitive canaries | R-007 P0 reproduce refined; no wire, suite, code, CI or assurance promotion |
 | 2026-11-23 | [Daily research](daily/2026-11-23.md) | NIST Nov20 CMVP SP800-90C D.T/D.U source-vs-module entropy, single-consumption and failure states; D.S conditional RFC10024 PQ/T hybrid TLS combiner, IESG constrained-PQ Informational approval | R-005 benchmark/R-010 reproduce/R-003 benchmark evidence refined; no native suite, TLS/PQ, FIPS, wire, workflow, code or assurance promotion |
